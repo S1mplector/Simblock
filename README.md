@@ -1,15 +1,15 @@
 # SimBlock - Keyboard Blocker
 
-A Windows application that allows you to temporarily block all keyboard input with a single toggle button, perfect for safely cleaning your keyboard.
+A very lightweight Windows application that allows you to temporarily block all keyboard input with a single toggle button, designed to safely clean your keyboard.
 
 ## Features
 
-- 🎯 **One-Click Toggle** - Simple button to block/unblock keyboard input
-- 🔒 **Global Keyboard Blocking** - Blocks all keyboard input system-wide
-- 🆘 **Emergency Unlock** - Ctrl+Alt+U combination to unlock in case of issues
-- 🔔 **System Tray Integration** - Minimize to tray and toggle from tray icon
-- 📊 **Clean Architecture** - Layered design with dependency injection
-- 🪟 **Windows Native** - Uses Win32 API for reliable keyboard hooking
+-  **One-Click Toggle** - Simple button to block/unblock keyboard input
+-  **Global Keyboard Blocking** - Blocks all keyboard input system-wide
+-  **Emergency Unlock** - Ctrl+Alt+U combination to unlock in case of issues
+-  **System Tray Integration** - Minimize to tray and toggle from tray icon
+-  **Clean Architecture** - Layered design with dependency injection
+-  **Windows Native** - Uses Win32 API for reliable keyboard hooking
 
 ## Emergency Unlock
 
