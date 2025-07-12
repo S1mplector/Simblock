@@ -66,16 +66,7 @@ src/
 
 ## Security Note
 
-This application requires administrative privileges to install global keyboard hooks. It only blocks keyboard input locally and does not transmit any data.
-│   └── Presentation
-│       ├── Controllers
-│       └── Models
-├── tests
-│   ├── Unit
-│   └── Integration
-├── Program.cs
-├── appsettings.json
-└── README.md
+This application requires administrative privileges to install global keyboard hooks. It only blocks keyboard input locally and does not transmit any data. You are welcome to inspect the source code. 
 ```
 
 ## Getting Started
