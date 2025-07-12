@@ -11,6 +11,16 @@ A very lightweight Windows application that allows you to temporarily block all 
 -  **Clean Architecture** - Layered design with dependency injection
 -  **Windows Native** - Uses Win32 API for reliable keyboard hooking
 
+## Screenshots
+
+<div align="center">
+  <img src="docs/images/main_interface.png" alt="Main Interface" width="600">
+  <p><i>Main player interface with library and playlists</i></p>
+  
+  <img src="docs/images/tray.png" alt="Mini Player" width="300">
+  <p><i>Widget inside the application tray</i></p>
+</div>
+
 ## Emergency Unlock
 
 If the application becomes unresponsive or you need to quickly unlock:
