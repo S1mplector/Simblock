@@ -69,42 +69,6 @@ src/
 This application requires administrative privileges to install global keyboard hooks. It only blocks keyboard input locally and does not transmit any data. You are welcome to inspect the source code. 
 ```
 
-## Getting Started
-
-### Prerequisites
-- .NET SDK (version X.X or later)
-- A suitable IDE or text editor (e.g., Visual Studio, VS Code)
-
-### Installation
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/my-csharp-app.git
-   ```
-2. Navigate to the project directory:
-   ```
-   cd my-csharp-app
-   ```
-3. Restore the dependencies:
-   ```
-   dotnet restore
-   ```
-
-### Running the Application
-To run the application, use the following command:
-```
-dotnet run
-```
-
-### Running Tests
-To run the unit tests, use:
-```
-dotnet test tests/Unit
-```
-For integration tests, use:
-```
-dotnet test tests/Integration
-```
-
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
 
