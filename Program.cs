@@ -7,6 +7,7 @@ using SimBlock.Core.Domain.Interfaces;
 using SimBlock.Infrastructure.Windows;
 using SimBlock.Presentation.Forms;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace SimBlock
 {
@@ -15,6 +16,15 @@ namespace SimBlock
         [STAThread]
         public static async Task Main(string[] args)
         {
+            // Ensure only a single instance runs
+            bool createdNew;
+            using var mutex = new Mutex(true, "SimBlockSingletonMutex", out createdNew);
+            if (!createdNew)
+            {
+                MessageBox.Show("SimBlock is already running.", "SimBlock", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             // Enable Windows Forms visual styles
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

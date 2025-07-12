@@ -213,8 +213,7 @@ namespace SimBlock.Presentation.Forms
 
         private System.Drawing.Icon CreateApplicationIcon()
         {
-            // Create a simple application icon
-            var bitmap = new System.Drawing.Bitmap(32, 32);
+            using var bitmap = new System.Drawing.Bitmap(32, 32);
             using (var g = System.Drawing.Graphics.FromImage(bitmap))
             {
                 g.FillEllipse(System.Drawing.Brushes.Blue, 4, 4, 24, 24);

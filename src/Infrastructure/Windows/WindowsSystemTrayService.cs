@@ -109,19 +109,17 @@ namespace SimBlock.Infrastructure.Windows
 
         private System.Drawing.Icon CreateIcon(bool isBlocked)
         {
-            // Create a simple 16x16 icon
-            var bitmap = new System.Drawing.Bitmap(16, 16);
+            using var bitmap = new System.Drawing.Bitmap(16, 16);
             using (var g = System.Drawing.Graphics.FromImage(bitmap))
             {
                 // Fill with red if blocked, green if not
-                var brush = new System.Drawing.SolidBrush(isBlocked ? 
+                using var brush = new System.Drawing.SolidBrush(isBlocked ? 
                     System.Drawing.Color.Red : System.Drawing.Color.Green);
+
                 g.FillEllipse(brush, 2, 2, 12, 12);
-                
+
                 // Add a border
                 g.DrawEllipse(System.Drawing.Pens.Black, 2, 2, 12, 12);
-                
-                brush.Dispose();
             }
 
             return System.Drawing.Icon.FromHandle(bitmap.GetHicon());
