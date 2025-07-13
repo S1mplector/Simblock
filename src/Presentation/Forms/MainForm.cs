@@ -20,6 +20,17 @@ namespace SimBlock.Presentation.Forms
         private Label _statusLabel = null!;
         private Label _lastToggleLabel = null!;
         private Button _hideToTrayButton = null!;
+        private StatusStrip _statusStrip = null!;
+        private ToolStripStatusLabel _timeLabel = null!;
+        private ToolStripStatusLabel _blockingDurationLabel = null!;
+        private ToolStripStatusLabel _sessionInfoLabel = null!;
+        private ToolStripStatusLabel _hookStatusLabel = null!;
+
+        // Status bar tracking
+        private System.Windows.Forms.Timer _statusTimer = null!;
+        private DateTime? _blockingStartTime = null;
+        private int _todayBlockCount = 0;
+        private DateTime _lastResetDate = DateTime.Today;
 
         public MainForm(IKeyboardBlockerService keyboardBlockerService, ILogger<MainForm> logger)
         {
@@ -136,6 +147,85 @@ namespace SimBlock.Presentation.Forms
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10));
 
             Controls.Add(mainPanel);
+            
+            // Initialize status bar
+            InitializeStatusBar();
+        }
+
+        private void InitializeStatusBar()
+        {
+            // Create status strip
+            _statusStrip = new StatusStrip
+            {
+                BackColor = System.Drawing.Color.FromArgb(240, 240, 240),
+                Font = new System.Drawing.Font("Segoe UI", 8.25F),
+                SizingGrip = false
+            };
+
+            // Current time label
+            _timeLabel = new ToolStripStatusLabel
+            {
+                Text = DateTime.Now.ToString("HH:mm:ss"),
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched,
+                AutoSize = false,
+                Width = 60,
+                TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+                ToolTipText = "Current system time"
+            };
+
+            // Blocking duration label
+            _blockingDurationLabel = new ToolStripStatusLabel
+            {
+                Text = "Ready",
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched,
+                AutoSize = false,
+                Width = 100,
+                TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+                ToolTipText = "Duration of current blocking session"
+            };
+
+            // Session info label
+            _sessionInfoLabel = new ToolStripStatusLabel
+            {
+                Text = "Blocks today: 0",
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched,
+                AutoSize = false,
+                Width = 100,
+                TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+                ToolTipText = "Number of times keyboard was blocked today"
+            };
+
+            // Hook status label
+            _hookStatusLabel = new ToolStripStatusLabel
+            {
+                Text = "Hook: Active",
+                ForeColor = System.Drawing.Color.Green,
+                Spring = true,
+                TextAlign = System.Drawing.ContentAlignment.MiddleRight,
+                ToolTipText = "Keyboard hook service status"
+            };
+
+            // Add labels to status strip
+            _statusStrip.Items.AddRange(new ToolStripItem[] { 
+                _timeLabel, 
+                _blockingDurationLabel, 
+                _sessionInfoLabel, 
+                _hookStatusLabel 
+            });
+
+            // Add status strip to form
+            Controls.Add(_statusStrip);
+
+            // Initialize timer for real-time updates
+            _statusTimer = new System.Windows.Forms.Timer
+            {
+                Interval = 1000, // Update every second
+                Enabled = true
+            };
+            _statusTimer.Tick += OnStatusTimerTick;
         }
 
         private void InitializeEventHandlers()
@@ -201,6 +291,91 @@ namespace SimBlock.Presentation.Forms
 
             _viewModel.UpdateFromState(state);
             UpdateUI();
+            UpdateStatusBar(state);
+        }
+
+        private void OnStatusTimerTick(object? sender, EventArgs e)
+        {
+            // Update current time
+            _timeLabel.Text = DateTime.Now.ToString("HH:mm:ss");
+
+            // Reset daily counter if new day
+            if (DateTime.Today != _lastResetDate)
+            {
+                _todayBlockCount = 0;
+                _lastResetDate = DateTime.Today;
+                _sessionInfoLabel.Text = "Blocks today: 0";
+            }
+
+            // Update blocking duration if currently blocked
+            if (_blockingStartTime.HasValue)
+            {
+                var duration = DateTime.Now - _blockingStartTime.Value;
+                _blockingDurationLabel.Text = $"Blocked: {duration:mm\\:ss}";
+                _blockingDurationLabel.ForeColor = System.Drawing.Color.Red;
+            }
+
+            // Update hook status periodically
+            UpdateHookStatus();
+        }
+
+        private void UpdateHookStatus()
+        {
+            try
+            {
+                // Check if the keyboard service is working properly
+                var currentState = _keyboardBlockerService.CurrentState;
+                if (currentState != null)
+                {
+                    _hookStatusLabel.Text = "Hook: Active";
+                    _hookStatusLabel.ForeColor = System.Drawing.Color.Green;
+                }
+                else
+                {
+                    _hookStatusLabel.Text = "Hook: Inactive";
+                    _hookStatusLabel.ForeColor = System.Drawing.Color.Red;
+                }
+            }
+            catch (Exception ex)
+            {
+                _hookStatusLabel.Text = "Hook: Error";
+                _hookStatusLabel.ForeColor = System.Drawing.Color.Red;
+                _logger.LogWarning(ex, "Error checking hook status");
+            }
+        }
+
+        private void UpdateStatusBar(KeyboardBlockState state)
+        {
+            try
+            {
+                // Update blocking duration
+                if (state.IsBlocked && !_blockingStartTime.HasValue)
+                {
+                    // Just started blocking
+                    _blockingStartTime = DateTime.Now;
+                    _todayBlockCount++;
+                    _blockingDurationLabel.Text = "Blocked: 00:00";
+                    _blockingDurationLabel.ForeColor = System.Drawing.Color.Red;
+                }
+                else if (!state.IsBlocked && _blockingStartTime.HasValue)
+                {
+                    // Just stopped blocking
+                    _blockingStartTime = null;
+                    _blockingDurationLabel.Text = "Ready";
+                    _blockingDurationLabel.ForeColor = System.Drawing.Color.Green;
+                }
+
+                // Update session info
+                _sessionInfoLabel.Text = $"Blocks today: {_todayBlockCount}";
+
+                // Update hook status based on service state
+                _hookStatusLabel.Text = "Hook: Active";
+                _hookStatusLabel.ForeColor = System.Drawing.Color.Green;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating status bar");
+            }
         }
 
         private void UpdateUI()
@@ -272,6 +447,12 @@ Tips:
             {
                 e.Cancel = true;
                 Hide();
+            }
+            else
+            {
+                // Actually closing - dispose resources
+                _statusTimer?.Stop();
+                _statusTimer?.Dispose();
             }
         }
 
