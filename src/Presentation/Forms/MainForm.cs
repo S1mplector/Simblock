@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Presentation.ViewModels;
+using SimBlock.Infrastructure.Windows;
 
 namespace SimBlock.Presentation.Forms
 {
@@ -14,6 +15,7 @@ namespace SimBlock.Presentation.Forms
         private readonly IKeyboardBlockerService _keyboardBlockerService;
         private readonly ILogger<MainForm> _logger;
         private readonly MainWindowViewModel _viewModel;
+        private readonly ResourceMonitor _resourceMonitor;
 
         // UI Controls
         private Button _toggleButton = null!;
@@ -26,6 +28,7 @@ namespace SimBlock.Presentation.Forms
         private ToolStripStatusLabel _blockingDurationLabel = null!;
         private ToolStripStatusLabel _sessionInfoLabel = null!;
         private ToolStripStatusLabel _hookStatusLabel = null!;
+        private ToolStripStatusLabel _resourceUsageLabel = null!;
 
         // Status bar tracking
         private System.Windows.Forms.Timer _statusTimer = null!;
@@ -38,6 +41,7 @@ namespace SimBlock.Presentation.Forms
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _viewModel = new MainWindowViewModel();
+            _resourceMonitor = new ResourceMonitor();
 
             InitializeComponent();
             InitializeEventHandlers();
@@ -56,7 +60,7 @@ namespace SimBlock.Presentation.Forms
         {
             // Form properties
             Text = "SimBlock - Keyboard Blocker";
-            Size = new System.Drawing.Size(400, 300);
+            Size = new System.Drawing.Size(550, 300);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
@@ -215,9 +219,22 @@ namespace SimBlock.Presentation.Forms
             {
                 Text = "Hook: Active",
                 ForeColor = System.Drawing.Color.Green,
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched,
+                AutoSize = false,
+                Width = 80,
+                TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+                ToolTipText = "Keyboard hook service status"
+            };
+
+            // Resource usage label
+            _resourceUsageLabel = new ToolStripStatusLabel
+            {
+                Text = "CPU: 0% | RAM: 0MB",
+                ForeColor = System.Drawing.Color.Blue,
                 Spring = true,
                 TextAlign = System.Drawing.ContentAlignment.MiddleRight,
-                ToolTipText = "Keyboard hook service status"
+                ToolTipText = "SimBlock application resource usage (CPU and RAM)"
             };
 
             // Add labels to status strip
@@ -225,7 +242,8 @@ namespace SimBlock.Presentation.Forms
                 _timeLabel, 
                 _blockingDurationLabel, 
                 _sessionInfoLabel, 
-                _hookStatusLabel 
+                _hookStatusLabel,
+                _resourceUsageLabel 
             });
 
             // Add status strip to form
@@ -329,6 +347,9 @@ namespace SimBlock.Presentation.Forms
 
             // Update hook status periodically
             UpdateHookStatus();
+            
+            // Update resource usage
+            UpdateResourceUsage();
         }
 
         private void UpdateHookStatus()
@@ -353,6 +374,38 @@ namespace SimBlock.Presentation.Forms
                 _hookStatusLabel.Text = "Hook: Error";
                 _hookStatusLabel.ForeColor = System.Drawing.Color.Red;
                 _logger.LogWarning(ex, "Error checking hook status");
+            }
+        }
+
+        private void UpdateResourceUsage()
+        {
+            try
+            {
+                var resourceString = _resourceMonitor.GetCompactResourceString();
+                _resourceUsageLabel.Text = resourceString;
+                
+                // Change color based on resource usage
+                var cpuUsage = _resourceMonitor.GetCpuUsage();
+                var appMemoryUsage = _resourceMonitor.GetTaskManagerMemoryUsage();
+                
+                if (cpuUsage > 5 || appMemoryUsage > 80)
+                {
+                    _resourceUsageLabel.ForeColor = System.Drawing.Color.Red;
+                }
+                else if (cpuUsage > 2 || appMemoryUsage > 50)
+                {
+                    _resourceUsageLabel.ForeColor = System.Drawing.Color.Orange;
+                }
+                else
+                {
+                    _resourceUsageLabel.ForeColor = System.Drawing.Color.Blue;
+                }
+            }
+            catch (Exception ex)
+            {
+                _resourceUsageLabel.Text = "Resource info unavailable";
+                _resourceUsageLabel.ForeColor = System.Drawing.Color.Gray;
+                _logger.LogWarning(ex, "Error updating resource usage");
             }
         }
 
@@ -552,11 +605,19 @@ Emergency Unlock:
 • Ctrl+Alt+U (3 times) - Emergency unlock (works even when blocked)
 • Must be pressed 3 times within 2 seconds
 
+Status Bar Information:
+• Current time and blocking duration
+• Daily blocking session count
+• Keyboard hook service status
+• SimBlock application resource usage (CPU and RAM)
+
 Tips:
 • The application minimizes to system tray when closed
 • Right-click the tray icon for quick access
 • The tray icon shows current blocking status
-• Emergency unlock requires 3 consecutive presses for safety";
+• Emergency unlock requires 3 consecutive presses for safety
+• Resource usage colors: Blue (normal), Orange (moderate), Red (high)
+• Memory usage matches Task Manager's ""Memory"" column exactly";
 
             MessageBox.Show(helpText, "SimBlock Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -576,6 +637,7 @@ Tips:
                 _statusTimer?.Dispose();
                 _logoIcon?.Image?.Dispose();
                 _logoIcon?.Dispose();
+                _resourceMonitor?.Dispose();
             }
         }
 
