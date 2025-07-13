@@ -1,6 +1,6 @@
-# SimBlock - Keyboard Blocker
+# SimBlock - Simple Keyboard Blocker
 
-A very lightweight Windows application that allows you to temporarily block all keyboard input with a single toggle button, designed to safely clean your keyboard.
+A very lightweight Windows application that allows you to temporarily block all keyboard input globally with a single toggle button, designed to safely clean your keyboard.
 
 ## Features
 
@@ -48,7 +48,7 @@ src/
 - **Windows Forms** - GUI framework
 - **Microsoft.Extensions.Hosting** - Dependency injection and configuration
 - **Win32 API** - Low-level keyboard hooking
-- **Clean Architecture** - Design pattern
+
 
 ## Building and Running
 
