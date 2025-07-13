@@ -1,4 +1,6 @@
-<div align="center"> <img src="docs/images/logo.ico" alt="
+<div align="center">
+    <img src="logo.ico" alt="Simblock Logo" width="128">
+    <br><br>
 </div>
 
 # SimBlock - Simple Keyboard Blocker
