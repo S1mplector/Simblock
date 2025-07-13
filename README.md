@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="logo.ico" alt="Simblock Logo" width="128">
+    <img src="src/Presentation/Resources/Images/logo.ico" width="128">
     <br><br>
 </div>
 
