@@ -24,7 +24,9 @@ A very lightweight Windows application that allows you to temporarily block all 
 ## Emergency Unlock
 
 If the application becomes unresponsive or you need to quickly unlock:
-- Press **Ctrl+Alt+U** to immediately unlock the keyboard
+- Press **Ctrl+Alt+U** **three times in quick succession** (within 2 seconds) to immediately unlock the keyboard
+- This works even when the keyboard is globally blocked
+- The triple-press requirement prevents accidental unlocks
 
 ## Architecture
 

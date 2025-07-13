@@ -31,13 +31,12 @@ namespace SimBlock.Presentation.Forms
             InitializeEventHandlers();
             UpdateUI();
             
-            // Debug: Show message to confirm window creation
+            // Ensure window is visible and focused on startup
             this.Load += (s, e) => 
             {
                 this.BringToFront();
                 this.Activate();
                 this.Focus();
-                MessageBox.Show("SimBlock GUI is now visible!", "SimBlock", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
         }
 
@@ -55,6 +54,7 @@ namespace SimBlock.Presentation.Forms
             Visible = true;
             TopMost = false;
             Icon = CreateApplicationIcon();
+            KeyPreview = true; // Enable keyboard shortcuts
 
             // Main panel
             var mainPanel = new TableLayoutPanel
@@ -114,7 +114,7 @@ namespace SimBlock.Presentation.Forms
             // Instructions label
             var instructionsLabel = new Label
             {
-                Text = "Emergency unlock: Ctrl+Alt+U",
+                Text = "Space: Toggle • Esc: Hide • F1: Help • Emergency: Ctrl+Alt+U (3x)",
                 Font = new System.Drawing.Font("Segoe UI", 8),
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Fill,
@@ -146,6 +146,9 @@ namespace SimBlock.Presentation.Forms
 
             // Handle form closing
             FormClosing += OnFormClosing;
+            
+            // Handle keyboard shortcuts
+            KeyDown += OnKeyDown;
         }
 
         private async void OnToggleButtonClick(object? sender, EventArgs e)
@@ -153,12 +156,24 @@ namespace SimBlock.Presentation.Forms
             try
             {
                 _logger.LogInformation("Toggle button clicked");
+                
+                // Disable button during operation to prevent double-clicks
+                _toggleButton.Enabled = false;
+                _toggleButton.Text = "Processing...";
+                
                 await _keyboardBlockerService.ToggleBlockingAsync();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error toggling keyboard blocking");
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Failed to toggle keyboard blocking.\n\nError: {ex.Message}", 
+                    "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // Re-enable button and update UI
+                _toggleButton.Enabled = true;
+                UpdateUI();
             }
         }
 
@@ -195,10 +210,59 @@ namespace SimBlock.Presentation.Forms
                 System.Drawing.Color.Red : System.Drawing.Color.Green;
 
             _toggleButton.Text = _viewModel.ToggleButtonText;
-            _toggleButton.BackColor = _viewModel.IsKeyboardBlocked ? 
-                System.Drawing.Color.FromArgb(215, 0, 0) : System.Drawing.Color.FromArgb(0, 120, 215);
+            
+            // Only update button color if it's enabled (not processing)
+            if (_toggleButton.Enabled)
+            {
+                _toggleButton.BackColor = _viewModel.IsKeyboardBlocked ? 
+                    System.Drawing.Color.FromArgb(215, 0, 0) : System.Drawing.Color.FromArgb(0, 120, 215);
+            }
 
             _lastToggleLabel.Text = $"Last toggle: {_viewModel.LastToggleTime:HH:mm:ss}";
+        }
+
+        private void OnKeyDown(object? sender, KeyEventArgs e)
+        {
+            // Space bar to toggle
+            if (e.KeyCode == Keys.Space)
+            {
+                e.Handled = true;
+                OnToggleButtonClick(sender, EventArgs.Empty);
+            }
+            // Escape to hide to tray
+            else if (e.KeyCode == Keys.Escape)
+            {
+                e.Handled = true;
+                OnHideToTrayButtonClick(sender, EventArgs.Empty);
+            }
+            // F1 for help/about
+            else if (e.KeyCode == Keys.F1)
+            {
+                e.Handled = true;
+                ShowHelp();
+            }
+        }
+
+        private void ShowHelp()
+        {
+            string helpText = @"SimBlock - Keyboard Blocker
+
+Keyboard Shortcuts:
+• Space - Toggle keyboard blocking
+• Escape - Hide to system tray
+• F1 - Show this help
+
+Emergency Unlock:
+• Ctrl+Alt+U (3 times) - Emergency unlock (works even when blocked)
+• Must be pressed 3 times within 2 seconds
+
+Tips:
+• The application minimizes to system tray when closed
+• Right-click the tray icon for quick access
+• The tray icon shows current blocking status
+• Emergency unlock requires 3 consecutive presses for safety";
+
+            MessageBox.Show(helpText, "SimBlock Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void OnFormClosing(object? sender, FormClosingEventArgs e)

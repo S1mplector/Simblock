@@ -17,6 +17,12 @@ namespace SimBlock.Infrastructure.Windows
         private IntPtr _hookId = IntPtr.Zero;
         private NativeMethods.LowLevelKeyboardProc _proc;
 
+        // Emergency unlock tracking
+        private int _emergencyUnlockCount = 0;
+        private DateTime _lastEmergencyKeyPress = DateTime.MinValue;
+        private const int EMERGENCY_UNLOCK_REQUIRED_PRESSES = 3;
+        private const int EMERGENCY_UNLOCK_TIMEOUT_MS = 2000; // 2 seconds between presses
+
         public event EventHandler<KeyboardBlockState>? BlockStateChanged;
 
         public bool IsHookInstalled => _hookId != IntPtr.Zero;
@@ -115,12 +121,12 @@ namespace SimBlock.Infrastructure.Windows
                 // Check if we should block the key
                 if (_state.IsBlocked)
                 {
-                    // Check for emergency unlock combination (Ctrl+Alt+U)
-                    if (IsEmergencyUnlockCombination(lParam))
+                    // Check for emergency unlock combination (Ctrl+Alt+U - must be pressed 3 times)
+                    // Only trigger on key down events (WM_KEYDOWN = 0x0100)
+                    if (wParam.ToInt32() == 0x0100 && IsEmergencyUnlockCombination(lParam))
                     {
-                        _logger.LogWarning("Emergency unlock combination detected - unblocking keyboard");
-                        _ = SetBlockingAsync(false, "Emergency unlock");
-                        return NativeMethods.CallNextHookEx(_hookId, nCode, wParam, lParam);
+                        HandleEmergencyUnlock();
+                        return (IntPtr)1; // Block this key press to prevent it from reaching applications
                     }
 
                     // Block all other keys when blocking is enabled
@@ -131,6 +137,43 @@ namespace SimBlock.Infrastructure.Windows
 
             // Allow the key to pass through
             return NativeMethods.CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        private void HandleEmergencyUnlock()
+        {
+            try
+            {
+                var now = DateTime.Now;
+                var timeSinceLastPress = now - _lastEmergencyKeyPress;
+
+                // Reset counter if too much time has passed
+                if (timeSinceLastPress.TotalMilliseconds > EMERGENCY_UNLOCK_TIMEOUT_MS)
+                {
+                    _emergencyUnlockCount = 0;
+                }
+
+                _emergencyUnlockCount++;
+                _lastEmergencyKeyPress = now;
+
+                _logger.LogInformation("Emergency unlock attempt {Count}/{Required}", 
+                    _emergencyUnlockCount, EMERGENCY_UNLOCK_REQUIRED_PRESSES);
+
+                // Check if we've reached the required number of presses
+                if (_emergencyUnlockCount >= EMERGENCY_UNLOCK_REQUIRED_PRESSES)
+                {
+                    _logger.LogWarning("Emergency unlock activated! Keyboard will be unlocked.");
+                    
+                    // Reset counter
+                    _emergencyUnlockCount = 0;
+                    
+                    // Unlock the keyboard
+                    _ = SetBlockingAsync(false, "Emergency unlock (3x Ctrl+Alt+U)");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during emergency unlock");
+            }
         }
 
         private bool IsEmergencyUnlockCombination(IntPtr lParam)
