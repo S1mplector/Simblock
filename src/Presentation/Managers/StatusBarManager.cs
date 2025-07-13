@@ -3,13 +3,14 @@ using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Presentation.Managers
 {
     /// <summary>
     /// Manages the status bar UI components and updates
     /// </summary>
-    public class StatusBarManager
+    public class StatusBarManager : IStatusBarManager
     {
         private readonly UISettings _uiSettings;
         private readonly ILogger<StatusBarManager> _logger;

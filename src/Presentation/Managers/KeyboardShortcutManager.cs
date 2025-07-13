@@ -1,13 +1,14 @@
 using System;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Presentation.Managers
 {
     /// <summary>
     /// Manages keyboard shortcuts and their handlers
     /// </summary>
-    public class KeyboardShortcutManager
+    public class KeyboardShortcutManager : IKeyboardShortcutManager
     {
         private readonly ILogger<KeyboardShortcutManager> _logger;
 

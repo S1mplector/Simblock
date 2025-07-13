@@ -6,6 +6,9 @@ using SimBlock.Core.Application.Services;
 using SimBlock.Core.Domain.Interfaces;
 using SimBlock.Infrastructure.Windows;
 using SimBlock.Presentation.Forms;
+using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Interfaces;
+using SimBlock.Presentation.Managers;
 using System.Windows.Forms;
 using System.Threading;
 
@@ -75,6 +78,18 @@ namespace SimBlock
 
                     // Register application services
                     services.AddSingleton<IKeyboardBlockerService, KeyboardBlockerService>();
+
+                    // Register infrastructure services
+                    services.AddSingleton<SimBlock.Presentation.Interfaces.IResourceMonitor, ResourceMonitor>();
+
+                    // Register UI configuration
+                    services.AddSingleton<UISettings>();
+
+                    // Register UI managers
+                    services.AddSingleton<ILogoManager, LogoManager>();
+                    services.AddSingleton<IStatusBarManager, StatusBarManager>();
+                    services.AddSingleton<IUILayoutManager, UILayoutManager>();
+                    services.AddSingleton<IKeyboardShortcutManager, KeyboardShortcutManager>();
 
                     // Register presentation layer
                     services.AddTransient<MainForm>();

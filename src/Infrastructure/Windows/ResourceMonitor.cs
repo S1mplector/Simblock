@@ -1,12 +1,13 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Infrastructure.Windows
 {
     /// <summary>
     /// Monitors system resource usage including CPU and RAM
     /// </summary>
-    public class ResourceMonitor : IDisposable
+    public class ResourceMonitor : IResourceMonitor
     {
         private readonly ILogger<ResourceMonitor> _logger;
         private readonly PerformanceCounter _systemCpuCounter;

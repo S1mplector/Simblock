@@ -5,7 +5,7 @@ using SimBlock.Core.Domain.Entities;
 using SimBlock.Presentation.ViewModels;
 using SimBlock.Infrastructure.Windows;
 using SimBlock.Presentation.Configuration;
-using SimBlock.Presentation.Managers;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Presentation.Forms
 {
@@ -17,34 +17,41 @@ namespace SimBlock.Presentation.Forms
         private readonly IKeyboardBlockerService _keyboardBlockerService;
         private readonly ILogger<MainForm> _logger;
         private readonly MainWindowViewModel _viewModel;
-        private readonly ResourceMonitor _resourceMonitor;
+        private readonly IResourceMonitor _resourceMonitor;
         
         // UI Managers
         private readonly UISettings _uiSettings;
-        private readonly StatusBarManager _statusBarManager;
-        private readonly LogoManager _logoManager;
-        private readonly UILayoutManager _layoutManager;
-        private readonly KeyboardShortcutManager _shortcutManager;
+        private readonly IStatusBarManager _statusBarManager;
+        private readonly ILogoManager _logoManager;
+        private readonly IUILayoutManager _layoutManager;
+        private readonly IKeyboardShortcutManager _shortcutManager;
 
         // UI Controls (managed by UILayoutManager)
-        private UILayoutManager.UIControls _uiControls = null!;
+        private IUILayoutManager.UIControls _uiControls = null!;
 
         // Timer for status updates
         private System.Windows.Forms.Timer _statusTimer = null!;
 
-        public MainForm(IKeyboardBlockerService keyboardBlockerService, ILogger<MainForm> logger)
+        public MainForm(
+            IKeyboardBlockerService keyboardBlockerService, 
+            ILogger<MainForm> logger,
+            UISettings uiSettings,
+            IStatusBarManager statusBarManager,
+            ILogoManager logoManager,
+            IUILayoutManager layoutManager,
+            IKeyboardShortcutManager shortcutManager,
+            IResourceMonitor resourceMonitor)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
+            _statusBarManager = statusBarManager ?? throw new ArgumentNullException(nameof(statusBarManager));
+            _logoManager = logoManager ?? throw new ArgumentNullException(nameof(logoManager));
+            _layoutManager = layoutManager ?? throw new ArgumentNullException(nameof(layoutManager));
+            _shortcutManager = shortcutManager ?? throw new ArgumentNullException(nameof(shortcutManager));
+            _resourceMonitor = resourceMonitor ?? throw new ArgumentNullException(nameof(resourceMonitor));
+            
             _viewModel = new MainWindowViewModel();
-            _resourceMonitor = new ResourceMonitor();
-
-            // Initialize UI settings and managers
-            _uiSettings = new UISettings();
-            _logoManager = new LogoManager(_uiSettings, Microsoft.Extensions.Logging.Abstractions.NullLogger<LogoManager>.Instance);
-            _statusBarManager = new StatusBarManager(_uiSettings, Microsoft.Extensions.Logging.Abstractions.NullLogger<StatusBarManager>.Instance);
-            _layoutManager = new UILayoutManager(_uiSettings, _logoManager, Microsoft.Extensions.Logging.Abstractions.NullLogger<UILayoutManager>.Instance);
-            _shortcutManager = new KeyboardShortcutManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<KeyboardShortcutManager>.Instance);
 
             InitializeComponent();
             InitializeEventHandlers();

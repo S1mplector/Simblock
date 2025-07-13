@@ -3,19 +3,20 @@ using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Presentation.Managers
 {
     /// <summary>
     /// Manages the main UI layout and control creation
     /// </summary>
-    public class UILayoutManager
+    public class UILayoutManager : IUILayoutManager
     {
         private readonly UISettings _uiSettings;
-        private readonly LogoManager _logoManager;
+        private readonly ILogoManager _logoManager;
         private readonly ILogger<UILayoutManager> _logger;
 
-        public UILayoutManager(UISettings uiSettings, LogoManager logoManager, ILogger<UILayoutManager> logger)
+        public UILayoutManager(UISettings uiSettings, ILogoManager logoManager, ILogger<UILayoutManager> logger)
         {
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
             _logoManager = logoManager ?? throw new ArgumentNullException(nameof(logoManager));
@@ -38,7 +39,7 @@ namespace SimBlock.Presentation.Managers
         /// <summary>
         /// Initializes the form layout and creates all UI controls
         /// </summary>
-        public UIControls InitializeLayout(Form form)
+        public IUILayoutManager.UIControls InitializeLayout(Form form)
         {
             // Configure form properties
             ConfigureFormProperties(form);
@@ -71,9 +72,9 @@ namespace SimBlock.Presentation.Managers
             form.KeyPreview = true; // Enable keyboard shortcuts
         }
 
-        private UIControls CreateUIControls()
+        private IUILayoutManager.UIControls CreateUIControls()
         {
-            var controls = new UIControls();
+            var controls = new IUILayoutManager.UIControls();
 
             // Status label
             controls.StatusLabel = new Label
@@ -137,7 +138,7 @@ namespace SimBlock.Presentation.Managers
             return controls;
         }
 
-        private TableLayoutPanel CreateMainLayoutPanel(UIControls controls)
+        private TableLayoutPanel CreateMainLayoutPanel(IUILayoutManager.UIControls controls)
         {
             var mainPanel = new TableLayoutPanel
             {
@@ -169,7 +170,7 @@ namespace SimBlock.Presentation.Managers
         /// <summary>
         /// Updates the UI controls based on the current state
         /// </summary>
-        public void UpdateUI(UIControls controls, bool isKeyboardBlocked, string statusText, string toggleButtonText, DateTime lastToggleTime)
+        public void UpdateUI(IUILayoutManager.UIControls controls, bool isKeyboardBlocked, string statusText, string toggleButtonText, DateTime lastToggleTime)
         {
             // Update status label
             controls.StatusLabel.Text = statusText;

@@ -6,13 +6,14 @@ using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Presentation.Managers
 {
     /// <summary>
     /// Manages logo and icon creation and state changes
     /// </summary>
-    public class LogoManager : IDisposable
+    public class LogoManager : ILogoManager
     {
         private readonly UISettings _uiSettings;
         private readonly ILogger<LogoManager> _logger;
