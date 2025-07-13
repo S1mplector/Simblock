@@ -1,0 +1,93 @@
+# ------------------------------
+# General
+# ------------------------------
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Logs
+*.log
+logs/
+
+# ------------------------------
+# Build / Publish Outputs
+# ------------------------------
+bin/
+obj/
+artifacts/
+TestResults/
+coverage/
+
+# ------------------------------
+# Visual Studio / VS Code / Rider
+# ------------------------------
+.vs/
+.vscode/
+.idea/
+
+# User-specific & workspace files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider & ReSharper settings
+*.DotSettings.user
+
+# ------------------------------
+# .NET
+# ------------------------------
+# Lock files & generated artifacts
+project.lock.json
+project.fragment.lock.json
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# Entity Framework / Local DB
+*.dbmdl
+*.mdf
+*.ldf
+
+# ------------------------------
+# Windows / OS
+# ------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+ehthumbs.db
+Icon?
+
+# ------------------------------
+# Installer & publish bundles
+# ------------------------------
+*.msi
+*.exe
+*.dll
+*.pdb
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.zip
+*.7z
+*.tar
+*.gz
+*.bz2
+*.rar
+
+# ------------------------------
+# Secrets / local config
+# ------------------------------
+appsettings.Development.json
+appsettings.Local.json
+usersecrets.* 
+
+# ------------------------------
+# TESTING.md file
+# ------------------------------
+TESTING.md
