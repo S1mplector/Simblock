@@ -1,3 +1,6 @@
+<div align="center"> <img src="docs/images/logo.ico" alt="
+</div>
+
 # SimBlock - Simple Keyboard Blocker
 
 A very lightweight Windows application that allows you to temporarily block all keyboard input globally with a single toggle button, designed to safely clean your keyboard.
