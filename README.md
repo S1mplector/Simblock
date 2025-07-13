@@ -20,7 +20,7 @@ A very lightweight Windows application that allows you to temporarily block all 
 
 <div align="center">
   <img src="docs/images/main_interface.png" alt="Main Interface" width="600">
-  <p><i>Main player interface with library and playlists</i></p>
+  <p><i>Main interface</i></p>
   
   <img src="docs/images/tray.png" alt="Mini Player" width="300">
   <p><i>Widget inside the application tray</i></p>
