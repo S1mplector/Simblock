@@ -213,6 +213,42 @@ namespace SimBlock.Presentation.Forms
 
         private System.Drawing.Icon CreateApplicationIcon()
         {
+            try
+            {
+                // Try to load the logo.ico file from embedded resources
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "SimBlock.src.Presentation.Resources.Images.logo.ico";
+                
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    return new System.Drawing.Icon(stream);
+                }
+                else
+                {
+                    // Fallback to file system if embedded resource not found
+                    string iconPath = Path.Combine(Application.StartupPath, "src", "Presentation", "Resources", "Images", "logo.ico");
+                    
+                    if (File.Exists(iconPath))
+                    {
+                        return new System.Drawing.Icon(iconPath);
+                    }
+                    else
+                    {
+                        // Final fallback to the original programmatic icon
+                        return CreateFallbackIcon();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load logo.ico, using fallback icon");
+                return CreateFallbackIcon();
+            }
+        }
+
+        private System.Drawing.Icon CreateFallbackIcon()
+        {
             using var bitmap = new System.Drawing.Bitmap(32, 32);
             using (var g = System.Drawing.Graphics.FromImage(bitmap))
             {

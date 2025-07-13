@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SimBlock</AssemblyName>
     <RootNamespace>SimBlock</RootNamespace>
+    <ApplicationIcon>src\Presentation\Resources\Images\logo.ico</ApplicationIcon>
     <Win32Resource />
   </PropertyGroup>
 
@@ -17,6 +18,13 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="src\Presentation\Resources\Images\logo.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <EmbeddedResource Include="src\Presentation\Resources\Images\logo.ico" />
   </ItemGroup>
 
 </Project>

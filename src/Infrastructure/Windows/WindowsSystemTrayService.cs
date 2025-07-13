@@ -109,6 +109,80 @@ namespace SimBlock.Infrastructure.Windows
 
         private System.Drawing.Icon CreateIcon(bool isBlocked)
         {
+            try
+            {
+                // Try to load the base logo first
+                var baseIcon = LoadLogoIcon();
+                if (baseIcon != null)
+                {
+                    // Create a modified version based on blocking state
+                    return CreateIconFromBase(baseIcon, isBlocked);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load logo for tray icon, using fallback");
+            }
+
+            // Fallback to the original programmatic icon
+            return CreateFallbackIcon(isBlocked);
+        }
+
+        private System.Drawing.Icon? LoadLogoIcon()
+        {
+            try
+            {
+                // Try to load from embedded resources first
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "SimBlock.src.Presentation.Resources.Images.logo.ico";
+                
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    return new System.Drawing.Icon(stream);
+                }
+
+                // Fallback to file system
+                string iconPath = Path.Combine(Application.StartupPath, "src", "Presentation", "Resources", "Images", "logo.ico");
+                if (File.Exists(iconPath))
+                {
+                    return new System.Drawing.Icon(iconPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to load logo icon");
+            }
+
+            return null;
+        }
+
+        private System.Drawing.Icon CreateIconFromBase(System.Drawing.Icon baseIcon, bool isBlocked)
+        {
+            // Create a bitmap from the base icon
+            using var baseBitmap = baseIcon.ToBitmap();
+            var bitmap = new System.Drawing.Bitmap(16, 16);
+            
+            using (var g = System.Drawing.Graphics.FromImage(bitmap))
+            {
+                // Draw the base icon scaled to 16x16
+                g.DrawImage(baseBitmap, 0, 0, 16, 16);
+                
+                // Add a small status indicator in the bottom-right corner
+                var statusColor = isBlocked ? System.Drawing.Color.Red : System.Drawing.Color.Green;
+                using var statusBrush = new System.Drawing.SolidBrush(statusColor);
+                using var borderPen = new System.Drawing.Pen(System.Drawing.Color.White, 1);
+                
+                // Draw a small circle in the bottom-right corner
+                g.FillEllipse(statusBrush, 10, 10, 6, 6);
+                g.DrawEllipse(borderPen, 10, 10, 6, 6);
+            }
+
+            return System.Drawing.Icon.FromHandle(bitmap.GetHicon());
+        }
+
+        private System.Drawing.Icon CreateFallbackIcon(bool isBlocked)
+        {
             using var bitmap = new System.Drawing.Bitmap(16, 16);
             using (var g = System.Drawing.Graphics.FromImage(bitmap))
             {
