@@ -18,6 +18,7 @@ namespace SimBlock.Presentation.Forms
         // UI Controls
         private Button _toggleButton = null!;
         private Label _statusLabel = null!;
+        private PictureBox _logoIcon = null!;
         private Label _lastToggleLabel = null!;
         private Button _hideToTrayButton = null!;
         private StatusStrip _statusStrip = null!;
@@ -72,7 +73,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 5,
+                RowCount = 6, // Increased to accommodate logo
                 Padding = new Padding(20)
             };
 
@@ -84,6 +85,15 @@ namespace SimBlock.Presentation.Forms
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Fill,
                 ForeColor = System.Drawing.Color.Green
+            };
+
+            // Logo icon
+            _logoIcon = new PictureBox
+            {
+                Size = new System.Drawing.Size(48, 48),
+                Anchor = AnchorStyles.None,
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                Image = CreateLogoImage()
             };
 
             // Toggle button
@@ -134,17 +144,19 @@ namespace SimBlock.Presentation.Forms
 
             // Add controls to panel
             mainPanel.Controls.Add(_statusLabel, 0, 0);
-            mainPanel.Controls.Add(_toggleButton, 0, 1);
-            mainPanel.Controls.Add(_lastToggleLabel, 0, 2);
-            mainPanel.Controls.Add(_hideToTrayButton, 0, 3);
-            mainPanel.Controls.Add(instructionsLabel, 0, 4);
+            mainPanel.Controls.Add(_logoIcon, 0, 1);
+            mainPanel.Controls.Add(_toggleButton, 0, 2);
+            mainPanel.Controls.Add(_lastToggleLabel, 0, 3);
+            mainPanel.Controls.Add(_hideToTrayButton, 0, 4);
+            mainPanel.Controls.Add(instructionsLabel, 0, 5);
 
             // Set row styles
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Status text
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Logo
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Toggle button
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Last toggle
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Hide button
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Instructions
 
             Controls.Add(mainPanel);
             
@@ -394,6 +406,115 @@ namespace SimBlock.Presentation.Forms
             }
 
             _lastToggleLabel.Text = $"Last toggle: {_viewModel.LastToggleTime:HH:mm:ss}";
+            
+            // Update logo based on keyboard state
+            UpdateLogoAppearance();
+        }
+
+        private void UpdateLogoAppearance()
+        {
+            if (_logoIcon?.Image == null) return;
+
+            try
+            {
+                // Create a new image based on the current state
+                var originalImage = CreateLogoImage();
+                if (originalImage == null) return;
+
+                if (_viewModel.IsKeyboardBlocked)
+                {
+                    // Create a dimmed and slightly red-tinted version for blocked state
+                    _logoIcon.Image = CreateBlockedStateImage(originalImage);
+                }
+                else
+                {
+                    // Use the original image for unlocked state
+                    _logoIcon.Image = originalImage;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error updating logo appearance");
+            }
+        }
+
+        private System.Drawing.Image? CreateLogoImage()
+        {
+            try
+            {
+                // Try to load the logo.ico file from embedded resources
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "SimBlock.src.Presentation.Resources.Images.logo.ico";
+                
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    using var icon = new System.Drawing.Icon(stream);
+                    return icon.ToBitmap();
+                }
+                else
+                {
+                    // Fallback to file system if embedded resource not found
+                    string iconPath = Path.Combine(Application.StartupPath, "src", "Presentation", "Resources", "Images", "logo.ico");
+                    
+                    if (File.Exists(iconPath))
+                    {
+                        using var icon = new System.Drawing.Icon(iconPath);
+                        return icon.ToBitmap();
+                    }
+                    else
+                    {
+                        // Final fallback to the original programmatic icon
+                        return CreateFallbackLogoImage();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load logo image, using fallback");
+                return CreateFallbackLogoImage();
+            }
+        }
+
+        private System.Drawing.Image CreateFallbackLogoImage()
+        {
+            var bitmap = new System.Drawing.Bitmap(48, 48);
+            using (var g = System.Drawing.Graphics.FromImage(bitmap))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.FillEllipse(System.Drawing.Brushes.Blue, 6, 6, 36, 36);
+                g.DrawString("K", new System.Drawing.Font("Arial", 24, System.Drawing.FontStyle.Bold), 
+                    System.Drawing.Brushes.White, 12, 8);
+            }
+            return bitmap;
+        }
+
+        private System.Drawing.Image CreateBlockedStateImage(System.Drawing.Image originalImage)
+        {
+            var bitmap = new System.Drawing.Bitmap(originalImage.Width, originalImage.Height);
+            
+            using (var g = System.Drawing.Graphics.FromImage(bitmap))
+            {
+                // Draw the original image with reduced opacity (dimmed)
+                var colorMatrix = new System.Drawing.Imaging.ColorMatrix();
+                
+                // Dim the image and add red tint
+                colorMatrix.Matrix00 = 0.8f; // Red
+                colorMatrix.Matrix11 = 0.4f; // Green (reduced)
+                colorMatrix.Matrix22 = 0.4f; // Blue (reduced)
+                colorMatrix.Matrix33 = 0.6f; // Alpha (transparency for dimming)
+                colorMatrix.Matrix44 = 1.0f;
+                
+                var attributes = new System.Drawing.Imaging.ImageAttributes();
+                attributes.SetColorMatrix(colorMatrix);
+                
+                g.DrawImage(originalImage, 
+                    new System.Drawing.Rectangle(0, 0, originalImage.Width, originalImage.Height),
+                    0, 0, originalImage.Width, originalImage.Height, 
+                    System.Drawing.GraphicsUnit.Pixel, attributes);
+            }
+            
+            return bitmap;
         }
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -453,6 +574,8 @@ Tips:
                 // Actually closing - dispose resources
                 _statusTimer?.Stop();
                 _statusTimer?.Dispose();
+                _logoIcon?.Image?.Dispose();
+                _logoIcon?.Dispose();
             }
         }
 
