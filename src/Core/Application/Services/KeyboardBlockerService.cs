@@ -15,6 +15,7 @@ namespace SimBlock.Core.Application.Services
         private readonly ILogger<KeyboardBlockerService> _logger;
 
         public event EventHandler<KeyboardBlockState>? StateChanged;
+        public event EventHandler<int>? EmergencyUnlockAttempt;
         
         public KeyboardBlockState CurrentState => _hookService.CurrentState;
 
@@ -28,6 +29,7 @@ namespace SimBlock.Core.Application.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _hookService.BlockStateChanged += OnBlockStateChanged;
+            _hookService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
             _trayService.TrayIconClicked += OnTrayIconClicked;
             _trayService.ExitRequested += OnExitRequested;
         }
@@ -93,6 +95,12 @@ namespace SimBlock.Core.Application.Services
         private void OnTrayIconClicked(object? sender, EventArgs e)
         {
             _ = ToggleBlockingAsync();
+        }
+
+        private void OnEmergencyUnlockAttempt(object? sender, int attemptCount)
+        {
+            _logger.LogInformation("Emergency unlock attempt forwarded: {AttemptCount}", attemptCount);
+            EmergencyUnlockAttempt?.Invoke(this, attemptCount);
         }
 
         private void OnExitRequested(object? sender, EventArgs e)

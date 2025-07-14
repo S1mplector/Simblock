@@ -15,7 +15,12 @@ namespace SimBlock.Infrastructure.Windows
         public const int HC_ACTION = 0;
         public const int WH_KEYBOARD_LL = 13;
         public const int WM_KEYDOWN = 0x0100;
+        public const int WM_KEYUP = 0x0101;
         public const int WM_SYSKEYDOWN = 0x0104;
+        public const int WM_SYSKEYUP = 0x0105;
+        
+        // Additional virtual key codes
+        public const int VK_U = 0x55;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr SetWindowsHookEx(int idHook,
@@ -31,6 +36,17 @@ namespace SimBlock.Infrastructure.Windows
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("user32.dll")]
+        public static extern short GetAsyncKeyState(int vKey);
+
+        // Virtual key codes for modifier keys
+        public const int VK_CONTROL = 0x11;
+        public const int VK_LCONTROL = 0xA2;
+        public const int VK_RCONTROL = 0xA3;
+        public const int VK_MENU = 0x12;      // Alt key
+        public const int VK_LMENU = 0xA4;     // Left Alt
+        public const int VK_RMENU = 0xA5;     // Right Alt
 
         [StructLayout(LayoutKind.Sequential)]
         public struct KBDLLHOOKSTRUCT

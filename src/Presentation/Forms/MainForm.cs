@@ -31,6 +31,10 @@ namespace SimBlock.Presentation.Forms
 
         // Timer for status updates
         private System.Windows.Forms.Timer _statusTimer = null!;
+        
+        // Emergency unlock feedback tracking
+        private System.Windows.Forms.Timer? _emergencyFeedbackTimer = null;
+        private bool _showingEmergencyFeedback = false;
 
         public MainForm(
             IKeyboardBlockerService keyboardBlockerService, 
@@ -81,6 +85,7 @@ namespace SimBlock.Presentation.Forms
             _uiControls.ToggleButton.Click += OnToggleButtonClick;
             _uiControls.HideToTrayButton.Click += OnHideToTrayButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
+            _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
 
             // Handle form closing
             FormClosing += OnFormClosing;
@@ -205,9 +210,93 @@ namespace SimBlock.Presentation.Forms
             }
         }
 
+        private void OnEmergencyUnlockAttempt(object? sender, int attemptCount)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnEmergencyUnlockAttempt(sender, attemptCount)));
+                return;
+            }
+
+            try
+            {
+                // Show temporary visual feedback in the main window
+                ShowEmergencyUnlockFeedback(attemptCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling emergency unlock attempt UI update");
+            }
+        }
+
+        private void ShowEmergencyUnlockFeedback(int attemptCount)
+        {
+            try
+            {
+                // Only show emergency feedback when keyboard is blocked
+                if (!_viewModel.IsKeyboardBlocked)
+                    return;
+
+                // Stop any existing emergency feedback timer
+                if (_emergencyFeedbackTimer != null)
+                {
+                    _emergencyFeedbackTimer.Stop();
+                    _emergencyFeedbackTimer.Dispose();
+                    _emergencyFeedbackTimer = null;
+                }
+
+                // Mark that we're showing emergency feedback
+                _showingEmergencyFeedback = true;
+                
+                // Temporarily change the toggle button text to show emergency feedback
+                _uiControls.ToggleButton.Text = $"Emergency: {attemptCount}/3";
+                _uiControls.ToggleButton.BackColor = _uiSettings.ErrorColor;
+                
+                // Reset button after 1 second
+                _emergencyFeedbackTimer = new System.Windows.Forms.Timer();
+                _emergencyFeedbackTimer.Interval = 1000;
+                _emergencyFeedbackTimer.Tick += (s, e) =>
+                {
+                    ResetEmergencyFeedback();
+                };
+                _emergencyFeedbackTimer.Start();
+
+                // Flash the window to draw attention
+                this.Activate();
+                this.BringToFront();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing emergency unlock feedback");
+                ResetEmergencyFeedback();
+            }
+        }
+
+        private void ResetEmergencyFeedback()
+        {
+            try
+            {
+                if (_emergencyFeedbackTimer != null)
+                {
+                    _emergencyFeedbackTimer.Stop();
+                    _emergencyFeedbackTimer.Dispose();
+                    _emergencyFeedbackTimer = null;
+                }
+
+                _showingEmergencyFeedback = false;
+                
+                // Restore normal button appearance
+                UpdateUI();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting emergency unlock feedback");
+            }
+        }
+
         private void UpdateUI()
         {
-            _layoutManager.UpdateUI(_uiControls, _viewModel.IsKeyboardBlocked, _viewModel.StatusText, 
+            _layoutManager.UpdateUI(_uiControls, _viewModel.IsKeyboardBlocked, _viewModel.StatusText,
                 _viewModel.ToggleButtonText, _viewModel.LastToggleTime);
         }
 
@@ -229,6 +318,8 @@ namespace SimBlock.Presentation.Forms
                 // Actually closing - dispose resources
                 _statusTimer?.Stop();
                 _statusTimer?.Dispose();
+                _emergencyFeedbackTimer?.Stop();
+                _emergencyFeedbackTimer?.Dispose();
                 _uiControls?.LogoIcon?.Image?.Dispose();
                 _uiControls?.LogoIcon?.Dispose();
                 _logoManager?.Dispose();

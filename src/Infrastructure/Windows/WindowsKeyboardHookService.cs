@@ -22,8 +22,13 @@ namespace SimBlock.Infrastructure.Windows
         private DateTime _lastEmergencyKeyPress = DateTime.MinValue;
         private const int EMERGENCY_UNLOCK_REQUIRED_PRESSES = 3;
         private const int EMERGENCY_UNLOCK_TIMEOUT_MS = 2000; // 2 seconds between presses
+        
+        // Track modifier key states within the hook
+        private bool _ctrlPressed = false;
+        private bool _altPressed = false;
 
         public event EventHandler<KeyboardBlockState>? BlockStateChanged;
+        public event EventHandler<int>? EmergencyUnlockAttempt;
 
         public bool IsHookInstalled => _hookId != IntPtr.Zero;
         public KeyboardBlockState CurrentState => _state;
@@ -118,12 +123,18 @@ namespace SimBlock.Infrastructure.Windows
         {
             if (nCode >= 0)
             {
+                var kbStruct = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
+                int message = wParam.ToInt32();
+                
+                // Track modifier key states
+                TrackModifierKeys(kbStruct.vkCode, message);
+                
                 // Check if we should block the key
                 if (_state.IsBlocked)
                 {
                     // Check for emergency unlock combination (Ctrl+Alt+U - must be pressed 3 times)
                     // Only trigger on key down events (WM_KEYDOWN = 0x0100)
-                    if (wParam.ToInt32() == 0x0100 && IsEmergencyUnlockCombination(lParam))
+                    if (message == NativeMethods.WM_KEYDOWN && IsEmergencyUnlockCombination(kbStruct.vkCode))
                     {
                         HandleEmergencyUnlock();
                         return (IntPtr)1; // Block this key press to prevent it from reaching applications
@@ -155,8 +166,11 @@ namespace SimBlock.Infrastructure.Windows
                 _emergencyUnlockCount++;
                 _lastEmergencyKeyPress = now;
 
-                _logger.LogInformation("Emergency unlock attempt {Count}/{Required}", 
+                _logger.LogInformation("Emergency unlock attempt {Count}/{Required}",
                     _emergencyUnlockCount, EMERGENCY_UNLOCK_REQUIRED_PRESSES);
+
+                // Notify UI about emergency unlock attempt
+                EmergencyUnlockAttempt?.Invoke(this, _emergencyUnlockCount);
 
                 // Check if we've reached the required number of presses
                 if (_emergencyUnlockCount >= EMERGENCY_UNLOCK_REQUIRED_PRESSES)
@@ -176,20 +190,48 @@ namespace SimBlock.Infrastructure.Windows
             }
         }
 
-        private bool IsEmergencyUnlockCombination(IntPtr lParam)
+        private void TrackModifierKeys(uint vkCode, int message)
         {
             try
             {
-                var kbStruct = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
+                bool isKeyDown = message == NativeMethods.WM_KEYDOWN || message == NativeMethods.WM_SYSKEYDOWN;
+                bool isKeyUp = message == NativeMethods.WM_KEYUP || message == NativeMethods.WM_SYSKEYUP;
                 
-                // Check if it's the 'U' key (Virtual Key Code 85)
-                if (kbStruct.vkCode == 85) // VK_U
+                // Track Control key state
+                if (vkCode == NativeMethods.VK_LCONTROL || vkCode == NativeMethods.VK_RCONTROL || vkCode == NativeMethods.VK_CONTROL)
                 {
-                    // Check if Ctrl and Alt are pressed
-                    bool ctrlPressed = (Control.ModifierKeys & Keys.Control) != 0;
-                    bool altPressed = (Control.ModifierKeys & Keys.Alt) != 0;
+                    if (isKeyDown)
+                        _ctrlPressed = true;
+                    else if (isKeyUp)
+                        _ctrlPressed = false;
+                }
+                
+                // Track Alt key state
+                if (vkCode == NativeMethods.VK_LMENU || vkCode == NativeMethods.VK_RMENU || vkCode == NativeMethods.VK_MENU)
+                {
+                    if (isKeyDown)
+                        _altPressed = true;
+                    else if (isKeyUp)
+                        _altPressed = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error tracking modifier keys");
+            }
+        }
+
+        private bool IsEmergencyUnlockCombination(uint vkCode)
+        {
+            try
+            {
+                // Check if it's the 'U' key (Virtual Key Code 85)
+                if (vkCode == NativeMethods.VK_U)
+                {
+                    // Debug logging
+                    _logger.LogDebug("U key pressed. Ctrl: {CtrlPressed}, Alt: {AltPressed}", _ctrlPressed, _altPressed);
                     
-                    return ctrlPressed && altPressed;
+                    return _ctrlPressed && _altPressed;
                 }
             }
             catch (Exception ex)

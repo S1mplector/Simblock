@@ -8,6 +8,7 @@ namespace SimBlock.Core.Domain.Interfaces
     public interface IKeyboardHookService
     {
         event EventHandler<KeyboardBlockState>? BlockStateChanged;
+        event EventHandler<int>? EmergencyUnlockAttempt;
         
         bool IsHookInstalled { get; }
         KeyboardBlockState CurrentState { get; }

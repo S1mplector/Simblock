@@ -8,6 +8,7 @@ namespace SimBlock.Core.Application.Interfaces
     public interface IKeyboardBlockerService
     {
         event EventHandler<KeyboardBlockState>? StateChanged;
+        event EventHandler<int>? EmergencyUnlockAttempt;
         
         KeyboardBlockState CurrentState { get; }
         
