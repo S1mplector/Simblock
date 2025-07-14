@@ -33,6 +33,7 @@ namespace SimBlock.Presentation.Managers
             public PictureBox LogoIcon { get; set; } = null!;
             public Label LastToggleLabel { get; set; } = null!;
             public Button HideToTrayButton { get; set; } = null!;
+            public Button ThemeToggleButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
         }
 
@@ -70,6 +71,8 @@ namespace SimBlock.Presentation.Managers
             form.TopMost = false;
             form.Icon = _logoManager.CreateApplicationIcon();
             form.KeyPreview = true; // Enable keyboard shortcuts
+            form.BackColor = _uiSettings.BackgroundColor;
+            form.ForeColor = _uiSettings.TextColor;
         }
 
         private IUILayoutManager.UIControls CreateUIControls()
@@ -112,6 +115,19 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
+            // Theme toggle button
+            controls.ThemeToggleButton = new Button
+            {
+                Text = _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light",
+                Font = new Font("Segoe UI", 9),
+                Size = new Size(100, 30),
+                Anchor = AnchorStyles.None,
+                BackColor = _uiSettings.SecondaryButtonColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            controls.ThemeToggleButton.FlatAppearance.BorderSize = 0;
+
             // Hide to tray button
             controls.HideToTrayButton = new Button
             {
@@ -132,7 +148,7 @@ namespace SimBlock.Presentation.Managers
                 Font = new Font("Segoe UI", 8),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Fill,
-                ForeColor = Color.DarkGray
+                ForeColor = _uiSettings.InactiveColor
             };
 
             return controls;
@@ -144,8 +160,9 @@ namespace SimBlock.Presentation.Managers
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
-                Padding = new Padding(_uiSettings.WindowPadding)
+                RowCount = 7,
+                Padding = new Padding(_uiSettings.WindowPadding),
+                BackColor = _uiSettings.BackgroundColor
             };
 
             // Add controls to panel
@@ -153,7 +170,21 @@ namespace SimBlock.Presentation.Managers
             mainPanel.Controls.Add(controls.LogoIcon, 0, 1);
             mainPanel.Controls.Add(controls.ToggleButton, 0, 2);
             mainPanel.Controls.Add(controls.LastToggleLabel, 0, 3);
-            mainPanel.Controls.Add(controls.HideToTrayButton, 0, 4);
+            
+            // Create a panel for the buttons to put them side by side
+            var buttonPanel = new TableLayoutPanel
+            {
+                ColumnCount = 2,
+                RowCount = 1,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor
+            };
+            buttonPanel.Controls.Add(controls.ThemeToggleButton, 0, 0);
+            buttonPanel.Controls.Add(controls.HideToTrayButton, 1, 0);
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            
+            mainPanel.Controls.Add(buttonPanel, 0, 4);
             mainPanel.Controls.Add(controls.InstructionsLabel, 0, 5);
 
             // Set row styles
@@ -161,7 +192,7 @@ namespace SimBlock.Presentation.Managers
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Logo
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Toggle button
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Last toggle
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Hide button
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Button panel
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Instructions
 
             return mainPanel;
@@ -207,6 +238,14 @@ namespace SimBlock.Presentation.Managers
                 toggleButton.Enabled = true;
                 // Text will be updated by UpdateUI method
             }
+        }
+
+        /// <summary>
+        /// Updates the theme button text based on current theme
+        /// </summary>
+        public void UpdateThemeButton(Button themeButton)
+        {
+            themeButton.Text = _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light";
         }
     }
 }

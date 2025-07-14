@@ -18,6 +18,7 @@ namespace SimBlock.Presentation.Interfaces
             public PictureBox LogoIcon { get; set; } = null!;
             public Label LastToggleLabel { get; set; } = null!;
             public Button HideToTrayButton { get; set; } = null!;
+            public Button ThemeToggleButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
         }
 
@@ -35,5 +36,10 @@ namespace SimBlock.Presentation.Interfaces
         /// Updates the toggle button state during processing
         /// </summary>
         void SetToggleButtonProcessing(Button toggleButton, bool isProcessing);
+
+        /// <summary>
+        /// Updates the theme button text based on current theme
+        /// </summary>
+        void UpdateThemeButton(Button themeButton);
     }
 }

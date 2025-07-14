@@ -90,6 +90,7 @@ namespace SimBlock
                     services.AddSingleton<IStatusBarManager, StatusBarManager>();
                     services.AddSingleton<IUILayoutManager, UILayoutManager>();
                     services.AddSingleton<IKeyboardShortcutManager, KeyboardShortcutManager>();
+                    services.AddSingleton<IThemeManager, ThemeManager>();
 
                     // Register presentation layer
                     services.AddTransient<MainForm>();

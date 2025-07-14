@@ -25,6 +25,7 @@ namespace SimBlock.Presentation.Forms
         private readonly ILogoManager _logoManager;
         private readonly IUILayoutManager _layoutManager;
         private readonly IKeyboardShortcutManager _shortcutManager;
+        private readonly IThemeManager _themeManager;
 
         // UI Controls (managed by UILayoutManager)
         private IUILayoutManager.UIControls _uiControls = null!;
@@ -37,14 +38,15 @@ namespace SimBlock.Presentation.Forms
         private bool _showingEmergencyFeedback = false;
 
         public MainForm(
-            IKeyboardBlockerService keyboardBlockerService, 
+            IKeyboardBlockerService keyboardBlockerService,
             ILogger<MainForm> logger,
             UISettings uiSettings,
             IStatusBarManager statusBarManager,
             ILogoManager logoManager,
             IUILayoutManager layoutManager,
             IKeyboardShortcutManager shortcutManager,
-            IResourceMonitor resourceMonitor)
+            IResourceMonitor resourceMonitor,
+            IThemeManager themeManager)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -54,6 +56,7 @@ namespace SimBlock.Presentation.Forms
             _layoutManager = layoutManager ?? throw new ArgumentNullException(nameof(layoutManager));
             _shortcutManager = shortcutManager ?? throw new ArgumentNullException(nameof(shortcutManager));
             _resourceMonitor = resourceMonitor ?? throw new ArgumentNullException(nameof(resourceMonitor));
+            _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             
             _viewModel = new MainWindowViewModel();
 
@@ -63,7 +66,7 @@ namespace SimBlock.Presentation.Forms
             UpdateUI();
             
             // Ensure window is visible and focused on startup
-            this.Load += (s, e) => 
+            this.Load += (s, e) =>
             {
                 this.BringToFront();
                 this.Activate();
@@ -78,12 +81,16 @@ namespace SimBlock.Presentation.Forms
             
             // Initialize status bar
             _statusBarManager.Initialize(this);
+            
+            // Register components with theme manager
+            _themeManager.RegisterComponents(this, _layoutManager, _statusBarManager);
         }
 
         private void InitializeEventHandlers()
         {
             _uiControls.ToggleButton.Click += OnToggleButtonClick;
             _uiControls.HideToTrayButton.Click += OnHideToTrayButtonClick;
+            _uiControls.ThemeToggleButton.Click += OnThemeToggleButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
             _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
 
@@ -97,6 +104,10 @@ namespace SimBlock.Presentation.Forms
             _shortcutManager.ToggleRequested += (s, e) => OnToggleButtonClick(s, e);
             _shortcutManager.HideToTrayRequested += (s, e) => OnHideToTrayButtonClick(s, e);
             _shortcutManager.HelpRequested += (s, e) => _shortcutManager.ShowHelp();
+            _shortcutManager.ThemeToggleRequested += (s, e) => OnThemeToggleButtonClick(s, e);
+            
+            // Wire up theme manager events
+            _themeManager.ThemeChanged += OnThemeChanged;
         }
 
         private void InitializeTimer()
@@ -146,6 +157,45 @@ namespace SimBlock.Presentation.Forms
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error hiding to tray");
+            }
+        }
+
+        private void OnThemeToggleButtonClick(object? sender, EventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("Theme toggle button clicked");
+                _themeManager.ToggleTheme();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling theme");
+                MessageBox.Show($"Failed to toggle theme.\n\nError: {ex.Message}",
+                    "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnThemeChanged(object? sender, Theme theme)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnThemeChanged(sender, theme)));
+                return;
+            }
+
+            try
+            {
+                _logger.LogInformation("Theme changed to {Theme}", theme);
+                
+                // Update theme button text
+                _layoutManager.UpdateThemeButton(_uiControls.ThemeToggleButton);
+                
+                // Update UI with new theme
+                UpdateUI();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling theme change");
             }
         }
 
@@ -235,6 +285,10 @@ namespace SimBlock.Presentation.Forms
             {
                 // Only show emergency feedback when keyboard is blocked
                 if (!_viewModel.IsKeyboardBlocked)
+                    return;
+
+                // Don't start new feedback if already showing
+                if (_showingEmergencyFeedback)
                     return;
 
                 // Stop any existing emergency feedback timer
