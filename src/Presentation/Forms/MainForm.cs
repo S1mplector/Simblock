@@ -2,6 +2,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
+using SimBlock.Core.Domain.Interfaces;
 using SimBlock.Presentation.ViewModels;
 using SimBlock.Infrastructure.Windows;
 using SimBlock.Presentation.Configuration;
@@ -18,6 +19,7 @@ namespace SimBlock.Presentation.Forms
         private readonly ILogger<MainForm> _logger;
         private readonly MainWindowViewModel _viewModel;
         private readonly IResourceMonitor _resourceMonitor;
+        private readonly IKeyboardInfoService _keyboardInfoService;
         
         // UI Managers
         private readonly UISettings _uiSettings;
@@ -46,7 +48,8 @@ namespace SimBlock.Presentation.Forms
             IUILayoutManager layoutManager,
             IKeyboardShortcutManager shortcutManager,
             IResourceMonitor resourceMonitor,
-            IThemeManager themeManager)
+            IThemeManager themeManager,
+            IKeyboardInfoService keyboardInfoService)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -57,6 +60,7 @@ namespace SimBlock.Presentation.Forms
             _shortcutManager = shortcutManager ?? throw new ArgumentNullException(nameof(shortcutManager));
             _resourceMonitor = resourceMonitor ?? throw new ArgumentNullException(nameof(resourceMonitor));
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
+            _keyboardInfoService = keyboardInfoService ?? throw new ArgumentNullException(nameof(keyboardInfoService));
             
             _viewModel = new MainWindowViewModel();
 
@@ -64,6 +68,9 @@ namespace SimBlock.Presentation.Forms
             InitializeEventHandlers();
             InitializeTimer();
             UpdateUI();
+            
+            // Load keyboard name initially
+            _ = LoadKeyboardNameAsync();
             
             // Ensure window is visible and focused on startup
             this.Load += (s, e) =>
@@ -226,6 +233,12 @@ namespace SimBlock.Presentation.Forms
             
             // Update resource usage
             UpdateResourceUsage();
+            
+            // Update keyboard name periodically (every 30 seconds)
+            if (DateTime.Now.Second % 30 == 0)
+            {
+                _ = LoadKeyboardNameAsync();
+            }
         }
 
         private void UpdateHookStatus()
@@ -258,6 +271,36 @@ namespace SimBlock.Presentation.Forms
             {
                 _statusBarManager.UpdateResourceUsage("Resource info unavailable", 0, 0);
                 _logger.LogWarning(ex, "Error updating resource usage");
+            }
+        }
+
+        private async Task LoadKeyboardNameAsync()
+        {
+            try
+            {
+                var keyboardName = await _keyboardInfoService.GetCurrentKeyboardNameAsync();
+                
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, keyboardName)));
+                }
+                else
+                {
+                    _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, keyboardName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading keyboard name");
+                
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, "Keyboard info unavailable")));
+                }
+                else
+                {
+                    _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, "Keyboard info unavailable");
+                }
             }
         }
 

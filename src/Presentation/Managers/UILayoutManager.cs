@@ -31,6 +31,7 @@ namespace SimBlock.Presentation.Managers
             public Button ToggleButton { get; set; } = null!;
             public Label StatusLabel { get; set; } = null!;
             public PictureBox LogoIcon { get; set; } = null!;
+            public Label KeyboardNameLabel { get; set; } = null!;
             public Label LastToggleLabel { get; set; } = null!;
             public Button HideToTrayButton { get; set; } = null!;
             public Button ThemeToggleButton { get; set; } = null!;
@@ -91,6 +92,16 @@ namespace SimBlock.Presentation.Managers
 
             // Logo icon
             controls.LogoIcon = _logoManager.CreateLogoPictureBox();
+
+            // Keyboard name label
+            controls.KeyboardNameLabel = new Label
+            {
+                Text = "Loading keyboard info...",
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                ForeColor = _uiSettings.InactiveColor
+            };
 
             // Toggle button
             controls.ToggleButton = new Button
@@ -160,7 +171,7 @@ namespace SimBlock.Presentation.Managers
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 7,
+                RowCount = 8,
                 Padding = new Padding(_uiSettings.WindowPadding),
                 BackColor = _uiSettings.BackgroundColor
             };
@@ -168,8 +179,9 @@ namespace SimBlock.Presentation.Managers
             // Add controls to panel
             mainPanel.Controls.Add(controls.StatusLabel, 0, 0);
             mainPanel.Controls.Add(controls.LogoIcon, 0, 1);
-            mainPanel.Controls.Add(controls.ToggleButton, 0, 2);
-            mainPanel.Controls.Add(controls.LastToggleLabel, 0, 3);
+            mainPanel.Controls.Add(controls.KeyboardNameLabel, 0, 2);
+            mainPanel.Controls.Add(controls.ToggleButton, 0, 3);
+            mainPanel.Controls.Add(controls.LastToggleLabel, 0, 4);
             
             // Create a panel for the buttons to put them side by side
             var buttonPanel = new TableLayoutPanel
@@ -184,13 +196,14 @@ namespace SimBlock.Presentation.Managers
             buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             
-            mainPanel.Controls.Add(buttonPanel, 0, 4);
-            mainPanel.Controls.Add(controls.InstructionsLabel, 0, 5);
+            mainPanel.Controls.Add(buttonPanel, 0, 5);
+            mainPanel.Controls.Add(controls.InstructionsLabel, 0, 6);
 
             // Set row styles
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Status text
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Status text
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Logo
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Toggle button
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Keyboard name
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Toggle button
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Last toggle
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Button panel
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Instructions
@@ -246,6 +259,17 @@ namespace SimBlock.Presentation.Managers
         public void UpdateThemeButton(Button themeButton)
         {
             themeButton.Text = _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light";
+        }
+
+        /// <summary>
+        /// Updates the keyboard name label
+        /// </summary>
+        public void UpdateKeyboardNameLabel(Label keyboardNameLabel, string keyboardName)
+        {
+            if (keyboardNameLabel != null)
+            {
+                keyboardNameLabel.Text = keyboardName;
+            }
         }
     }
 }

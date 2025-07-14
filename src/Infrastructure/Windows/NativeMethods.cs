@@ -48,6 +48,26 @@ namespace SimBlock.Infrastructure.Windows
         public const int VK_LMENU = 0xA4;     // Left Alt
         public const int VK_RMENU = 0xA5;     // Right Alt
 
+        // Keyboard layout related constants
+        public const int KLF_ACTIVATE = 0x00000001;
+        public const int LOCALE_SLANGUAGE = 0x00000002;
+        public const int LOCALE_SENGLANGUAGE = 0x00001001;
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetKeyboardLayout(uint idThread);
+
+        [DllImport("user32.dll")]
+        public static extern int GetKeyboardLayoutName(System.Text.StringBuilder pwszKLID);
+
+        [DllImport("kernel32.dll")]
+        public static extern int GetLocaleInfo(uint Locale, uint LCType, System.Text.StringBuilder lpLCData, int cchData);
+
+        [DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
         [StructLayout(LayoutKind.Sequential)]
         public struct KBDLLHOOKSTRUCT
         {

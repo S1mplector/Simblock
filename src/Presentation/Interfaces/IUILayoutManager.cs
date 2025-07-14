@@ -16,6 +16,7 @@ namespace SimBlock.Presentation.Interfaces
             public Button ToggleButton { get; set; } = null!;
             public Label StatusLabel { get; set; } = null!;
             public PictureBox LogoIcon { get; set; } = null!;
+            public Label KeyboardNameLabel { get; set; } = null!;
             public Label LastToggleLabel { get; set; } = null!;
             public Button HideToTrayButton { get; set; } = null!;
             public Button ThemeToggleButton { get; set; } = null!;
@@ -41,5 +42,10 @@ namespace SimBlock.Presentation.Interfaces
         /// Updates the theme button text based on current theme
         /// </summary>
         void UpdateThemeButton(Button themeButton);
+
+        /// <summary>
+        /// Updates the keyboard name label
+        /// </summary>
+        void UpdateKeyboardNameLabel(Label keyboardNameLabel, string keyboardName);
     }
 }

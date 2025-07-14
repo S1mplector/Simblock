@@ -75,6 +75,7 @@ namespace SimBlock
                     // Register domain services
                     services.AddSingleton<IKeyboardHookService, WindowsKeyboardHookService>();
                     services.AddSingleton<ISystemTrayService, WindowsSystemTrayService>();
+                    services.AddSingleton<IKeyboardInfoService, WindowsKeyboardInfoService>();
 
                     // Register application services
                     services.AddSingleton<IKeyboardBlockerService, KeyboardBlockerService>();
