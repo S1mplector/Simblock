@@ -9,6 +9,7 @@ namespace SimBlock.Core.Application.Interfaces
     {
         event EventHandler<KeyboardBlockState>? StateChanged;
         event EventHandler<int>? EmergencyUnlockAttempt;
+        event EventHandler? ShowWindowRequested;
         
         KeyboardBlockState CurrentState { get; }
         

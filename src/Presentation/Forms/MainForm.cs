@@ -93,6 +93,7 @@ namespace SimBlock.Presentation.Forms
             _uiControls.ThemeToggleButton.Click += OnThemeToggleButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
             _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
+            _keyboardBlockerService.ShowWindowRequested += OnShowWindowRequested;
 
             // Handle form closing
             FormClosing += OnFormClosing;
@@ -276,6 +277,41 @@ namespace SimBlock.Presentation.Forms
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling emergency unlock attempt UI update");
+            }
+        }
+
+        private void OnShowWindowRequested(object? sender, EventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnShowWindowRequested(sender, e)));
+                return;
+            }
+
+            try
+            {
+                _logger.LogInformation("Show window requested from tray");
+                
+                // Show the window if it's hidden
+                if (!Visible)
+                {
+                    Show();
+                }
+                
+                // Restore the window if it's minimized
+                if (WindowState == FormWindowState.Minimized)
+                {
+                    WindowState = FormWindowState.Normal;
+                }
+                
+                // Bring the window to the front and activate it
+                BringToFront();
+                Activate();
+                Focus();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing window from tray");
             }
         }
 

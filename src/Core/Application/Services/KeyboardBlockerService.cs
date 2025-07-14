@@ -16,6 +16,7 @@ namespace SimBlock.Core.Application.Services
 
         public event EventHandler<KeyboardBlockState>? StateChanged;
         public event EventHandler<int>? EmergencyUnlockAttempt;
+        public event EventHandler? ShowWindowRequested;
         
         public KeyboardBlockState CurrentState => _hookService.CurrentState;
 
@@ -31,6 +32,7 @@ namespace SimBlock.Core.Application.Services
             _hookService.BlockStateChanged += OnBlockStateChanged;
             _hookService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
             _trayService.TrayIconClicked += OnTrayIconClicked;
+            _trayService.ShowWindowRequested += OnShowWindowRequested;
             _trayService.ExitRequested += OnExitRequested;
         }
 
@@ -95,6 +97,12 @@ namespace SimBlock.Core.Application.Services
         private void OnTrayIconClicked(object? sender, EventArgs e)
         {
             _ = ToggleBlockingAsync();
+        }
+
+        private void OnShowWindowRequested(object? sender, EventArgs e)
+        {
+            _logger.LogInformation("Show window requested from tray");
+            ShowWindowRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnEmergencyUnlockAttempt(object? sender, int attemptCount)

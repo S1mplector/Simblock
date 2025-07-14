@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimBlock", "SimBlock.csproj", "{A78F591B-7B56-1068-4FC2-4FE1C2F70CE6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A78F591B-7B56-1068-4FC2-4FE1C2F70CE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A78F591B-7B56-1068-4FC2-4FE1C2F70CE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A78F591B-7B56-1068-4FC2-4FE1C2F70CE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A78F591B-7B56-1068-4FC2-4FE1C2F70CE6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {52B16B78-462B-495B-A202-26E639C6DACA}
+	EndGlobalSection
+EndGlobal

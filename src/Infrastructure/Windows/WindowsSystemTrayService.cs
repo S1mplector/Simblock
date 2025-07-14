@@ -15,6 +15,7 @@ namespace SimBlock.Infrastructure.Windows
         private bool _disposed = false;
 
         public event EventHandler? TrayIconClicked;
+        public event EventHandler? ShowWindowRequested;
         public event EventHandler? ExitRequested;
 
         public bool IsVisible => _notifyIcon?.Visible ?? false;
@@ -32,13 +33,22 @@ namespace SimBlock.Infrastructure.Windows
             // Create context menu
             _contextMenu = new ContextMenuStrip();
             
+            var showWindowItem = new ToolStripMenuItem("Show Window");
+            showWindowItem.Click += (s, e) => ShowWindowRequested?.Invoke(this, EventArgs.Empty);
+            
             var toggleItem = new ToolStripMenuItem("Toggle Keyboard Block");
             toggleItem.Click += (s, e) => TrayIconClicked?.Invoke(this, EventArgs.Empty);
             
             var exitItem = new ToolStripMenuItem("Exit");
             exitItem.Click += (s, e) => ExitRequested?.Invoke(this, EventArgs.Empty);
             
-            _contextMenu.Items.AddRange(new ToolStripItem[] { toggleItem, new ToolStripSeparator(), exitItem });
+            _contextMenu.Items.AddRange(new ToolStripItem[] {
+                showWindowItem,
+                new ToolStripSeparator(),
+                toggleItem,
+                new ToolStripSeparator(),
+                exitItem
+            });
 
             // Create notify icon
             _notifyIcon = new NotifyIcon

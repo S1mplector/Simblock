@@ -14,6 +14,7 @@ namespace SimBlock.Core.Domain.Interfaces
         void ShowNotification(string title, string message);
         
         event EventHandler? TrayIconClicked;
+        event EventHandler? ShowWindowRequested;
         event EventHandler? ExitRequested;
     }
 }
