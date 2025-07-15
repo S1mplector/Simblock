@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Interfaces;
 
@@ -21,12 +22,14 @@ namespace SimBlock.Presentation.Forms
         private Button _closeButton = null!;
         private Label _themeLabel = null!;
         private GroupBox _appearanceGroupBox = null!;
+        private GroupBox _behaviorGroupBox = null!;
         private GroupBox _keyboardShortcutsGroupBox = null!;
         private Label _emergencyUnlockLabel = null!;
         private ComboBox _emergencyUnlockKeyComboBox = null!;
         private CheckBox _emergencyUnlockCtrlCheckBox = null!;
         private CheckBox _emergencyUnlockAltCheckBox = null!;
         private CheckBox _emergencyUnlockShiftCheckBox = null!;
+        private CheckBox _startWithWindowsCheckBox = null!;
 
         public SettingsForm(
             IThemeManager themeManager,
@@ -39,6 +42,7 @@ namespace SimBlock.Presentation.Forms
 
             InitializeComponent();
             InitializeEventHandlers();
+            InitializeStartupState();
             ApplyCurrentTheme();
         }
 
@@ -46,7 +50,7 @@ namespace SimBlock.Presentation.Forms
         {
             // Configure form properties
             Text = "Settings - SimBlock";
-            Size = new Size(500, 450);
+            Size = new Size(500, 520);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -90,6 +94,24 @@ namespace SimBlock.Presentation.Forms
                 FlatStyle = FlatStyle.Flat
             };
             _themeToggleButton.FlatAppearance.BorderSize = 0;
+
+            // Behavior group box
+            _behaviorGroupBox = new GroupBox
+            {
+                Text = "Behavior",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor
+            };
+
+            // Start with Windows checkbox
+            _startWithWindowsCheckBox = new CheckBox
+            {
+                Text = "Start with Windows",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.StartWithWindows
+            };
 
             // Keyboard shortcuts group box
             _keyboardShortcutsGroupBox = new GroupBox
@@ -216,7 +238,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 3,
+                RowCount = 4,
                 Padding = new Padding(20),
                 BackColor = _uiSettings.BackgroundColor
             };
@@ -238,6 +260,22 @@ namespace SimBlock.Presentation.Forms
             // Add theme panel to group box
             _appearanceGroupBox.Controls.Add(themePanel);
             _appearanceGroupBox.Size = new Size(450, 80);
+
+            // Behavior controls panel
+            var behaviorPanel = new TableLayoutPanel
+            {
+                ColumnCount = 1,
+                RowCount = 1,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor
+            };
+
+            behaviorPanel.Controls.Add(_startWithWindowsCheckBox, 0, 0);
+            behaviorPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            // Add behavior panel to group box
+            _behaviorGroupBox.Controls.Add(behaviorPanel);
+            _behaviorGroupBox.Size = new Size(450, 60);
 
             // Keyboard shortcuts controls panel
             var keyboardShortcutsPanel = new TableLayoutPanel
@@ -284,10 +322,12 @@ namespace SimBlock.Presentation.Forms
 
             // Add to main panel
             mainPanel.Controls.Add(_appearanceGroupBox, 0, 0);
-            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 1);
-            mainPanel.Controls.Add(buttonPanel, 0, 2);
+            mainPanel.Controls.Add(_behaviorGroupBox, 0, 1);
+            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 2);
+            mainPanel.Controls.Add(buttonPanel, 0, 3);
 
             // Set row styles
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -306,6 +346,9 @@ namespace SimBlock.Presentation.Forms
             _emergencyUnlockCtrlCheckBox.CheckedChanged += OnEmergencyUnlockModifierChanged;
             _emergencyUnlockAltCheckBox.CheckedChanged += OnEmergencyUnlockModifierChanged;
             _emergencyUnlockShiftCheckBox.CheckedChanged += OnEmergencyUnlockModifierChanged;
+            
+            // Behavior settings event handlers
+            _startWithWindowsCheckBox.CheckedChanged += OnStartWithWindowsChanged;
         }
 
         private void OnThemeToggleButtonClick(object? sender, EventArgs e)
@@ -363,6 +406,114 @@ namespace SimBlock.Presentation.Forms
             }
         }
 
+        private void OnStartWithWindowsChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                _uiSettings.StartWithWindows = _startWithWindowsCheckBox.Checked;
+                _logger.LogInformation("Start with Windows setting changed to: {StartWithWindows}", _uiSettings.StartWithWindows);
+                
+                // Apply the startup setting
+                ApplyStartupSetting(_uiSettings.StartWithWindows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing start with Windows setting");
+                MessageBox.Show($"Failed to change startup setting.\n\nError: {ex.Message}",
+                    "SimBlock Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                
+                // Revert checkbox state on error
+                _startWithWindowsCheckBox.Checked = _uiSettings.StartWithWindows;
+            }
+        }
+
+        private void ApplyStartupSetting(bool startWithWindows)
+        {
+            try
+            {
+                const string registryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+                const string appName = "SimBlock";
+                
+                using var key = Registry.CurrentUser.OpenSubKey(registryKey, true);
+                if (key == null)
+                {
+                    throw new InvalidOperationException("Unable to access Windows startup registry key");
+                }
+
+                if (startWithWindows)
+                {
+                    // Add to startup
+                    var executablePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    if (executablePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // For .NET applications, we need to get the actual executable path
+                        executablePath = Environment.ProcessPath ?? executablePath;
+                    }
+                    
+                    key.SetValue(appName, $"\"{executablePath}\"");
+                    _logger.LogInformation("Added SimBlock to Windows startup");
+                }
+                else
+                {
+                    // Remove from startup
+                    key.DeleteValue(appName, false);
+                    _logger.LogInformation("Removed SimBlock from Windows startup");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error applying startup setting");
+                throw;
+            }
+        }
+
+        private void InitializeStartupState()
+        {
+            try
+            {
+                // Check if the application is actually set to start with Windows
+                bool isInStartup = IsApplicationInStartup();
+                
+                // Update the UISettings to match the actual registry state
+                _uiSettings.StartWithWindows = isInStartup;
+                
+                // Update the checkbox to reflect the current state
+                _startWithWindowsCheckBox.Checked = isInStartup;
+                
+                _logger.LogInformation("Startup state initialized: {IsInStartup}", isInStartup);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initializing startup state");
+                // Default to false if we can't determine the state
+                _startWithWindowsCheckBox.Checked = false;
+                _uiSettings.StartWithWindows = false;
+            }
+        }
+
+        private bool IsApplicationInStartup()
+        {
+            try
+            {
+                const string registryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+                const string appName = "SimBlock";
+                
+                using var key = Registry.CurrentUser.OpenSubKey(registryKey, false);
+                if (key == null)
+                {
+                    return false;
+                }
+
+                var value = key.GetValue(appName);
+                return value != null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking startup state");
+                return false;
+            }
+        }
+
         private void OnThemeChanged(object? sender, Theme theme)
         {
             if (InvokeRequired)
@@ -392,6 +543,10 @@ namespace SimBlock.Presentation.Forms
                 
                 _appearanceGroupBox.ForeColor = _uiSettings.TextColor;
                 _themeLabel.ForeColor = _uiSettings.TextColor;
+                
+                // Apply theme to behavior controls
+                _behaviorGroupBox.ForeColor = _uiSettings.TextColor;
+                _startWithWindowsCheckBox.ForeColor = _uiSettings.TextColor;
                 
                 // Apply theme to keyboard shortcut controls
                 _keyboardShortcutsGroupBox.ForeColor = _uiSettings.TextColor;

@@ -29,6 +29,9 @@ namespace SimBlock.Presentation.Configuration
         public bool EmergencyUnlockRequiresAlt { get; set; } = true;
         public bool EmergencyUnlockRequiresShift { get; set; } = false;
 
+        // Startup settings
+        public bool StartWithWindows { get; set; } = false;
+
         // Colors (will be dynamically set based on theme)
         public Color NormalColor { get; set; } = Color.Blue;
         public Color WarningColor { get; set; } = Color.Orange;
