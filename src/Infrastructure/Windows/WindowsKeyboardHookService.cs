@@ -133,18 +133,23 @@ namespace SimBlock.Infrastructure.Windows
                 // Track modifier key states
                 TrackModifierKeys(kbStruct.vkCode, message);
                 
+                // Always check for emergency unlock combination (works for both keyboard and mouse blocking)
+                // Only trigger on key down events (WM_KEYDOWN = 0x0100)
+                if (message == NativeMethods.WM_KEYDOWN && IsEmergencyUnlockCombination(kbStruct.vkCode))
+                {
+                    HandleEmergencyUnlock();
+                    // If keyboard is blocked, prevent this key from reaching applications
+                    if (_state.IsBlocked)
+                    {
+                        return (IntPtr)1; // Block this key press to prevent it from reaching applications
+                    }
+                    // If only mouse is blocked, allow the key to pass through but still handle emergency unlock
+                }
+                
                 // Check if we should block the key
                 if (_state.IsBlocked)
                 {
-                    // Check for emergency unlock combination (Ctrl+Alt+U - must be pressed 3 times)
-                    // Only trigger on key down events (WM_KEYDOWN = 0x0100)
-                    if (message == NativeMethods.WM_KEYDOWN && IsEmergencyUnlockCombination(kbStruct.vkCode))
-                    {
-                        HandleEmergencyUnlock();
-                        return (IntPtr)1; // Block this key press to prevent it from reaching applications
-                    }
-
-                    // Block all other keys when blocking is enabled
+                    // Block all other keys when keyboard blocking is enabled
                     _logger.LogDebug("Blocking keyboard input");
                     return (IntPtr)1; // Return non-zero to suppress the key
                 }

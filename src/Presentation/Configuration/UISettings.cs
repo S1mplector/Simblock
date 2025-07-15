@@ -50,7 +50,7 @@ namespace SimBlock.Presentation.Configuration
         public Color StatusBarBackColor { get; set; } = Color.FromArgb(240, 240, 240);
 
         // Window settings
-        public Size WindowSize { get; set; } = new Size(700, 400);
+        public Size WindowSize { get; set; } = new Size(700, 500);
         public int WindowPadding { get; set; } = 20;
 
         // Status bar settings
