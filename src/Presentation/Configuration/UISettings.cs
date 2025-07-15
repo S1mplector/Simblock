@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace SimBlock.Presentation.Configuration
 {
@@ -21,6 +22,12 @@ namespace SimBlock.Presentation.Configuration
 
         // Theme settings
         public Theme CurrentTheme { get; set; } = Theme.Light;
+
+        // Emergency unlock shortcut settings
+        public Keys EmergencyUnlockKey { get; set; } = Keys.U;
+        public bool EmergencyUnlockRequiresCtrl { get; set; } = true;
+        public bool EmergencyUnlockRequiresAlt { get; set; } = true;
+        public bool EmergencyUnlockRequiresShift { get; set; } = false;
 
         // Colors (will be dynamically set based on theme)
         public Color NormalColor { get; set; } = Color.Blue;

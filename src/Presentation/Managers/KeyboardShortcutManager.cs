@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Interfaces;
+using SimBlock.Presentation.Configuration;
 
 namespace SimBlock.Presentation.Managers
 {
@@ -11,15 +12,17 @@ namespace SimBlock.Presentation.Managers
     public class KeyboardShortcutManager : IKeyboardShortcutManager
     {
         private readonly ILogger<KeyboardShortcutManager> _logger;
+        private readonly UISettings _uiSettings;
 
         public event EventHandler? ToggleRequested;
         public event EventHandler? HideToTrayRequested;
         public event EventHandler? HelpRequested;
         public event EventHandler? SettingsRequested;
 
-        public KeyboardShortcutManager(ILogger<KeyboardShortcutManager> logger)
+        public KeyboardShortcutManager(ILogger<KeyboardShortcutManager> logger, UISettings uiSettings)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
         }
 
         /// <summary>
@@ -69,7 +72,10 @@ namespace SimBlock.Presentation.Managers
         /// </summary>
         public void ShowHelp()
         {
-            string helpText = @"SimBlock - Keyboard Blocker
+            // Build the emergency unlock shortcut string
+            var emergencyShortcut = BuildEmergencyUnlockShortcutString();
+            
+            string helpText = $@"SimBlock - Keyboard Blocker
 
 Keyboard Shortcuts:
 • Space - Toggle keyboard blocking
@@ -78,7 +84,7 @@ Keyboard Shortcuts:
 • F2 - Open settings window
 
 Emergency Unlock:
-• Ctrl+Alt+U (3 times) - Emergency unlock (works even when blocked)
+• {emergencyShortcut} (3 times) - Emergency unlock (works even when blocked)
 • Must be pressed 3 times within 2 seconds
 
 Status Bar Information:
@@ -95,9 +101,30 @@ Tips:
 • Resource usage colors: Blue (normal), Orange (moderate), Red (high)
 • Memory usage matches Task Manager's ""Memory"" column exactly
 • Theme preference is saved and restored on startup
-• Theme can be changed in the settings window (F2 or Settings button)";
+• Theme can be changed in the settings window (F2 or Settings button)
+• Emergency unlock shortcut can be customized in settings";
 
             MessageBox.Show(helpText, "SimBlock Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private string BuildEmergencyUnlockShortcutString()
+        {
+            var modifiers = new List<string>();
+            
+            if (_uiSettings.EmergencyUnlockRequiresCtrl)
+                modifiers.Add("Ctrl");
+            if (_uiSettings.EmergencyUnlockRequiresAlt)
+                modifiers.Add("Alt");
+            if (_uiSettings.EmergencyUnlockRequiresShift)
+                modifiers.Add("Shift");
+            
+            var shortcut = string.Join("+", modifiers);
+            if (shortcut.Length > 0)
+                shortcut += "+";
+            
+            shortcut += _uiSettings.EmergencyUnlockKey.ToString();
+            
+            return shortcut;
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Interfaces;
+using SimBlock.Presentation.Configuration;
 
 namespace SimBlock.Infrastructure.Windows
 {
@@ -13,6 +14,7 @@ namespace SimBlock.Infrastructure.Windows
     public class WindowsKeyboardHookService : IKeyboardHookService
     {
         private readonly ILogger<WindowsKeyboardHookService> _logger;
+        private readonly UISettings _uiSettings;
         private readonly KeyboardBlockState _state;
         private IntPtr _hookId = IntPtr.Zero;
         private NativeMethods.LowLevelKeyboardProc _proc;
@@ -26,6 +28,7 @@ namespace SimBlock.Infrastructure.Windows
         // Track modifier key states within the hook
         private bool _ctrlPressed = false;
         private bool _altPressed = false;
+        private bool _shiftPressed = false;
 
         public event EventHandler<KeyboardBlockState>? BlockStateChanged;
         public event EventHandler<int>? EmergencyUnlockAttempt;
@@ -33,9 +36,10 @@ namespace SimBlock.Infrastructure.Windows
         public bool IsHookInstalled => _hookId != IntPtr.Zero;
         public KeyboardBlockState CurrentState => _state;
 
-        public WindowsKeyboardHookService(ILogger<WindowsKeyboardHookService> logger)
+        public WindowsKeyboardHookService(ILogger<WindowsKeyboardHookService> logger, UISettings uiSettings)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
             _state = new KeyboardBlockState();
             _proc = HookCallback;
         }
@@ -214,6 +218,15 @@ namespace SimBlock.Infrastructure.Windows
                     else if (isKeyUp)
                         _altPressed = false;
                 }
+                
+                // Track Shift key state
+                if (vkCode == NativeMethods.VK_LSHIFT || vkCode == NativeMethods.VK_RSHIFT || vkCode == NativeMethods.VK_SHIFT)
+                {
+                    if (isKeyDown)
+                        _shiftPressed = true;
+                    else if (isKeyUp)
+                        _shiftPressed = false;
+                }
             }
             catch (Exception ex)
             {
@@ -225,13 +238,28 @@ namespace SimBlock.Infrastructure.Windows
         {
             try
             {
-                // Check if it's the 'U' key (Virtual Key Code 85)
-                if (vkCode == NativeMethods.VK_U)
+                // Convert Keys enum to virtual key code
+                uint configuredKeyCode = (uint)_uiSettings.EmergencyUnlockKey;
+                
+                // Check if it's the configured emergency unlock key
+                if (vkCode == configuredKeyCode)
                 {
-                    // Debug logging
-                    _logger.LogDebug("U key pressed. Ctrl: {CtrlPressed}, Alt: {AltPressed}", _ctrlPressed, _altPressed);
+                    // Check if the required modifiers are pressed
+                    bool ctrlMatch = !_uiSettings.EmergencyUnlockRequiresCtrl || _ctrlPressed;
+                    bool altMatch = !_uiSettings.EmergencyUnlockRequiresAlt || _altPressed;
+                    bool shiftMatch = !_uiSettings.EmergencyUnlockRequiresShift || _shiftPressed;
                     
-                    return _ctrlPressed && _altPressed;
+                    // Ensure at least one modifier is required and pressed
+                    bool hasRequiredModifiers = (_uiSettings.EmergencyUnlockRequiresCtrl && _ctrlPressed) ||
+                                               (_uiSettings.EmergencyUnlockRequiresAlt && _altPressed) ||
+                                               (_uiSettings.EmergencyUnlockRequiresShift && _shiftPressed);
+                    
+                    // Debug logging
+                    _logger.LogDebug("Emergency unlock key {Key} pressed. Ctrl: {CtrlPressed}/{CtrlRequired}, Alt: {AltPressed}/{AltRequired}, Shift: {ShiftPressed}/{ShiftRequired}",
+                        _uiSettings.EmergencyUnlockKey, _ctrlPressed, _uiSettings.EmergencyUnlockRequiresCtrl,
+                        _altPressed, _uiSettings.EmergencyUnlockRequiresAlt, _shiftPressed, _uiSettings.EmergencyUnlockRequiresShift);
+                    
+                    return ctrlMatch && altMatch && shiftMatch && hasRequiredModifiers;
                 }
             }
             catch (Exception ex)

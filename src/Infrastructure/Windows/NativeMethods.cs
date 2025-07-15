@@ -47,6 +47,9 @@ namespace SimBlock.Infrastructure.Windows
         public const int VK_MENU = 0x12;      // Alt key
         public const int VK_LMENU = 0xA4;     // Left Alt
         public const int VK_RMENU = 0xA5;     // Right Alt
+        public const int VK_SHIFT = 0x10;     // Shift key
+        public const int VK_LSHIFT = 0xA0;    // Left Shift
+        public const int VK_RSHIFT = 0xA1;    // Right Shift
 
         // Keyboard layout related constants
         public const int KLF_ACTIVATE = 0x00000001;
