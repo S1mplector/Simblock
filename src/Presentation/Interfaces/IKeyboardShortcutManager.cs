@@ -26,7 +26,7 @@ namespace SimBlock.Presentation.Interfaces
         /// <summary>
         /// Fired when theme toggle is requested via keyboard shortcut
         /// </summary>
-        event EventHandler? ThemeToggleRequested;
+        event EventHandler? SettingsRequested;
 
         /// <summary>
         /// Handles key down events and processes shortcuts

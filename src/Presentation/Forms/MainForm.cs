@@ -1,5 +1,6 @@
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Interfaces;
@@ -20,6 +21,7 @@ namespace SimBlock.Presentation.Forms
         private readonly MainWindowViewModel _viewModel;
         private readonly IResourceMonitor _resourceMonitor;
         private readonly IKeyboardInfoService _keyboardInfoService;
+        private readonly IServiceProvider _serviceProvider;
         
         // UI Managers
         private readonly UISettings _uiSettings;
@@ -49,7 +51,8 @@ namespace SimBlock.Presentation.Forms
             IKeyboardShortcutManager shortcutManager,
             IResourceMonitor resourceMonitor,
             IThemeManager themeManager,
-            IKeyboardInfoService keyboardInfoService)
+            IKeyboardInfoService keyboardInfoService,
+            IServiceProvider serviceProvider)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -61,6 +64,7 @@ namespace SimBlock.Presentation.Forms
             _resourceMonitor = resourceMonitor ?? throw new ArgumentNullException(nameof(resourceMonitor));
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _keyboardInfoService = keyboardInfoService ?? throw new ArgumentNullException(nameof(keyboardInfoService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             
             _viewModel = new MainWindowViewModel();
 
@@ -97,7 +101,7 @@ namespace SimBlock.Presentation.Forms
         {
             _uiControls.ToggleButton.Click += OnToggleButtonClick;
             _uiControls.HideToTrayButton.Click += OnHideToTrayButtonClick;
-            _uiControls.ThemeToggleButton.Click += OnThemeToggleButtonClick;
+            _uiControls.SettingsButton.Click += OnSettingsButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
             _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
             _keyboardBlockerService.ShowWindowRequested += OnShowWindowRequested;
@@ -112,7 +116,7 @@ namespace SimBlock.Presentation.Forms
             _shortcutManager.ToggleRequested += (s, e) => OnToggleButtonClick(s, e);
             _shortcutManager.HideToTrayRequested += (s, e) => OnHideToTrayButtonClick(s, e);
             _shortcutManager.HelpRequested += (s, e) => _shortcutManager.ShowHelp();
-            _shortcutManager.ThemeToggleRequested += (s, e) => OnThemeToggleButtonClick(s, e);
+            _shortcutManager.SettingsRequested += (s, e) => OnSettingsButtonClick(s, e);
             
             // Wire up theme manager events
             _themeManager.ThemeChanged += OnThemeChanged;
@@ -168,17 +172,20 @@ namespace SimBlock.Presentation.Forms
             }
         }
 
-        private void OnThemeToggleButtonClick(object? sender, EventArgs e)
+        private void OnSettingsButtonClick(object? sender, EventArgs e)
         {
             try
             {
-                _logger.LogInformation("Theme toggle button clicked");
-                _themeManager.ToggleTheme();
+                _logger.LogInformation("Settings button clicked");
+                
+                // Create and show the settings form using dependency injection
+                using var settingsForm = _serviceProvider.GetRequiredService<SettingsForm>();
+                settingsForm.ShowDialog(this);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error toggling theme");
-                MessageBox.Show($"Failed to toggle theme.\n\nError: {ex.Message}",
+                _logger.LogError(ex, "Error opening settings window");
+                MessageBox.Show($"Failed to open settings.\n\nError: {ex.Message}",
                     "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -195,8 +202,8 @@ namespace SimBlock.Presentation.Forms
             {
                 _logger.LogInformation("Theme changed to {Theme}", theme);
                 
-                // Update theme button text
-                _layoutManager.UpdateThemeButton(_uiControls.ThemeToggleButton);
+                // Update settings button (no changes needed since settings button doesn't change with theme)
+                _layoutManager.UpdateSettingsButton(_uiControls.SettingsButton);
                 
                 // Update UI with new theme
                 UpdateUI();

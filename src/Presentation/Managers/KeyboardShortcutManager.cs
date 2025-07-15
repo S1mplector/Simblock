@@ -15,7 +15,7 @@ namespace SimBlock.Presentation.Managers
         public event EventHandler? ToggleRequested;
         public event EventHandler? HideToTrayRequested;
         public event EventHandler? HelpRequested;
-        public event EventHandler? ThemeToggleRequested;
+        public event EventHandler? SettingsRequested;
 
         public KeyboardShortcutManager(ILogger<KeyboardShortcutManager> logger)
         {
@@ -50,12 +50,12 @@ namespace SimBlock.Presentation.Managers
                     _logger.LogDebug("F1 key pressed - triggering help");
                     HelpRequested?.Invoke(this, EventArgs.Empty);
                 }
-                // F2 for theme toggle
+                // F2 for settings
                 else if (e.KeyCode == Keys.F2)
                 {
                     e.Handled = true;
-                    _logger.LogDebug("F2 key pressed - triggering theme toggle");
-                    ThemeToggleRequested?.Invoke(this, EventArgs.Empty);
+                    _logger.LogDebug("F2 key pressed - triggering settings");
+                    SettingsRequested?.Invoke(this, EventArgs.Empty);
                 }
             }
             catch (Exception ex)
@@ -75,7 +75,7 @@ Keyboard Shortcuts:
 • Space - Toggle keyboard blocking
 • Escape - Hide to system tray
 • F1 - Show this help
-• F2 - Toggle light/dark theme
+• F2 - Open settings window
 
 Emergency Unlock:
 • Ctrl+Alt+U (3 times) - Emergency unlock (works even when blocked)
@@ -94,7 +94,8 @@ Tips:
 • Emergency unlock requires 3 consecutive presses for safety
 • Resource usage colors: Blue (normal), Orange (moderate), Red (high)
 • Memory usage matches Task Manager's ""Memory"" column exactly
-• Theme preference is saved and restored on startup";
+• Theme preference is saved and restored on startup
+• Theme can be changed in the settings window (F2 or Settings button)";
 
             MessageBox.Show(helpText, "SimBlock Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

@@ -34,7 +34,7 @@ namespace SimBlock.Presentation.Managers
             public Label KeyboardNameLabel { get; set; } = null!;
             public Label LastToggleLabel { get; set; } = null!;
             public Button HideToTrayButton { get; set; } = null!;
-            public Button ThemeToggleButton { get; set; } = null!;
+            public Button SettingsButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
         }
 
@@ -126,10 +126,10 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
-            // Theme toggle button
-            controls.ThemeToggleButton = new Button
+            // Settings button
+            controls.SettingsButton = new Button
             {
-                Text = _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light",
+                Text = "⚙️ Settings",
                 Font = new Font("Segoe UI", 9),
                 Size = new Size(100, 30),
                 Anchor = AnchorStyles.None,
@@ -137,7 +137,7 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
             };
-            controls.ThemeToggleButton.FlatAppearance.BorderSize = 0;
+            controls.SettingsButton.FlatAppearance.BorderSize = 0;
 
             // Hide to tray button
             controls.HideToTrayButton = new Button
@@ -155,7 +155,7 @@ namespace SimBlock.Presentation.Managers
             // Instructions label
             controls.InstructionsLabel = new Label
             {
-                Text = "Space: Toggle • Esc: Hide • F1: Help • Emergency: Ctrl+Alt+U (3x)",
+                Text = "Space: Toggle • Esc: Hide • F1: Help • F2: Settings • Emergency: Ctrl+Alt+U (3x)",
                 Font = new Font("Segoe UI", 8),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Fill,
@@ -191,7 +191,7 @@ namespace SimBlock.Presentation.Managers
                 Dock = DockStyle.Fill,
                 BackColor = _uiSettings.BackgroundColor
             };
-            buttonPanel.Controls.Add(controls.ThemeToggleButton, 0, 0);
+            buttonPanel.Controls.Add(controls.SettingsButton, 0, 0);
             buttonPanel.Controls.Add(controls.HideToTrayButton, 1, 0);
             buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
@@ -254,11 +254,12 @@ namespace SimBlock.Presentation.Managers
         }
 
         /// <summary>
-        /// Updates the theme button text based on current theme
+        /// Updates the settings button (placeholder for future settings updates)
         /// </summary>
-        public void UpdateThemeButton(Button themeButton)
+        public void UpdateSettingsButton(Button settingsButton)
         {
-            themeButton.Text = _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light";
+            // Settings button text doesn't change, but this method is kept for consistency
+            settingsButton.Text = "⚙️ Settings";
         }
 
         /// <summary>

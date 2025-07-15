@@ -95,6 +95,7 @@ namespace SimBlock
 
                     // Register presentation layer
                     services.AddTransient<MainForm>();
+                    services.AddTransient<SimBlock.Presentation.Forms.SettingsForm>();
 
                     // Configure logging
                     services.AddLogging(builder =>
