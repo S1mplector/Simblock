@@ -35,16 +35,18 @@ namespace SimBlock
             // Build the host
             var host = CreateHostBuilder(args).Build();
 
-            // Get the main service and initialize
+            // Get the main services and initialize
             var keyboardBlockerService = host.Services.GetRequiredService<IKeyboardBlockerService>();
+            var mouseBlockerService = host.Services.GetRequiredService<IMouseBlockerService>();
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
             try
             {
                 logger.LogInformation("Starting SimBlock application...");
 
-                // Initialize the keyboard blocker service
+                // Initialize both blocker services
                 await keyboardBlockerService.InitializeAsync();
+                await mouseBlockerService.InitializeAsync();
 
                 // Create and show the main form
                 var mainForm = host.Services.GetRequiredService<MainForm>();
@@ -59,6 +61,7 @@ namespace SimBlock
 
                 logger.LogInformation("Application shutting down...");
                 await keyboardBlockerService.ShutdownAsync();
+                await mouseBlockerService.ShutdownAsync();
             }
             catch (Exception ex)
             {
@@ -74,11 +77,14 @@ namespace SimBlock
                 {
                     // Register domain services
                     services.AddSingleton<IKeyboardHookService, WindowsKeyboardHookService>();
+                    services.AddSingleton<IMouseHookService, WindowsMouseHookService>();
                     services.AddSingleton<ISystemTrayService, WindowsSystemTrayService>();
                     services.AddSingleton<IKeyboardInfoService, WindowsKeyboardInfoService>();
+                    services.AddSingleton<IMouseInfoService, WindowsMouseInfoService>();
 
                     // Register application services
                     services.AddSingleton<IKeyboardBlockerService, KeyboardBlockerService>();
+                    services.AddSingleton<IMouseBlockerService, MouseBlockerService>();
 
                     // Register infrastructure services
                     services.AddSingleton<SimBlock.Presentation.Interfaces.IResourceMonitor, ResourceMonitor>();

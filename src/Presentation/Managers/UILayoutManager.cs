@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Interfaces;
+using SimBlock.Presentation.ViewModels;
 
 namespace SimBlock.Presentation.Managers
 {
@@ -28,11 +29,26 @@ namespace SimBlock.Presentation.Managers
         /// </summary>
         public class UIControls
         {
-            public Button ToggleButton { get; set; } = null!;
-            public Label StatusLabel { get; set; } = null!;
-            public PictureBox LogoIcon { get; set; } = null!;
+            // Tab controls
+            public TabControl MainTabControl { get; set; } = null!;
+            public TabPage KeyboardTab { get; set; } = null!;
+            public TabPage MouseTab { get; set; } = null!;
+            
+            // Keyboard tab controls
+            public Button KeyboardToggleButton { get; set; } = null!;
+            public Label KeyboardStatusLabel { get; set; } = null!;
+            public PictureBox KeyboardLogoIcon { get; set; } = null!;
             public Label KeyboardNameLabel { get; set; } = null!;
-            public Label LastToggleLabel { get; set; } = null!;
+            public Label KeyboardLastToggleLabel { get; set; } = null!;
+            
+            // Mouse tab controls
+            public Button MouseToggleButton { get; set; } = null!;
+            public Label MouseStatusLabel { get; set; } = null!;
+            public PictureBox MouseLogoIcon { get; set; } = null!;
+            public Label MouseNameLabel { get; set; } = null!;
+            public Label MouseLastToggleLabel { get; set; } = null!;
+            
+            // Shared controls
             public Button HideToTrayButton { get; set; } = null!;
             public Button SettingsButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
@@ -50,8 +66,8 @@ namespace SimBlock.Presentation.Managers
             // Create UI controls
             var controls = CreateUIControls();
 
-            // Create and configure the main layout panel
-            var mainPanel = CreateMainLayoutPanel(controls);
+            // Create and configure the main layout with tabs
+            var mainPanel = CreateMainLayoutWithTabs(controls);
 
             // Add the main panel to the form
             form.Controls.Add(mainPanel);
@@ -61,7 +77,7 @@ namespace SimBlock.Presentation.Managers
 
         private void ConfigureFormProperties(Form form)
         {
-            form.Text = "SimBlock - Keyboard Blocker";
+            form.Text = "SimBlock - Keyboard & Mouse Blocker";
             form.Size = _uiSettings.WindowSize;
             form.StartPosition = FormStartPosition.CenterScreen;
             form.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -81,8 +97,32 @@ namespace SimBlock.Presentation.Managers
         {
             var controls = new IUILayoutManager.UIControls();
 
-            // Status label
-            controls.StatusLabel = new Label
+            // Create tab control
+            controls.MainTabControl = new TabControl
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 10),
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+
+            // Create tab pages
+            controls.KeyboardTab = new TabPage
+            {
+                Text = "Keyboard",
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+
+            controls.MouseTab = new TabPage
+            {
+                Text = "Mouse",
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+
+            // Create keyboard tab controls
+            controls.KeyboardStatusLabel = new Label
             {
                 Text = "Keyboard is unlocked",
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
@@ -91,10 +131,8 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.SuccessColor
             };
 
-            // Logo icon
-            controls.LogoIcon = _logoManager.CreateLogoPictureBox();
+            controls.KeyboardLogoIcon = _logoManager.CreateLogoPictureBox();
 
-            // Keyboard name label
             controls.KeyboardNameLabel = new Label
             {
                 Text = "Loading keyboard info...",
@@ -104,8 +142,7 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
-            // Toggle button
-            controls.ToggleButton = new Button
+            controls.KeyboardToggleButton = new Button
             {
                 Text = "Block Keyboard",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -115,10 +152,9 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
             };
-            controls.ToggleButton.FlatAppearance.BorderSize = 0;
+            controls.KeyboardToggleButton.FlatAppearance.BorderSize = 0;
 
-            // Last toggle time label
-            controls.LastToggleLabel = new Label
+            controls.KeyboardLastToggleLabel = new Label
             {
                 Text = "Last toggle: Never",
                 Font = new Font("Segoe UI", 9),
@@ -127,7 +163,49 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
-            // Settings button
+            // Create mouse tab controls
+            controls.MouseStatusLabel = new Label
+            {
+                Text = "Mouse is unlocked",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                ForeColor = _uiSettings.SuccessColor
+            };
+
+            controls.MouseLogoIcon = _logoManager.CreateLogoPictureBox();
+
+            controls.MouseNameLabel = new Label
+            {
+                Text = "Loading mouse info...",
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                ForeColor = _uiSettings.InactiveColor
+            };
+
+            controls.MouseToggleButton = new Button
+            {
+                Text = "Block Mouse",
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Size = new Size(200, 50),
+                Anchor = AnchorStyles.None,
+                BackColor = _uiSettings.PrimaryButtonColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            controls.MouseToggleButton.FlatAppearance.BorderSize = 0;
+
+            controls.MouseLastToggleLabel = new Label
+            {
+                Text = "Last toggle: Never",
+                Font = new Font("Segoe UI", 9),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                ForeColor = _uiSettings.InactiveColor
+            };
+
+            // Create shared controls
             controls.SettingsButton = new Button
             {
                 Text = "⚙️ Settings",
@@ -140,7 +218,6 @@ namespace SimBlock.Presentation.Managers
             };
             controls.SettingsButton.FlatAppearance.BorderSize = 0;
 
-            // Hide to tray button
             controls.HideToTrayButton = new Button
             {
                 Text = "Hide to Tray",
@@ -153,7 +230,6 @@ namespace SimBlock.Presentation.Managers
             };
             controls.HideToTrayButton.FlatAppearance.BorderSize = 0;
 
-            // Instructions label
             controls.InstructionsLabel = new Label
             {
                 Text = "Space: Toggle • Esc: Hide • F1: Help • F2: Settings • Emergency: Ctrl+Alt+U (3x)",
@@ -163,7 +239,6 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
-            // Privacy notice label
             controls.PrivacyNoticeLabel = new Label
             {
                 Text = "SimBlock doesn't collect, intercept or transmit any personal data. You're welcome to inspect the source code.",
@@ -176,25 +251,44 @@ namespace SimBlock.Presentation.Managers
             return controls;
         }
 
-        private TableLayoutPanel CreateMainLayoutPanel(IUILayoutManager.UIControls controls)
+        private TableLayoutPanel CreateMainLayoutWithTabs(IUILayoutManager.UIControls controls)
         {
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 9,
+                RowCount = 3,
                 Padding = new Padding(_uiSettings.WindowPadding),
                 BackColor = _uiSettings.BackgroundColor
             };
 
-            // Add controls to panel
-            mainPanel.Controls.Add(controls.StatusLabel, 0, 0);
-            mainPanel.Controls.Add(controls.LogoIcon, 0, 1);
-            mainPanel.Controls.Add(controls.KeyboardNameLabel, 0, 2);
-            mainPanel.Controls.Add(controls.ToggleButton, 0, 3);
-            mainPanel.Controls.Add(controls.LastToggleLabel, 0, 4);
-            
-            // Create a panel for the buttons to put them side by side
+            // Create keyboard tab layout
+            var keyboardTabPanel = CreateTabPanel(
+                controls.KeyboardStatusLabel,
+                controls.KeyboardLogoIcon,
+                controls.KeyboardNameLabel,
+                controls.KeyboardToggleButton,
+                controls.KeyboardLastToggleLabel
+            );
+
+            // Create mouse tab layout
+            var mouseTabPanel = CreateTabPanel(
+                controls.MouseStatusLabel,
+                controls.MouseLogoIcon,
+                controls.MouseNameLabel,
+                controls.MouseToggleButton,
+                controls.MouseLastToggleLabel
+            );
+
+            // Add panels to tabs
+            controls.KeyboardTab.Controls.Add(keyboardTabPanel);
+            controls.MouseTab.Controls.Add(mouseTabPanel);
+
+            // Add tabs to tab control
+            controls.MainTabControl.TabPages.Add(controls.KeyboardTab);
+            controls.MainTabControl.TabPages.Add(controls.MouseTab);
+
+            // Create shared button panel
             var buttonPanel = new TableLayoutPanel
             {
                 ColumnCount = 2,
@@ -206,47 +300,86 @@ namespace SimBlock.Presentation.Managers
             buttonPanel.Controls.Add(controls.HideToTrayButton, 1, 0);
             buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            
-            mainPanel.Controls.Add(buttonPanel, 0, 5);
-            mainPanel.Controls.Add(controls.InstructionsLabel, 0, 6);
-            mainPanel.Controls.Add(controls.PrivacyNoticeLabel, 0, 7);
+
+            // Add main components to main panel
+            mainPanel.Controls.Add(controls.MainTabControl, 0, 0);
+            mainPanel.Controls.Add(buttonPanel, 0, 1);
+            mainPanel.Controls.Add(controls.InstructionsLabel, 0, 2);
 
             // Set row styles
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Status text
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Logo
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Keyboard name
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Toggle button
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Last toggle
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Button panel
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 5));  // Instructions
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 5));  // Privacy notice
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 80)); // Tab control
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Button panel
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Instructions
 
             return mainPanel;
+        }
+
+        private TableLayoutPanel CreateTabPanel(Label statusLabel, PictureBox logoIcon, Label nameLabel, Button toggleButton, Label lastToggleLabel)
+        {
+            var tabPanel = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 5,
+                Padding = new Padding(10),
+                BackColor = _uiSettings.BackgroundColor
+            };
+
+            // Add controls to tab panel
+            tabPanel.Controls.Add(statusLabel, 0, 0);
+            tabPanel.Controls.Add(logoIcon, 0, 1);
+            tabPanel.Controls.Add(nameLabel, 0, 2);
+            tabPanel.Controls.Add(toggleButton, 0, 3);
+            tabPanel.Controls.Add(lastToggleLabel, 0, 4);
+
+            // Set row styles
+            tabPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Status text
+            tabPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Logo
+            tabPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Device name
+            tabPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 25)); // Toggle button
+            tabPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Last toggle
+
+            return tabPanel;
         }
 
         /// <summary>
         /// Updates the UI controls based on the current state
         /// </summary>
-        public void UpdateUI(IUILayoutManager.UIControls controls, bool isKeyboardBlocked, string statusText, string toggleButtonText, DateTime lastToggleTime)
+        public void UpdateUI(IUILayoutManager.UIControls controls, MainWindowViewModel viewModel)
         {
-            // Update status label
-            controls.StatusLabel.Text = statusText;
-            controls.StatusLabel.ForeColor = isKeyboardBlocked ? _uiSettings.ErrorColor : _uiSettings.SuccessColor;
+            // Update keyboard tab
+            controls.KeyboardStatusLabel.Text = viewModel.KeyboardStatusText;
+            controls.KeyboardStatusLabel.ForeColor = viewModel.IsKeyboardBlocked ? _uiSettings.ErrorColor : _uiSettings.SuccessColor;
 
-            // Update toggle button
-            controls.ToggleButton.Text = toggleButtonText;
+            controls.KeyboardToggleButton.Text = viewModel.KeyboardToggleButtonText;
             
             // Only update button color if it's enabled (not processing)
-            if (controls.ToggleButton.Enabled)
+            if (controls.KeyboardToggleButton.Enabled)
             {
-                controls.ToggleButton.BackColor = isKeyboardBlocked ? _uiSettings.DangerButtonColor : _uiSettings.PrimaryButtonColor;
+                controls.KeyboardToggleButton.BackColor = viewModel.IsKeyboardBlocked ? _uiSettings.DangerButtonColor : _uiSettings.PrimaryButtonColor;
             }
 
-            // Update last toggle time
-            controls.LastToggleLabel.Text = $"Last toggle: {lastToggleTime:HH:mm:ss}";
+            controls.KeyboardLastToggleLabel.Text = $"Last toggle: {viewModel.KeyboardLastToggleTime:HH:mm:ss}";
 
             // Update logo appearance
-            _logoManager.UpdateLogoState(controls.LogoIcon, isKeyboardBlocked);
+            _logoManager.UpdateLogoState(controls.KeyboardLogoIcon, viewModel.IsKeyboardBlocked);
+
+            // Update mouse tab
+            controls.MouseStatusLabel.Text = viewModel.MouseStatusText;
+            controls.MouseStatusLabel.ForeColor = viewModel.IsMouseBlocked ? _uiSettings.ErrorColor : _uiSettings.SuccessColor;
+
+            controls.MouseToggleButton.Text = viewModel.MouseToggleButtonText;
+            
+            // Only update button color if it's enabled (not processing)
+            if (controls.MouseToggleButton.Enabled)
+            {
+                controls.MouseToggleButton.BackColor = viewModel.IsMouseBlocked ? _uiSettings.DangerButtonColor : _uiSettings.PrimaryButtonColor;
+            }
+
+            controls.MouseLastToggleLabel.Text = $"Last toggle: {viewModel.MouseLastToggleTime:HH:mm:ss}";
+
+            // Update logo appearance
+            _logoManager.UpdateLogoState(controls.MouseLogoIcon, viewModel.IsMouseBlocked);
         }
 
         /// <summary>
@@ -278,11 +411,11 @@ namespace SimBlock.Presentation.Managers
         /// <summary>
         /// Updates the keyboard name label
         /// </summary>
-        public void UpdateKeyboardNameLabel(Label keyboardNameLabel, string keyboardName)
+        public void UpdateDeviceNameLabel(Label deviceNameLabel, string deviceName)
         {
-            if (keyboardNameLabel != null)
+            if (deviceNameLabel != null)
             {
-                keyboardNameLabel.Text = keyboardName;
+                deviceNameLabel.Text = deviceName;
             }
         }
     }

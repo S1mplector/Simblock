@@ -17,10 +17,12 @@ namespace SimBlock.Presentation.Forms
     public partial class MainForm : Form
     {
         private readonly IKeyboardBlockerService _keyboardBlockerService;
+        private readonly IMouseBlockerService _mouseBlockerService;
         private readonly ILogger<MainForm> _logger;
         private readonly MainWindowViewModel _viewModel;
         private readonly IResourceMonitor _resourceMonitor;
         private readonly IKeyboardInfoService _keyboardInfoService;
+        private readonly IMouseInfoService _mouseInfoService;
         private readonly IServiceProvider _serviceProvider;
         
         // UI Managers
@@ -43,6 +45,7 @@ namespace SimBlock.Presentation.Forms
 
         public MainForm(
             IKeyboardBlockerService keyboardBlockerService,
+            IMouseBlockerService mouseBlockerService,
             ILogger<MainForm> logger,
             UISettings uiSettings,
             IStatusBarManager statusBarManager,
@@ -52,9 +55,11 @@ namespace SimBlock.Presentation.Forms
             IResourceMonitor resourceMonitor,
             IThemeManager themeManager,
             IKeyboardInfoService keyboardInfoService,
+            IMouseInfoService mouseInfoService,
             IServiceProvider serviceProvider)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
+            _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
             _statusBarManager = statusBarManager ?? throw new ArgumentNullException(nameof(statusBarManager));
@@ -64,6 +69,7 @@ namespace SimBlock.Presentation.Forms
             _resourceMonitor = resourceMonitor ?? throw new ArgumentNullException(nameof(resourceMonitor));
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _keyboardInfoService = keyboardInfoService ?? throw new ArgumentNullException(nameof(keyboardInfoService));
+            _mouseInfoService = mouseInfoService ?? throw new ArgumentNullException(nameof(mouseInfoService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             
             _viewModel = new MainWindowViewModel();
@@ -73,8 +79,9 @@ namespace SimBlock.Presentation.Forms
             InitializeTimer();
             UpdateUI();
             
-            // Load keyboard name initially
+            // Load keyboard and mouse names initially
             _ = LoadKeyboardNameAsync();
+            _ = LoadMouseNameAsync();
             
             // Ensure window is visible and focused on startup
             this.Load += (s, e) =>
@@ -99,12 +106,16 @@ namespace SimBlock.Presentation.Forms
 
         private void InitializeEventHandlers()
         {
-            _uiControls.ToggleButton.Click += OnToggleButtonClick;
+            _uiControls.KeyboardToggleButton.Click += OnKeyboardToggleButtonClick;
+            _uiControls.MouseToggleButton.Click += OnMouseToggleButtonClick;
             _uiControls.HideToTrayButton.Click += OnHideToTrayButtonClick;
             _uiControls.SettingsButton.Click += OnSettingsButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
             _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
             _keyboardBlockerService.ShowWindowRequested += OnShowWindowRequested;
+            _mouseBlockerService.StateChanged += OnMouseStateChanged;
+            _mouseBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
+            _mouseBlockerService.ShowWindowRequested += OnShowWindowRequested;
 
             // Handle form closing
             FormClosing += OnFormClosing;
@@ -113,7 +124,7 @@ namespace SimBlock.Presentation.Forms
             KeyDown += OnKeyDown;
             
             // Wire up shortcut manager events
-            _shortcutManager.ToggleRequested += (s, e) => OnToggleButtonClick(s, e);
+            _shortcutManager.ToggleRequested += (s, e) => OnKeyboardToggleButtonClick(s, e);
             _shortcutManager.HideToTrayRequested += (s, e) => OnHideToTrayButtonClick(s, e);
             _shortcutManager.HelpRequested += (s, e) => _shortcutManager.ShowHelp();
             _shortcutManager.SettingsRequested += (s, e) => OnSettingsButtonClick(s, e);
@@ -133,27 +144,52 @@ namespace SimBlock.Presentation.Forms
             _statusTimer.Tick += OnStatusTimerTick;
         }
 
-        private async void OnToggleButtonClick(object? sender, EventArgs e)
+        private async void OnKeyboardToggleButtonClick(object? sender, EventArgs e)
         {
             try
             {
-                _logger.LogInformation("Toggle button clicked");
+                _logger.LogInformation("Keyboard toggle button clicked");
                 
                 // Set button to processing state
-                _layoutManager.SetToggleButtonProcessing(_uiControls.ToggleButton, true);
+                _layoutManager.SetToggleButtonProcessing(_uiControls.KeyboardToggleButton, true);
                 
                 await _keyboardBlockerService.ToggleBlockingAsync();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error toggling keyboard blocking");
-                MessageBox.Show($"Failed to toggle keyboard blocking.\n\nError: {ex.Message}", 
+                MessageBox.Show($"Failed to toggle keyboard blocking.\n\nError: {ex.Message}",
                     "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
                 // Re-enable button and update UI
-                _layoutManager.SetToggleButtonProcessing(_uiControls.ToggleButton, false);
+                _layoutManager.SetToggleButtonProcessing(_uiControls.KeyboardToggleButton, false);
+                UpdateUI();
+            }
+        }
+
+        private async void OnMouseToggleButtonClick(object? sender, EventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("Mouse toggle button clicked");
+                
+                // Set button to processing state
+                _layoutManager.SetToggleButtonProcessing(_uiControls.MouseToggleButton, true);
+                
+                await _mouseBlockerService.ToggleBlockingAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling mouse blocking");
+                MessageBox.Show($"Failed to toggle mouse blocking.\n\nError: {ex.Message}",
+                    "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // Re-enable button and update UI
+                _layoutManager.SetToggleButtonProcessing(_uiControls.MouseToggleButton, false);
                 UpdateUI();
             }
         }
@@ -222,9 +258,22 @@ namespace SimBlock.Presentation.Forms
                 return;
             }
 
-            _viewModel.UpdateFromState(state);
+            _viewModel.UpdateFromKeyboardState(state);
             UpdateUI();
-            _statusBarManager.UpdateBlockingState(state.IsBlocked);
+            _statusBarManager.UpdateBlockingState(state.IsBlocked || _viewModel.IsMouseBlocked);
+        }
+
+        private void OnMouseStateChanged(object? sender, MouseBlockState state)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnMouseStateChanged(sender, state)));
+                return;
+            }
+
+            _viewModel.UpdateFromMouseState(state);
+            UpdateUI();
+            _statusBarManager.UpdateBlockingState(_viewModel.IsKeyboardBlocked || state.IsBlocked);
         }
 
         private void OnStatusTimerTick(object? sender, EventArgs e)
@@ -241,10 +290,11 @@ namespace SimBlock.Presentation.Forms
             // Update resource usage
             UpdateResourceUsage();
             
-            // Update keyboard name periodically (every 30 seconds)
+            // Update keyboard and mouse names periodically (every 30 seconds)
             if (DateTime.Now.Second % 30 == 0)
             {
                 _ = LoadKeyboardNameAsync();
+                _ = LoadMouseNameAsync();
             }
         }
 
@@ -252,9 +302,10 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                // Check if the keyboard service is working properly
-                var currentState = _keyboardBlockerService.CurrentState;
-                bool isActive = currentState != null;
+                // Check if the keyboard or mouse services are working properly
+                var keyboardState = _keyboardBlockerService.CurrentState;
+                var mouseState = _mouseBlockerService.CurrentState;
+                bool isActive = keyboardState != null || mouseState != null;
                 _statusBarManager.UpdateHookStatus(isActive);
             }
             catch (Exception ex)
@@ -289,11 +340,11 @@ namespace SimBlock.Presentation.Forms
                 
                 if (InvokeRequired)
                 {
-                    Invoke(new Action(() => _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, keyboardName)));
+                    Invoke(new Action(() => _layoutManager.UpdateDeviceNameLabel(_uiControls.KeyboardNameLabel, keyboardName)));
                 }
                 else
                 {
-                    _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, keyboardName);
+                    _layoutManager.UpdateDeviceNameLabel(_uiControls.KeyboardNameLabel, keyboardName);
                 }
             }
             catch (Exception ex)
@@ -302,11 +353,41 @@ namespace SimBlock.Presentation.Forms
                 
                 if (InvokeRequired)
                 {
-                    Invoke(new Action(() => _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, "Keyboard info unavailable")));
+                    Invoke(new Action(() => _layoutManager.UpdateDeviceNameLabel(_uiControls.KeyboardNameLabel, "Keyboard info unavailable")));
                 }
                 else
                 {
-                    _layoutManager.UpdateKeyboardNameLabel(_uiControls.KeyboardNameLabel, "Keyboard info unavailable");
+                    _layoutManager.UpdateDeviceNameLabel(_uiControls.KeyboardNameLabel, "Keyboard info unavailable");
+                }
+            }
+        }
+
+        private async Task LoadMouseNameAsync()
+        {
+            try
+            {
+                var mouseName = await _mouseInfoService.GetCurrentMouseNameAsync();
+                
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => _layoutManager.UpdateDeviceNameLabel(_uiControls.MouseNameLabel, mouseName)));
+                }
+                else
+                {
+                    _layoutManager.UpdateDeviceNameLabel(_uiControls.MouseNameLabel, mouseName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading mouse name");
+                
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => _layoutManager.UpdateDeviceNameLabel(_uiControls.MouseNameLabel, "Mouse info unavailable")));
+                }
+                else
+                {
+                    _layoutManager.UpdateDeviceNameLabel(_uiControls.MouseNameLabel, "Mouse info unavailable");
                 }
             }
         }
@@ -369,8 +450,8 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                // Only show emergency feedback when keyboard is blocked
-                if (!_viewModel.IsKeyboardBlocked)
+                // Only show emergency feedback when keyboard or mouse is blocked
+                if (!_viewModel.IsKeyboardBlocked && !_viewModel.IsMouseBlocked)
                     return;
 
                 // Don't start new feedback if already showing
@@ -388,9 +469,17 @@ namespace SimBlock.Presentation.Forms
                 // Mark that we're showing emergency feedback
                 _showingEmergencyFeedback = true;
                 
-                // Temporarily change the toggle button text to show emergency feedback
-                _uiControls.ToggleButton.Text = $"Emergency: {attemptCount}/3";
-                _uiControls.ToggleButton.BackColor = _uiSettings.ErrorColor;
+                // Temporarily change the appropriate toggle button text to show emergency feedback
+                if (_viewModel.IsKeyboardBlocked)
+                {
+                    _uiControls.KeyboardToggleButton.Text = $"Emergency: {attemptCount}/3";
+                    _uiControls.KeyboardToggleButton.BackColor = _uiSettings.ErrorColor;
+                }
+                if (_viewModel.IsMouseBlocked)
+                {
+                    _uiControls.MouseToggleButton.Text = $"Emergency: {attemptCount}/3";
+                    _uiControls.MouseToggleButton.BackColor = _uiSettings.ErrorColor;
+                }
                 
                 // Reset button after 1 second
                 _emergencyFeedbackTimer = new System.Windows.Forms.Timer();
@@ -436,8 +525,7 @@ namespace SimBlock.Presentation.Forms
 
         private void UpdateUI()
         {
-            _layoutManager.UpdateUI(_uiControls, _viewModel.IsKeyboardBlocked, _viewModel.StatusText,
-                _viewModel.ToggleButtonText, _viewModel.LastToggleTime);
+            _layoutManager.UpdateUI(_uiControls, _viewModel);
         }
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -460,8 +548,10 @@ namespace SimBlock.Presentation.Forms
                 _statusTimer?.Dispose();
                 _emergencyFeedbackTimer?.Stop();
                 _emergencyFeedbackTimer?.Dispose();
-                _uiControls?.LogoIcon?.Image?.Dispose();
-                _uiControls?.LogoIcon?.Dispose();
+                _uiControls?.KeyboardLogoIcon?.Image?.Dispose();
+                _uiControls?.KeyboardLogoIcon?.Dispose();
+                _uiControls?.MouseLogoIcon?.Image?.Dispose();
+                _uiControls?.MouseLogoIcon?.Dispose();
                 _logoManager?.Dispose();
                 _resourceMonitor?.Dispose();
             }

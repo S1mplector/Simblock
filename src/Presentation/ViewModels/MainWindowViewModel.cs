@@ -7,17 +7,32 @@ namespace SimBlock.Presentation.ViewModels
     /// </summary>
     public class MainWindowViewModel
     {
+        // Keyboard properties
         public bool IsKeyboardBlocked { get; set; }
-        public string StatusText { get; set; } = "Keyboard is unlocked";
-        public string ToggleButtonText { get; set; } = "Block Keyboard";
-        public DateTime LastToggleTime { get; set; }
+        public string KeyboardStatusText { get; set; } = "Keyboard is unlocked";
+        public string KeyboardToggleButtonText { get; set; } = "Block Keyboard";
+        public DateTime KeyboardLastToggleTime { get; set; }
         
-        public void UpdateFromState(KeyboardBlockState state)
+        // Mouse properties
+        public bool IsMouseBlocked { get; set; }
+        public string MouseStatusText { get; set; } = "Mouse is unlocked";
+        public string MouseToggleButtonText { get; set; } = "Block Mouse";
+        public DateTime MouseLastToggleTime { get; set; }
+        
+        public void UpdateFromKeyboardState(KeyboardBlockState state)
         {
             IsKeyboardBlocked = state.IsBlocked;
-            StatusText = state.IsBlocked ? "Keyboard is BLOCKED" : "Keyboard is unlocked";
-            ToggleButtonText = state.IsBlocked ? "Unblock Keyboard" : "Block Keyboard";
-            LastToggleTime = state.LastToggleTime;
+            KeyboardStatusText = state.IsBlocked ? "Keyboard is BLOCKED" : "Keyboard is unlocked";
+            KeyboardToggleButtonText = state.IsBlocked ? "Unblock Keyboard" : "Block Keyboard";
+            KeyboardLastToggleTime = state.LastToggleTime;
+        }
+        
+        public void UpdateFromMouseState(MouseBlockState state)
+        {
+            IsMouseBlocked = state.IsBlocked;
+            MouseStatusText = state.IsBlocked ? "Mouse is BLOCKED" : "Mouse is unlocked";
+            MouseToggleButtonText = state.IsBlocked ? "Unblock Mouse" : "Block Mouse";
+            MouseLastToggleTime = state.LastToggleTime;
         }
     }
 }
