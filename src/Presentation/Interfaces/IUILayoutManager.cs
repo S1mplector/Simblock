@@ -21,6 +21,7 @@ namespace SimBlock.Presentation.Interfaces
             public Button HideToTrayButton { get; set; } = null!;
             public Button SettingsButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
+            public Label PrivacyNoticeLabel { get; set; } = null!;
         }
 
         /// <summary>

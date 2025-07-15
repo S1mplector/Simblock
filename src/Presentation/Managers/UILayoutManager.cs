@@ -36,6 +36,7 @@ namespace SimBlock.Presentation.Managers
             public Button HideToTrayButton { get; set; } = null!;
             public Button SettingsButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
+            public Label PrivacyNoticeLabel { get; set; } = null!;
         }
 
         /// <summary>
@@ -156,6 +157,16 @@ namespace SimBlock.Presentation.Managers
             controls.InstructionsLabel = new Label
             {
                 Text = "Space: Toggle • Esc: Hide • F1: Help • F2: Settings • Emergency: Ctrl+Alt+U (3x)",
+                Font = new Font("Segoe UI", 9),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                ForeColor = _uiSettings.InactiveColor
+            };
+
+            // Privacy notice label
+            controls.PrivacyNoticeLabel = new Label
+            {
+                Text = "SimBlock doesn't collect, intercept or transmit any personal data. You're welcome to inspect the source code.",
                 Font = new Font("Segoe UI", 8),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Fill,
@@ -171,7 +182,7 @@ namespace SimBlock.Presentation.Managers
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 8,
+                RowCount = 9,
                 Padding = new Padding(_uiSettings.WindowPadding),
                 BackColor = _uiSettings.BackgroundColor
             };
@@ -198,6 +209,7 @@ namespace SimBlock.Presentation.Managers
             
             mainPanel.Controls.Add(buttonPanel, 0, 5);
             mainPanel.Controls.Add(controls.InstructionsLabel, 0, 6);
+            mainPanel.Controls.Add(controls.PrivacyNoticeLabel, 0, 7);
 
             // Set row styles
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Status text
@@ -206,7 +218,8 @@ namespace SimBlock.Presentation.Managers
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 20)); // Toggle button
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Last toggle
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 15)); // Button panel
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Instructions
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 5));  // Instructions
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 5));  // Privacy notice
 
             return mainPanel;
         }
