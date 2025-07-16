@@ -3,18 +3,18 @@
     <br><br>
 </div>
 
-# SimBlock - Simple Keyboard Blocker
+# SimBlock - Simple Input Device Blocker Utility
 
-A very lightweight Windows application that allows you to temporarily block all keyboard input globally with a single toggle button, designed to safely clean your keyboard.
+A very lightweight Windows application that allows you to temporarily block all keyboard 
+and mouse input globally with a single toggle button, designed to safely clean your peripherals.
 
 ## Features
 
--  **One-Click Toggle** - Simple button to block/unblock keyboard input
--  **Global Keyboard Blocking** - Blocks all keyboard input system-wide
--  **Emergency Unlock** - Ctrl+Alt+U combination to unlock in case of issues
+-  **One-Click Toggle** - Simple button to block/unblock keyboard / mouse input
+-  **Global Blocking** - Blocks all input system-wide
+-  **Emergency Unlock** - Key combination of choice to revert the block state in case of issues
 -  **System Tray Integration** - Minimize to tray and toggle from tray icon
--  **Clean Architecture** - Layered design with dependency injection
--  **Windows Native** - Uses Win32 API for reliable keyboard hooking
+-  **Windows Native** - Uses Win32 API for reliable keyboard and mouse hooking
 
 ## Screenshots
 
@@ -22,15 +22,17 @@ A very lightweight Windows application that allows you to temporarily block all 
   <img src="docs/images/main_interface.png" alt="Main Interface" width="600">
   <p><i>Main interface</i></p>
   
-  <img src="docs/images/tray.png" alt="Mini Player" width="300">
-  <p><i>Widget inside the application tray</i></p>
+   <img src="docs/images/settings.png" alt="Settings" width="300">
+   <p><i>User configurable settings</i></p>
+
+   <img src="docs/images/tray.png" alt="Tray" width="300">
+  <p><i>Minimized to tray</i></p>
 </div>
 
 ## Emergency Unlock
 
 If the application becomes unresponsive or you need to quickly unlock:
-- Press **Ctrl+Alt+U** **three times in quick succession** (within 2 seconds) to immediately unlock the keyboard
-- This works even when the keyboard is globally blocked
+- Press **Ctrl+Alt+U** (by default) **three times in quick succession** (within 2 seconds) to immediately unlock the keyboard. The shortcut can be changed in settings.
 - The triple-press requirement prevents accidental unlocks
 
 ## Architecture
@@ -76,10 +78,10 @@ src/
 ## Usage
 
 1. Launch the application
-2. Click "Block Keyboard" to prevent all keyboard input
-3. Clean your keyboard safely
-4. Click "Unblock Keyboard" or use the emergency combination (Ctrl+Alt+U)
-5. Minimize to system tray for easy access
+2. Click "Block Keyboard" or "Block Mouse" toggle buttons to prevent all peripheral input
+3. Clean your devices safely
+4. Click the toggle button again or use the emergency combination
+5. Minimize to system tray for easy access, click on the icon to toggle state
 
 ## Security Note
 
