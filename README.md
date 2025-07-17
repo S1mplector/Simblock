@@ -22,7 +22,7 @@ and mouse input globally with a single toggle button, designed to safely clean y
   <img src="docs/images/main_interface.png" alt="Main Interface" width="600">
   <p><i>Main interface</i></p>
   
-   <img src="docs/images/settings.png" alt="Settings" width="300">
+   <img src="docs/images/settings.png" alt="Settings" width="400">
    <p><i>User configurable settings</i></p>
 
    <img src="docs/images/tray.png" alt="Tray" width="300">
