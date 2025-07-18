@@ -23,17 +23,18 @@ namespace SimBlock.Presentation.Controls
         private readonly Dictionary<string, string> _componentLabels = new();
         
         // Drawing constants
-        private const int MouseWidth = 80;
-        private const int MouseHeight = 120;
-        private const int ButtonHeight = 25;
-        private const int WheelSize = 20;
+        private const int MouseWidth = 100;
+        private const int MouseHeight = 140;
+        private const int ButtonHeight = 30;
+        private const int WheelSize = 16;
         
         // Color scheme
         private Color _blockedColor = Color.Red;
         private Color _allowedColor = Color.LightGreen;
         private Color _neutralColor = Color.LightGray;
         private Color _textColor = Color.Black;
-        private Color _mouseBodyColor = Color.Silver;
+        private Color _mouseBodyColor = Color.FromArgb(220, 220, 220);
+        private Color _mouseBodyShadow = Color.FromArgb(180, 180, 180);
 
         public MouseVisualizationControl(UISettings uiSettings)
         {
@@ -52,7 +53,7 @@ namespace SimBlock.Presentation.Controls
                     ControlStyles.ResizeRedraw, true);
             
             BackColor = Color.Transparent;
-            Size = new Size(200, 200);
+            Size = new Size(220, 220);
             
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
@@ -62,43 +63,39 @@ namespace SimBlock.Presentation.Controls
         private void InitializeMouseLayout()
         {
             int centerX = Width / 2;
-            int startY = 20;
+            int startY = 25;
             
             // Main mouse body outline (for reference)
             int mouseX = centerX - MouseWidth / 2;
             _mouseComponents["MouseBody"] = new Rectangle(mouseX, startY, MouseWidth, MouseHeight);
             
-            // Left mouse button
-            _mouseComponents["LeftButton"] = new Rectangle(mouseX + 5, startY + 5, MouseWidth / 2 - 10, ButtonHeight);
-            _componentLabels["LeftButton"] = "L";
+            // Left mouse button - more realistic shape
+            _mouseComponents["LeftButton"] = new Rectangle(mouseX + 8, startY + 8, MouseWidth / 2 - 12, ButtonHeight);
+            _componentLabels["LeftButton"] = "LEFT";
             
-            // Right mouse button
-            _mouseComponents["RightButton"] = new Rectangle(mouseX + MouseWidth / 2 + 5, startY + 5, MouseWidth / 2 - 10, ButtonHeight);
-            _componentLabels["RightButton"] = "R";
+            // Right mouse button - more realistic shape
+            _mouseComponents["RightButton"] = new Rectangle(mouseX + MouseWidth / 2 + 4, startY + 8, MouseWidth / 2 - 12, ButtonHeight);
+            _componentLabels["RightButton"] = "RIGHT";
             
-            // Middle button / Wheel
-            _mouseComponents["MiddleButton"] = new Rectangle(centerX - WheelSize / 2, startY + ButtonHeight + 5, WheelSize, WheelSize);
-            _componentLabels["MiddleButton"] = "M";
+            // Unified wheel/middle button indicator between left and right buttons
+            _mouseComponents["WheelMiddle"] = new Rectangle(centerX - WheelSize / 2, startY + ButtonHeight + 8, WheelSize, WheelSize);
+            _componentLabels["WheelMiddle"] = "MID";
             
-            // Mouse wheel (visual representation)
-            _mouseComponents["MouseWheel"] = new Rectangle(centerX - WheelSize / 2, startY + ButtonHeight + 5, WheelSize, WheelSize);
-            _componentLabels["MouseWheel"] = "⚙";
-            
-            // X1 Button (side button)
-            _mouseComponents["X1Button"] = new Rectangle(mouseX - 15, startY + 40, 12, 20);
+            // X1 Button (side button) - positioned inside mouse body
+            _mouseComponents["X1Button"] = new Rectangle(mouseX + 5, startY + 50, 14, 25);
             _componentLabels["X1Button"] = "X1";
             
-            // X2 Button (side button)
-            _mouseComponents["X2Button"] = new Rectangle(mouseX - 15, startY + 65, 12, 20);
+            // X2 Button (side button) - positioned inside mouse body
+            _mouseComponents["X2Button"] = new Rectangle(mouseX + 5, startY + 80, 14, 25);
             _componentLabels["X2Button"] = "X2";
             
-            // Mouse Movement indicator (bottom area)
-            _mouseComponents["MouseMovement"] = new Rectangle(mouseX + 10, startY + MouseHeight - 25, MouseWidth - 20, 20);
-            _componentLabels["MouseMovement"] = "Movement";
+            // Mouse Sensor indicator (bottom area) - renamed from Movement
+            _mouseComponents["MouseSensor"] = new Rectangle(mouseX + 15, startY + MouseHeight - 30, MouseWidth - 30, 22);
+            _componentLabels["MouseSensor"] = "SENSOR";
             
-            // Double click indicator (overlaid on left button)
-            _mouseComponents["DoubleClick"] = new Rectangle(mouseX + 5, startY + 5, MouseWidth / 2 - 10, ButtonHeight);
-            _componentLabels["DoubleClick"] = "2x";
+            // Double click indicator (overlaid on left button) - better positioned
+            _mouseComponents["DoubleClick"] = new Rectangle(mouseX + 8, startY + 8, MouseWidth / 2 - 12, ButtonHeight);
+            _componentLabels["DoubleClick"] = "2×";
         }
 
         private void InitializeColors()
@@ -108,7 +105,8 @@ namespace SimBlock.Presentation.Controls
             _allowedColor = _uiSettings.SuccessColor;
             _neutralColor = _uiSettings.BackgroundColor;
             _textColor = _uiSettings.TextColor;
-            _mouseBodyColor = Color.FromArgb(200, 200, 200);
+            _mouseBodyColor = Color.FromArgb(220, 220, 220);
+            _mouseBodyShadow = Color.FromArgb(180, 180, 180);
         }
 
         /// <summary>
@@ -135,21 +133,38 @@ namespace SimBlock.Presentation.Controls
             
             // Draw mouse components
             DrawMouseComponents(g);
-            
-            // Draw legend
-            DrawLegend(g);
         }
 
         private void DrawMouseBody(Graphics g)
         {
             var mouseBody = _mouseComponents["MouseBody"];
             
-            // Draw mouse body with rounded corners
-            using (var brush = new SolidBrush(_mouseBodyColor))
-            using (var pen = new Pen(_textColor, 2))
+            // Draw mouse body shadow first (offset slightly)
+            using (var shadowBrush = new SolidBrush(_mouseBodyShadow))
+            {
+                var shadowPath = new System.Drawing.Drawing2D.GraphicsPath();
+                int radius = 20;
+                int shadowOffset = 2;
+                
+                var shadowRect = new Rectangle(mouseBody.X + shadowOffset, mouseBody.Y + shadowOffset,
+                                             mouseBody.Width, mouseBody.Height);
+                
+                shadowPath.AddArc(shadowRect.X, shadowRect.Y, radius, radius, 180, 90);
+                shadowPath.AddArc(shadowRect.Right - radius, shadowRect.Y, radius, radius, 270, 90);
+                shadowPath.AddArc(shadowRect.Right - radius, shadowRect.Bottom - radius, radius, radius, 0, 90);
+                shadowPath.AddArc(shadowRect.X, shadowRect.Bottom - radius, radius, radius, 90, 90);
+                shadowPath.CloseFigure();
+                
+                g.FillPath(shadowBrush, shadowPath);
+            }
+            
+            // Draw mouse body with gradient effect
+            using (var gradientBrush = new System.Drawing.Drawing2D.LinearGradientBrush(
+                mouseBody, _mouseBodyColor, _mouseBodyShadow, 45f))
+            using (var pen = new Pen(_textColor, 1.5f))
             {
                 var path = new System.Drawing.Drawing2D.GraphicsPath();
-                int radius = 15;
+                int radius = 20;
                 
                 path.AddArc(mouseBody.X, mouseBody.Y, radius, radius, 180, 90);
                 path.AddArc(mouseBody.Right - radius, mouseBody.Y, radius, radius, 270, 90);
@@ -157,8 +172,24 @@ namespace SimBlock.Presentation.Controls
                 path.AddArc(mouseBody.X, mouseBody.Bottom - radius, radius, radius, 90, 90);
                 path.CloseFigure();
                 
-                g.FillPath(brush, path);
+                g.FillPath(gradientBrush, path);
                 g.DrawPath(pen, path);
+            }
+            
+            // Add a subtle highlight on the top
+            using (var highlightBrush = new SolidBrush(Color.FromArgb(80, Color.White)))
+            {
+                var highlightPath = new System.Drawing.Drawing2D.GraphicsPath();
+                int radius = 20;
+                var highlightRect = new Rectangle(mouseBody.X + 5, mouseBody.Y + 5,
+                                                mouseBody.Width - 10, mouseBody.Height / 3);
+                
+                highlightPath.AddArc(highlightRect.X, highlightRect.Y, radius, radius, 180, 90);
+                highlightPath.AddArc(highlightRect.Right - radius, highlightRect.Y, radius, radius, 270, 90);
+                highlightPath.AddLine(highlightRect.Right, highlightRect.Bottom, highlightRect.X, highlightRect.Bottom);
+                highlightPath.CloseFigure();
+                
+                g.FillPath(highlightBrush, highlightPath);
             }
         }
 
@@ -186,7 +217,7 @@ namespace SimBlock.Presentation.Controls
                 // Draw component background
                 using (var brush = new SolidBrush(componentColor))
                 {
-                    if (component == "MouseWheel" || component == "MiddleButton")
+                    if (component == "WheelMiddle")
                     {
                         g.FillEllipse(brush, rect);
                     }
@@ -199,7 +230,7 @@ namespace SimBlock.Presentation.Controls
                 // Draw component border
                 using (var pen = new Pen(_textColor, 1))
                 {
-                    if (component == "MouseWheel" || component == "MiddleButton")
+                    if (component == "WheelMiddle")
                     {
                         g.DrawEllipse(pen, rect);
                     }
@@ -225,7 +256,7 @@ namespace SimBlock.Presentation.Controls
 
         private void DrawComponentLabel(Graphics g, Rectangle rect, string label, string component)
         {
-            using (var font = new Font("Arial", component == "MouseWheel" ? 10 : 6, FontStyle.Bold))
+            using (var font = new Font("Arial", component == "WheelMiddle" ? 8 : 6, FontStyle.Bold))
             using (var brush = new SolidBrush(_textColor))
             {
                 var textSize = g.MeasureString(label, font);
@@ -233,7 +264,7 @@ namespace SimBlock.Presentation.Controls
                 float textY = rect.Y + (rect.Height - textSize.Height) / 2;
                 
                 // Special positioning for certain components
-                if (component == "MouseMovement")
+                if (component == "MouseSensor")
                 {
                     textY = rect.Y + 2;
                 }
@@ -267,11 +298,10 @@ namespace SimBlock.Presentation.Controls
                 {
                     "LeftButton" => _advancedConfig.BlockLeftButton,
                     "RightButton" => _advancedConfig.BlockRightButton,
-                    "MiddleButton" => _advancedConfig.BlockMiddleButton,
+                    "WheelMiddle" => _advancedConfig.BlockMiddleButton || _advancedConfig.BlockMouseWheel,
                     "X1Button" => _advancedConfig.BlockX1Button,
                     "X2Button" => _advancedConfig.BlockX2Button,
-                    "MouseWheel" => _advancedConfig.BlockMouseWheel,
-                    "MouseMovement" => _advancedConfig.BlockMouseMovement,
+                    "MouseSensor" => _advancedConfig.BlockMouseMovement,
                     "DoubleClick" => _advancedConfig.BlockDoubleClick,
                     _ => false
                 };
@@ -343,7 +373,7 @@ namespace SimBlock.Presentation.Controls
                 if (_advancedConfig.BlockX1Button) blockedActions.Add("X1 Button");
                 if (_advancedConfig.BlockX2Button) blockedActions.Add("X2 Button");
                 if (_advancedConfig.BlockMouseWheel) blockedActions.Add("Mouse Wheel");
-                if (_advancedConfig.BlockMouseMovement) blockedActions.Add("Mouse Movement");
+                if (_advancedConfig.BlockMouseMovement) blockedActions.Add("Mouse Sensor");
                 if (_advancedConfig.BlockDoubleClick) blockedActions.Add("Double Click");
                 
                 if (blockedActions.Count == 0)

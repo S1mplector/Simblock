@@ -51,7 +51,7 @@ namespace SimBlock.Presentation.Controls
                     ControlStyles.ResizeRedraw, true);
             
             BackColor = Color.Transparent;
-            Size = new Size(600, 150);
+            Size = new Size(750, 200);
             
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
@@ -60,11 +60,43 @@ namespace SimBlock.Presentation.Controls
 
         private void InitializeKeyLayout()
         {
-            // Function keys row (F1-F12)
-            int x = 10;
-            int y = 10;
+            _keyLayout.Clear();
+            _keyLabels.Clear();
             
-            for (int i = 1; i <= 12; i++)
+            int startX = 10;
+            int startY = 10;
+            
+            // Row 1: ESC + Function keys with proper spacing
+            int x = startX;
+            int y = startY;
+            
+            // ESC key
+            _keyLayout[Keys.Escape] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.Escape] = "Esc";
+            x += KeyWidth + KeySpacing * 2; // Extra space after ESC
+            
+            // F1-F4 group
+            for (int i = 1; i <= 4; i++)
+            {
+                var key = (Keys)Enum.Parse(typeof(Keys), $"F{i}");
+                _keyLayout[key] = new Rectangle(x, y, KeyWidth, KeyHeight);
+                _keyLabels[key] = $"F{i}";
+                x += KeyWidth + KeySpacing;
+            }
+            x += KeySpacing; // Extra space between F4 and F5
+            
+            // F5-F8 group
+            for (int i = 5; i <= 8; i++)
+            {
+                var key = (Keys)Enum.Parse(typeof(Keys), $"F{i}");
+                _keyLayout[key] = new Rectangle(x, y, KeyWidth, KeyHeight);
+                _keyLabels[key] = $"F{i}";
+                x += KeyWidth + KeySpacing;
+            }
+            x += KeySpacing; // Extra space between F8 and F9
+            
+            // F9-F12 group
+            for (int i = 9; i <= 12; i++)
             {
                 var key = (Keys)Enum.Parse(typeof(Keys), $"F{i}");
                 _keyLayout[key] = new Rectangle(x, y, KeyWidth, KeyHeight);
@@ -72,10 +104,16 @@ namespace SimBlock.Presentation.Controls
                 x += KeyWidth + KeySpacing;
             }
             
-            // Number row (1-9, 0)
-            x = 10;
-            y += RowHeight;
+            // Row 2: Number row
+            x = startX;
+            y += RowHeight + 5; // Extra space after function keys
             
+            // Backtick key
+            _keyLayout[Keys.Oemtilde] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.Oemtilde] = "~";
+            x += KeyWidth + KeySpacing;
+            
+            // Number keys 1-9
             for (int i = 1; i <= 9; i++)
             {
                 var key = (Keys)Enum.Parse(typeof(Keys), $"D{i}");
@@ -84,15 +122,36 @@ namespace SimBlock.Presentation.Controls
                 x += KeyWidth + KeySpacing;
             }
             
-            // Add 0 key
+            // 0 key
             _keyLayout[Keys.D0] = new Rectangle(x, y, KeyWidth, KeyHeight);
             _keyLabels[Keys.D0] = "0";
+            x += KeyWidth + KeySpacing;
+            
+            // Minus key
+            _keyLayout[Keys.OemMinus] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemMinus] = "-";
+            x += KeyWidth + KeySpacing;
+            
+            // Equals key
+            _keyLayout[Keys.Oemplus] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.Oemplus] = "=";
+            x += KeyWidth + KeySpacing;
+            
+            // Backspace key (wider)
+            _keyLayout[Keys.Back] = new Rectangle(x, y, KeyWidth * 2, KeyHeight);
+            _keyLabels[Keys.Back] = "Backspace";
+            
+            // Row 3: Tab + QWERTY row
+            x = startX;
+            y += RowHeight;
+            
+            // Tab key (wider)
+            _keyLayout[Keys.Tab] = new Rectangle(x, y, KeyWidth + 15, KeyHeight);
+            _keyLabels[Keys.Tab] = "Tab";
+            x += KeyWidth + 15 + KeySpacing;
             
             // QWERTY row
-            x = 10;
-            y += RowHeight;
             string qwertyRow = "QWERTYUIOP";
-            
             for (int i = 0; i < qwertyRow.Length; i++)
             {
                 var key = (Keys)Enum.Parse(typeof(Keys), qwertyRow[i].ToString());
@@ -101,11 +160,31 @@ namespace SimBlock.Presentation.Controls
                 x += KeyWidth + KeySpacing;
             }
             
-            // ASDF row
-            x = 25; // Slight offset for typical keyboard layout
-            y += RowHeight;
-            string asdfRow = "ASDFGHJKL";
+            // [ key
+            _keyLayout[Keys.OemOpenBrackets] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemOpenBrackets] = "[";
+            x += KeyWidth + KeySpacing;
             
+            // ] key
+            _keyLayout[Keys.OemCloseBrackets] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemCloseBrackets] = "]";
+            x += KeyWidth + KeySpacing;
+            
+            // \ key
+            _keyLayout[Keys.OemBackslash] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemBackslash] = "\\";
+            
+            // Row 4: Caps Lock + ASDF row
+            x = startX;
+            y += RowHeight;
+            
+            // Caps Lock key (wider)
+            _keyLayout[Keys.CapsLock] = new Rectangle(x, y, KeyWidth + 20, KeyHeight);
+            _keyLabels[Keys.CapsLock] = "Caps Lock";
+            x += KeyWidth + 20 + KeySpacing;
+            
+            // ASDF row
+            string asdfRow = "ASDFGHJKL";
             for (int i = 0; i < asdfRow.Length; i++)
             {
                 var key = (Keys)Enum.Parse(typeof(Keys), asdfRow[i].ToString());
@@ -114,11 +193,31 @@ namespace SimBlock.Presentation.Controls
                 x += KeyWidth + KeySpacing;
             }
             
-            // ZXCV row
-            x = 40; // Larger offset for typical keyboard layout
-            y += RowHeight;
-            string zxcvRow = "ZXCVBNM";
+            // ; key
+            _keyLayout[Keys.OemSemicolon] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemSemicolon] = ";";
+            x += KeyWidth + KeySpacing;
             
+            // ' key
+            _keyLayout[Keys.OemQuotes] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemQuotes] = "'";
+            x += KeyWidth + KeySpacing;
+            
+            // Enter key (wider)
+            _keyLayout[Keys.Enter] = new Rectangle(x, y, KeyWidth + 25, KeyHeight);
+            _keyLabels[Keys.Enter] = "Enter";
+            
+            // Row 5: Shift + ZXCV row
+            x = startX;
+            y += RowHeight;
+            
+            // Left Shift key (wider)
+            _keyLayout[Keys.LShiftKey] = new Rectangle(x, y, KeyWidth + 30, KeyHeight);
+            _keyLabels[Keys.LShiftKey] = "Shift";
+            x += KeyWidth + 30 + KeySpacing;
+            
+            // ZXCV row
+            string zxcvRow = "ZXCVBNM";
             for (int i = 0; i < zxcvRow.Length; i++)
             {
                 var key = (Keys)Enum.Parse(typeof(Keys), zxcvRow[i].ToString());
@@ -127,49 +226,71 @@ namespace SimBlock.Presentation.Controls
                 x += KeyWidth + KeySpacing;
             }
             
-            // Add special keys
-            AddSpecialKeys();
-        }
-
-        private void AddSpecialKeys()
-        {
-            int bottomRowY = 10 + (RowHeight * 5);
-            int currentX = 10;
+            // , key
+            _keyLayout[Keys.Oemcomma] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.Oemcomma] = ",";
+            x += KeyWidth + KeySpacing;
             
-            // Bottom row modifier keys (left to right)
-            // Left Control
-            _keyLayout[Keys.LControlKey] = new Rectangle(currentX, bottomRowY, KeyWidth + 8, KeyHeight);
+            // . key
+            _keyLayout[Keys.OemPeriod] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemPeriod] = ".";
+            x += KeyWidth + KeySpacing;
+            
+            // / key
+            _keyLayout[Keys.OemQuestion] = new Rectangle(x, y, KeyWidth, KeyHeight);
+            _keyLabels[Keys.OemQuestion] = "/";
+            x += KeyWidth + KeySpacing;
+            
+            // Right Shift key (wider)
+            _keyLayout[Keys.RShiftKey] = new Rectangle(x, y, KeyWidth + 30, KeyHeight);
+            _keyLabels[Keys.RShiftKey] = "Shift";
+            
+            // Row 6: Bottom row with modifiers
+            x = startX;
+            y += RowHeight;
+            
+            // Left Ctrl
+            _keyLayout[Keys.LControlKey] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
             _keyLabels[Keys.LControlKey] = "Ctrl";
-            currentX += KeyWidth + 8 + KeySpacing;
+            x += KeyWidth + 10 + KeySpacing;
+            
+            // Left Win
+            _keyLayout[Keys.LWin] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
+            _keyLabels[Keys.LWin] = "Win";
+            x += KeyWidth + 10 + KeySpacing;
             
             // Left Alt
-            _keyLayout[Keys.LMenu] = new Rectangle(currentX, bottomRowY, KeyWidth + 8, KeyHeight);
+            _keyLayout[Keys.LMenu] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
             _keyLabels[Keys.LMenu] = "Alt";
-            currentX += KeyWidth + 8 + KeySpacing;
+            x += KeyWidth + 10 + KeySpacing;
             
-            // Space bar (larger)
-            _keyLayout[Keys.Space] = new Rectangle(currentX, bottomRowY, KeyWidth * 5, KeyHeight);
+            // Space bar (much wider)
+            _keyLayout[Keys.Space] = new Rectangle(x, y, KeyWidth * 6, KeyHeight);
             _keyLabels[Keys.Space] = "Space";
-            currentX += KeyWidth * 5 + KeySpacing;
+            x += KeyWidth * 6 + KeySpacing;
             
-            // Right Alt (Alt Gr)
-            _keyLayout[Keys.RMenu] = new Rectangle(currentX, bottomRowY, KeyWidth + 8, KeyHeight);
-            _keyLabels[Keys.RMenu] = "Alt Gr";
-            currentX += KeyWidth + 8 + KeySpacing;
+            // Right Alt
+            _keyLayout[Keys.RMenu] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
+            _keyLabels[Keys.RMenu] = "Alt";
+            x += KeyWidth + 10 + KeySpacing;
             
-            // Windows key (Right Windows)
-            _keyLayout[Keys.RWin] = new Rectangle(currentX, bottomRowY, KeyWidth + 8, KeyHeight);
+            // Right Win
+            _keyLayout[Keys.RWin] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
             _keyLabels[Keys.RWin] = "Win";
-            currentX += KeyWidth + 8 + KeySpacing;
+            x += KeyWidth + 10 + KeySpacing;
             
-            // Right Control
-            _keyLayout[Keys.RControlKey] = new Rectangle(currentX, bottomRowY, KeyWidth + 8, KeyHeight);
+            // Menu key
+            _keyLayout[Keys.Apps] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
+            _keyLabels[Keys.Apps] = "Menu";
+            x += KeyWidth + 10 + KeySpacing;
+            
+            // Right Ctrl
+            _keyLayout[Keys.RControlKey] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
             _keyLabels[Keys.RControlKey] = "Ctrl";
-            currentX += KeyWidth + 8 + KeySpacing * 3; // Extra spacing before arrows
             
-            // Arrow keys (positioned to the right with proper spacing)
-            int arrowX = currentX;
-            int arrowY = 10 + (RowHeight * 4);
+            // Arrow keys (positioned to the right of the main keyboard)
+            int arrowX = startX + KeyWidth * 16; // Position to the right, moved left
+            int arrowY = y - RowHeight; // One row above the bottom row
             
             // Up arrow (centered above left/down/right)
             _keyLayout[Keys.Up] = new Rectangle(arrowX + KeyWidth + KeySpacing, arrowY, KeyWidth, KeyHeight);
@@ -184,28 +305,8 @@ namespace SimBlock.Presentation.Controls
             
             _keyLayout[Keys.Right] = new Rectangle(arrowX + (KeyWidth + KeySpacing) * 2, arrowY + RowHeight, KeyWidth, KeyHeight);
             _keyLabels[Keys.Right] = "→";
-            
-            // Shift key (left side of ZXCV row)
-            _keyLayout[Keys.LShiftKey] = new Rectangle(10, 10 + (RowHeight * 4), KeyWidth + 8, KeyHeight);
-            _keyLabels[Keys.LShiftKey] = "Shift";
-            
-            // Add common keys that might be missing
-            // Tab key (left of QWERTY row)
-            _keyLayout[Keys.Tab] = new Rectangle(10, 10 + (RowHeight * 2), KeyWidth + 8, KeyHeight);
-            _keyLabels[Keys.Tab] = "Tab";
-            
-            // Caps Lock (left of ASDF row)
-            _keyLayout[Keys.CapsLock] = new Rectangle(10, 10 + (RowHeight * 3), KeyWidth + 8, KeyHeight);
-            _keyLabels[Keys.CapsLock] = "Caps";
-            
-            // Enter key (right of ASDF row)
-            _keyLayout[Keys.Enter] = new Rectangle(25 + (KeyWidth + KeySpacing) * 9, 10 + (RowHeight * 3), KeyWidth + 8, KeyHeight);
-            _keyLabels[Keys.Enter] = "Enter";
-            
-            // Backspace (right of number row)
-            _keyLayout[Keys.Back] = new Rectangle(10 + (KeyWidth + KeySpacing) * 10, 10 + RowHeight, KeyWidth + 8, KeyHeight);
-            _keyLabels[Keys.Back] = "⌫";
         }
+
 
         private void InitializeColors()
         {
@@ -298,7 +399,7 @@ namespace SimBlock.Presentation.Controls
 
         private void DrawLegend(Graphics g)
         {
-            int legendY = Height - 30;
+            int legendY = Height - 20;
             int legendX = 10;
             
             // Draw legend items
