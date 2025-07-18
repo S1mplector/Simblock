@@ -98,7 +98,7 @@ namespace SimBlock.Presentation.Forms
         {
             // Configure form properties
             Text = "Settings - SimBlock";
-            Size = new Size(650, 900); // Increased height to accommodate visualization controls
+            Size = new Size(650, 1100); // Further increased height to accommodate visualization controls
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -474,7 +474,7 @@ namespace SimBlock.Presentation.Forms
                 Text = "Select Mode - Click to Select Keys/Actions",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = _uiSettings.TextColor,
-                Size = new Size(600, 350),
+                Size = new Size(600, 500), // Further increased height for better visualization spacing
                 Visible = false // Initially hidden, shown only in Select mode
             };
 
@@ -482,14 +482,27 @@ namespace SimBlock.Presentation.Forms
             _keyboardVisualizationControl = new SimBlock.Presentation.Controls.KeyboardVisualizationControl(_uiSettings)
             {
                 Location = new Point(10, 25),
-                Size = new Size(570, 200)
+                Size = new Size(570, 190) // Slightly reduced to give more space
             };
 
-            // Create mouse visualization control
+            // Create mouse visualization control - with more adequate spacing from keyboard visualization
             _mouseVisualizationControl = new SimBlock.Presentation.Controls.MouseVisualizationControl(_uiSettings)
             {
-                Location = new Point(10, 235),
-                Size = new Size(570, 100)
+                Location = new Point(10, 220), // Moved up slightly for better layout
+                Size = new Size(570, 250) // Further increased height to ensure full visibility
+            };
+
+            // Hook up event handlers to save settings when selections change
+            _keyboardVisualizationControl.KeyClicked += (sender, key) =>
+            {
+                _logger.LogInformation("Key selection changed in visualization: {Key}", key);
+                SaveSettings(); // Save immediately when selection changes
+            };
+
+            _mouseVisualizationControl.ComponentClicked += (sender, component) =>
+            {
+                _logger.LogInformation("Mouse component selection changed: {Component}", component);
+                SaveSettings(); // Save immediately when selection changes
             };
 
             // Add controls to group box
@@ -874,10 +887,16 @@ namespace SimBlock.Presentation.Forms
                         if (_keyboardVisualizationControl != null)
                         {
                             _keyboardVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig, false);
+                            // Re-hook event handler after mode change
+                            _keyboardVisualizationControl.KeyClicked -= OnVisualizationKeyClicked;
+                            _keyboardVisualizationControl.KeyClicked += OnVisualizationKeyClicked;
                         }
                         if (_mouseVisualizationControl != null)
                         {
                             _mouseVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedMouseConfig, false);
+                            // Re-hook event handler after mode change
+                            _mouseVisualizationControl.ComponentClicked -= OnVisualizationComponentClicked;
+                            _mouseVisualizationControl.ComponentClicked += OnVisualizationComponentClicked;
                         }
                     }
                     
@@ -1241,10 +1260,16 @@ namespace SimBlock.Presentation.Forms
                 {
                     if (_keyboardVisualizationControl != null && _uiSettings.AdvancedKeyboardConfig != null)
                     {
+                        _logger.LogInformation("Loading Select mode keyboard visualization with {Count} selected keys",
+                            _uiSettings.AdvancedKeyboardConfig.SelectedKeys.Count);
                         _keyboardVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig, false);
                     }
                     if (_mouseVisualizationControl != null && _uiSettings.AdvancedMouseConfig != null)
                     {
+                        _logger.LogInformation("Loading Select mode mouse visualization with selections: Left={Left}, Right={Right}, Middle={Middle}",
+                            _uiSettings.AdvancedMouseConfig.SelectedLeftButton,
+                            _uiSettings.AdvancedMouseConfig.SelectedRightButton,
+                            _uiSettings.AdvancedMouseConfig.SelectedMiddleButton);
                         _mouseVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedMouseConfig, false);
                     }
                 }
@@ -1282,6 +1307,20 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
+                // Log Select mode selections before saving
+                if (_uiSettings.KeyboardBlockingMode == BlockingMode.Select && _uiSettings.AdvancedKeyboardConfig != null)
+                {
+                    _logger.LogInformation("Saving Select mode keyboard settings with {Count} selected keys",
+                        _uiSettings.AdvancedKeyboardConfig.SelectedKeys.Count);
+                }
+                if (_uiSettings.MouseBlockingMode == BlockingMode.Select && _uiSettings.AdvancedMouseConfig != null)
+                {
+                    _logger.LogInformation("Saving Select mode mouse settings - Left={Left}, Right={Right}, Middle={Middle}",
+                        _uiSettings.AdvancedMouseConfig.SelectedLeftButton,
+                        _uiSettings.AdvancedMouseConfig.SelectedRightButton,
+                        _uiSettings.AdvancedMouseConfig.SelectedMiddleButton);
+                }
+                
                 _settingsManager.SaveSettings();
                 _logger.LogInformation("Settings saved successfully");
             }
@@ -1289,6 +1328,18 @@ namespace SimBlock.Presentation.Forms
             {
                 _logger.LogError(ex, "Error saving settings");
             }
+        }
+
+        private void OnVisualizationKeyClicked(object? sender, Keys key)
+        {
+            _logger.LogInformation("Key selection changed in visualization: {Key}", key);
+            SaveSettings(); // Save immediately when selection changes
+        }
+
+        private void OnVisualizationComponentClicked(object? sender, string component)
+        {
+            _logger.LogInformation("Mouse component selection changed: {Component}", component);
+            SaveSettings(); // Save immediately when selection changes
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

@@ -21,10 +21,7 @@ namespace SimBlock.Infrastructure.Windows
         private NativeMethods.LowLevelMouseProc _proc;
 
         // Emergency unlock tracking (handled via keyboard service)
-        private int _emergencyUnlockCount = 0;
-        private DateTime _lastEmergencyKeyPress = DateTime.MinValue;
         private const int EMERGENCY_UNLOCK_REQUIRED_PRESSES = 3;
-        private const int EMERGENCY_UNLOCK_TIMEOUT_MS = 2000; // 2 seconds between presses
 
         public event EventHandler<MouseBlockState>? BlockStateChanged;
         public event EventHandler<int>? EmergencyUnlockAttempt;
@@ -213,14 +210,19 @@ namespace SimBlock.Infrastructure.Windows
         {
             try
             {
+                _logger.LogInformation("Mouse service received emergency unlock attempt from keyboard. Attempt count: {Count}/{Required}",
+                    attemptCount, EMERGENCY_UNLOCK_REQUIRED_PRESSES);
+                
                 // Forward the emergency unlock attempt event
                 EmergencyUnlockAttempt?.Invoke(this, attemptCount);
 
                 // If emergency unlock is successful, disable mouse blocking
                 if (attemptCount >= EMERGENCY_UNLOCK_REQUIRED_PRESSES)
                 {
-                    _logger.LogWarning("Emergency unlock activated via keyboard! Mouse will be unlocked.");
+                    _logger.LogWarning("Emergency unlock activated via keyboard! Mouse will be unlocked. Current mouse state: IsBlocked={IsBlocked}, Mode={Mode}",
+                        _state.IsBlocked, _state.Mode);
                     _ = SetBlockingAsync(false, "Emergency unlock (3x Ctrl+Alt+U)");
+                    _logger.LogInformation("Mouse SetBlockingAsync(false) called for emergency unlock");
                 }
             }
             catch (Exception ex)

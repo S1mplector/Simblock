@@ -146,7 +146,7 @@ namespace SimBlock.Infrastructure.Windows
                         var name = parts[3]?.Trim();
 
                         _logger.LogDebug("Parsing keyboard entry - Description: {Description}, DeviceID: {DeviceID}, Name: {Name}",
-                            description, deviceId, name);
+                            description ?? "null", deviceId ?? "null", name ?? "null");
 
                         // Determine keyboard type based on device ID and description
                         if (!string.IsNullOrEmpty(deviceId))
@@ -155,13 +155,13 @@ namespace SimBlock.Infrastructure.Windows
                             {
                                 if (!foundUSBKeyboard)
                                 {
-                                    bestKeyboardName = DetermineKeyboardType(deviceId, description, name);
+                                    bestKeyboardName = DetermineKeyboardType(deviceId, description ?? string.Empty, name ?? string.Empty);
                                     foundUSBKeyboard = true;
                                 }
                             }
                             else if (!foundUSBKeyboard && deviceId.Contains("HID"))
                             {
-                                bestKeyboardName = DetermineKeyboardType(deviceId, description, name);
+                                bestKeyboardName = DetermineKeyboardType(deviceId, description ?? string.Empty, name ?? string.Empty);
                             }
                         }
                     }
@@ -223,8 +223,11 @@ namespace SimBlock.Infrastructure.Windows
             return "Standard Keyboard";
         }
 
-        private string GetManufacturerFromVID(string vid)
+        private string? GetManufacturerFromVID(string? vid)
         {
+            if (string.IsNullOrEmpty(vid))
+                return null;
+                
             return vid.ToUpper() switch
             {
                 "0414" => "Logitech",

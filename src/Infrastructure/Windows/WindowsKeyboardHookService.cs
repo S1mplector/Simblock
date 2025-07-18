@@ -176,6 +176,15 @@ namespace SimBlock.Infrastructure.Windows
                 var kbStruct = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
                 int message = wParam.ToInt32();
                 
+                // Log all key events when debugging emergency unlock
+                if ((Keys)kbStruct.vkCode == Keys.U ||
+                    (Keys)kbStruct.vkCode == Keys.ControlKey ||
+                    (Keys)kbStruct.vkCode == Keys.Menu)
+                {
+                    _logger.LogInformation("Keyboard hook received key: {Key} (vkCode: {VkCode}), Message: {Message}, IsBlocked: {IsBlocked}, Mode: {Mode}",
+                        (Keys)kbStruct.vkCode, kbStruct.vkCode, message, _state.IsBlocked, _state.Mode);
+                }
+                
                 // Track modifier key states
                 TrackModifierKeys(kbStruct.vkCode, message);
                 
@@ -183,6 +192,7 @@ namespace SimBlock.Infrastructure.Windows
                 // Only trigger on key down events (WM_KEYDOWN = 0x0100)
                 if (message == NativeMethods.WM_KEYDOWN && IsEmergencyUnlockCombination(kbStruct.vkCode))
                 {
+                    _logger.LogInformation("Emergency unlock combination detected in keyboard hook");
                     HandleEmergencyUnlock();
                     // If keyboard is blocked, prevent this key from reaching applications
                     if (_state.IsBlocked)
@@ -307,11 +317,18 @@ namespace SimBlock.Infrastructure.Windows
                                                (_uiSettings.EmergencyUnlockRequiresShift && _shiftPressed);
                     
                     // Debug logging
-                    _logger.LogDebug("Emergency unlock key {Key} pressed. Ctrl: {CtrlPressed}/{CtrlRequired}, Alt: {AltPressed}/{AltRequired}, Shift: {ShiftPressed}/{ShiftRequired}",
-                        _uiSettings.EmergencyUnlockKey, _ctrlPressed, _uiSettings.EmergencyUnlockRequiresCtrl,
-                        _altPressed, _uiSettings.EmergencyUnlockRequiresAlt, _shiftPressed, _uiSettings.EmergencyUnlockRequiresShift);
+                    _logger.LogInformation("Emergency unlock key check - Key: {Key} (vkCode: {VkCode}, configuredCode: {ConfiguredCode}), " +
+                        "Ctrl: {CtrlPressed}/{CtrlRequired}, Alt: {AltPressed}/{AltRequired}, Shift: {ShiftPressed}/{ShiftRequired}, " +
+                        "HasRequiredModifiers: {HasMods}",
+                        _uiSettings.EmergencyUnlockKey, vkCode, configuredKeyCode,
+                        _ctrlPressed, _uiSettings.EmergencyUnlockRequiresCtrl,
+                        _altPressed, _uiSettings.EmergencyUnlockRequiresAlt,
+                        _shiftPressed, _uiSettings.EmergencyUnlockRequiresShift,
+                        hasRequiredModifiers);
                     
-                    return ctrlMatch && altMatch && shiftMatch && hasRequiredModifiers;
+                    bool result = ctrlMatch && altMatch && shiftMatch && hasRequiredModifiers;
+                    _logger.LogInformation("Emergency unlock combination check result: {Result}", result);
+                    return result;
                 }
             }
             catch (Exception ex)
