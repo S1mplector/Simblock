@@ -89,21 +89,7 @@ namespace SimBlock.Core.Application.Services
         /// </summary>
         public async Task SetSelectModeAsync(AdvancedKeyboardConfiguration config)
         {
-            Console.WriteLine($"KeyboardBlockerService.SetSelectModeAsync: BEFORE hook service call - Current mode: {CurrentState.Mode}");
-            _logger.LogInformation("KeyboardBlockerService.SetSelectModeAsync: BEFORE hook service call - Current mode: {CurrentMode}", CurrentState.Mode);
-            
-            try
-            {
-                await _hookService.SetSelectModeAsync(config, "User set select mode");
-                Console.WriteLine($"KeyboardBlockerService.SetSelectModeAsync: AFTER hook service call - Current mode: {CurrentState.Mode}");
-                _logger.LogInformation("KeyboardBlockerService.SetSelectModeAsync: AFTER hook service call - Current mode: {CurrentMode}", CurrentState.Mode);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"KeyboardBlockerService.SetSelectModeAsync: EXCEPTION: {ex.Message}");
-                _logger.LogError(ex, "KeyboardBlockerService.SetSelectModeAsync: Exception occurred");
-                throw;
-            }
+            await _hookService.SetSelectModeAsync(config, "User set select mode");
         }
         
         /// <summary>

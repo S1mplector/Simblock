@@ -774,22 +774,17 @@ namespace SimBlock.Presentation.Forms
 
         private async void OnBlockingModeChanged(object? sender, EventArgs e)
         {
-            Console.WriteLine("SettingsForm.OnBlockingModeChanged: Event triggered");
-            
             try
             {
                 var radioButton = sender as RadioButton;
-                Console.WriteLine($"SettingsForm.OnBlockingModeChanged: RadioButton={radioButton?.Text}, Checked={radioButton?.Checked}");
                 
                 if (radioButton?.Checked != true)
                 {
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Radio button not checked, returning");
                     return;
                 }
 
                 if (radioButton == _simpleModeRadioButton)
                 {
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Simple mode selected");
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Simple;
                     _uiSettings.MouseBlockingMode = BlockingMode.Simple;
                     _advancedConfigPanel.Visible = false;
@@ -807,7 +802,6 @@ namespace SimBlock.Presentation.Forms
                 }
                 else if (radioButton == _advancedModeRadioButton)
                 {
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Advanced mode selected");
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Advanced;
                     _uiSettings.MouseBlockingMode = BlockingMode.Advanced;
                     _advancedConfigPanel.Visible = true;
@@ -831,7 +825,6 @@ namespace SimBlock.Presentation.Forms
                 }
                 else if (radioButton == _selectModeRadioButton)
                 {
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: SELECT MODE SELECTED!");
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Select;
                     _uiSettings.MouseBlockingMode = BlockingMode.Select;
                     _advancedConfigPanel.Visible = false;
@@ -840,27 +833,42 @@ namespace SimBlock.Presentation.Forms
                     // Initialize Advanced configurations if null for Select mode
                     if (_uiSettings.AdvancedKeyboardConfig == null)
                     {
-                        Console.WriteLine("SettingsForm.OnBlockingModeChanged: Creating new AdvancedKeyboardConfiguration for Select mode");
                         _logger.LogInformation("Creating new AdvancedKeyboardConfiguration for Select mode");
                         _uiSettings.AdvancedKeyboardConfig = new AdvancedKeyboardConfiguration();
                     }
                     if (_uiSettings.AdvancedMouseConfig == null)
                     {
-                        Console.WriteLine("SettingsForm.OnBlockingModeChanged: Creating new AdvancedMouseConfiguration for Select mode");
                         _logger.LogInformation("Creating new AdvancedMouseConfiguration for Select mode");
                         _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
                     }
                     
-                    // Clear any existing selections
+                    // Clear any existing selections AND advanced mode category flags
                     _uiSettings.AdvancedKeyboardConfig.ClearSelection();
+                    // Also clear the category-based blocking flags from Advanced mode
+                    _uiSettings.AdvancedKeyboardConfig.BlockModifierKeys = false;
+                    _uiSettings.AdvancedKeyboardConfig.BlockFunctionKeys = false;
+                    _uiSettings.AdvancedKeyboardConfig.BlockNumberKeys = false;
+                    _uiSettings.AdvancedKeyboardConfig.BlockLetterKeys = false;
+                    _uiSettings.AdvancedKeyboardConfig.BlockArrowKeys = false;
+                    _uiSettings.AdvancedKeyboardConfig.BlockSpecialKeys = false;
+                    
                     _uiSettings.AdvancedMouseConfig.ClearSelection();
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Cleared existing selections");
+                    // Also clear the mouse blocking flags from Advanced mode
+                    _uiSettings.AdvancedMouseConfig.BlockLeftButton = false;
+                    _uiSettings.AdvancedMouseConfig.BlockRightButton = false;
+                    _uiSettings.AdvancedMouseConfig.BlockMiddleButton = false;
+                    _uiSettings.AdvancedMouseConfig.BlockX1Button = false;
+                    _uiSettings.AdvancedMouseConfig.BlockX2Button = false;
+                    _uiSettings.AdvancedMouseConfig.BlockMouseWheel = false;
+                    _uiSettings.AdvancedMouseConfig.BlockMouseMovement = false;
+                    _uiSettings.AdvancedMouseConfig.BlockDoubleClick = false;
+                    
+                    _logger.LogInformation("Cleared existing selections and Advanced mode flags");
                     
                     // Show visualization controls for Select mode
                     if (_visualizationGroupBox != null)
                     {
                         _visualizationGroupBox.Visible = true;
-                        Console.WriteLine("SettingsForm.OnBlockingModeChanged: Showing visualization controls");
                         
                         // Update visualization controls with Select mode
                         if (_keyboardVisualizationControl != null)
@@ -874,43 +882,15 @@ namespace SimBlock.Presentation.Forms
                     }
                     
                     // Apply select mode to active blocker services
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Applying Select mode to keyboard blocker service");
-                    _logger.LogInformation("Applying Select mode to keyboard blocker service");
+                    _logger.LogInformation("Applying Select mode to blocker services");
                     
-                    try
-                    {
-                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: BEFORE keyboard SetSelectModeAsync - UISettings mode: {_uiSettings.KeyboardBlockingMode}, Service mode: {_keyboardBlockerService.CurrentState.Mode}");
-                        await _keyboardBlockerService.SetSelectModeAsync(_uiSettings.AdvancedKeyboardConfig);
-                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: AFTER keyboard SetSelectModeAsync - UISettings mode: {_uiSettings.KeyboardBlockingMode}, Service mode: {_keyboardBlockerService.CurrentState.Mode}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: EXCEPTION during keyboard SetSelectModeAsync: {ex.Message}");
-                        _logger.LogError(ex, "Exception during keyboard SetSelectModeAsync");
-                    }
-                    
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Applying Select mode to mouse blocker service");
-                    _logger.LogInformation("Applying Select mode to mouse blocker service");
-                    
-                    try
-                    {
-                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: BEFORE mouse SetSelectModeAsync - UISettings mode: {_uiSettings.MouseBlockingMode}, Service mode: {_mouseBlockerService.CurrentState.Mode}");
-                        await _mouseBlockerService.SetSelectModeAsync(_uiSettings.AdvancedMouseConfig);
-                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: AFTER mouse SetSelectModeAsync - UISettings mode: {_uiSettings.MouseBlockingMode}, Service mode: {_mouseBlockerService.CurrentState.Mode}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: EXCEPTION during mouse SetSelectModeAsync: {ex.Message}");
-                        _logger.LogError(ex, "Exception during mouse SetSelectModeAsync");
-                    }
+                    await _keyboardBlockerService.SetSelectModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                    await _mouseBlockerService.SetSelectModeAsync(_uiSettings.AdvancedMouseConfig);
                     
                     // Update visualization manager to Select mode
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Updating visualization manager to Select mode");
-                    _logger.LogInformation("Updating visualization manager to Select mode");
                     _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig);
                     _visualizationManager.SetMouseBlockingMode(BlockingMode.Select, _uiSettings.AdvancedMouseConfig);
                     
-                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Select mode configuration complete");
                     _logger.LogInformation("Select mode configuration complete");
                 }
                 SaveSettings();

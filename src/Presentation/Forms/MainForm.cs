@@ -265,16 +265,7 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                _logger.LogInformation("=== KEYBOARD TOGGLE BUTTON CLICKED ===");
-                _logger.LogInformation("UISettings.KeyboardBlockingMode: {Mode}", _uiSettings.KeyboardBlockingMode);
-                _logger.LogInformation("KeyboardBlockerService.CurrentState.Mode: {Mode}", _keyboardBlockerService.CurrentState?.Mode);
-                
-                // Show diagnostic information in MessageBox
-                string diagnosticInfo = $"=== KEYBOARD TOGGLE BUTTON CLICKED ===\n" +
-                                      $"UISettings.KeyboardBlockingMode: {_uiSettings.KeyboardBlockingMode}\n" +
-                                      $"KeyboardBlockerService.CurrentState.Mode: {_keyboardBlockerService.CurrentState?.Mode}\n" +
-                                      $"Selected Keys Count: {_uiSettings.AdvancedKeyboardConfig?.SelectedKeys?.Count ?? 0}";
-                MessageBox.Show(diagnosticInfo, "Keyboard Toggle Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                _logger.LogInformation("Keyboard toggle button clicked - Mode: {Mode}", _uiSettings.KeyboardBlockingMode);
                 
                 // Set button to processing state
                 _layoutManager.SetToggleButtonProcessing(_uiControls.KeyboardToggleButton, true);
@@ -312,21 +303,10 @@ namespace SimBlock.Presentation.Forms
                         await _keyboardBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedKeyboardConfig);
                         _logger.LogInformation("SetAdvancedModeAsync completed");
                         
-                        // DIAGNOSTIC: Check the blocking state
-                        _logger.LogInformation("DIAGNOSTIC - After SetAdvancedModeAsync:");
-                        _logger.LogInformation("  Mode: {Mode}", _keyboardBlockerService.CurrentState.Mode);
-                        _logger.LogInformation("  IsBlocked: {IsBlocked}", _keyboardBlockerService.CurrentState.IsBlocked);
-                        _logger.LogInformation("  BlockedKeys count: {Count}", _keyboardBlockerService.CurrentState.AdvancedConfig?.BlockedKeys?.Count ?? 0);
-                        
                         // Now toggle blocking to actually enable it
                         _logger.LogInformation("Calling ToggleBlockingAsync to enable blocking");
                         await _keyboardBlockerService.ToggleBlockingAsync();
                         _logger.LogInformation("ToggleBlockingAsync completed");
-                        
-                        // DIAGNOSTIC: Check the blocking state again
-                        _logger.LogInformation("DIAGNOSTIC - After ToggleBlockingAsync:");
-                        _logger.LogInformation("  Mode: {Mode}", _keyboardBlockerService.CurrentState.Mode);
-                        _logger.LogInformation("  IsBlocked: {IsBlocked}", _keyboardBlockerService.CurrentState.IsBlocked);
                     }
                     else
                     {
@@ -361,16 +341,7 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                _logger.LogInformation("=== MOUSE TOGGLE BUTTON CLICKED ===");
-                _logger.LogInformation("UISettings.MouseBlockingMode: {Mode}", _uiSettings.MouseBlockingMode);
-                _logger.LogInformation("MouseBlockerService.CurrentState.Mode: {Mode}", _mouseBlockerService.CurrentState?.Mode);
-                
-                // Show diagnostic information in MessageBox
-                string diagnosticInfo = $"=== MOUSE TOGGLE BUTTON CLICKED ===\n" +
-                                      $"UISettings.MouseBlockingMode: {_uiSettings.MouseBlockingMode}\n" +
-                                      $"MouseBlockerService.CurrentState.Mode: {_mouseBlockerService.CurrentState?.Mode}\n" +
-                                      $"Has Selected Components: {_uiSettings.AdvancedMouseConfig?.HasSelectedComponents() ?? false}";
-                MessageBox.Show(diagnosticInfo, "Mouse Toggle Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                _logger.LogInformation("Mouse toggle button clicked - Mode: {Mode}", _uiSettings.MouseBlockingMode);
                 
                 // Set button to processing state
                 _layoutManager.SetToggleButtonProcessing(_uiControls.MouseToggleButton, true);
@@ -415,6 +386,11 @@ namespace SimBlock.Presentation.Forms
                         _logger.LogInformation("Calling SetAdvancedModeAsync with configuration");
                         await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
                         _logger.LogInformation("SetAdvancedModeAsync completed");
+                        
+                        // Now toggle blocking to actually enable it
+                        _logger.LogInformation("Calling ToggleBlockingAsync to enable blocking");
+                        await _mouseBlockerService.ToggleBlockingAsync();
+                        _logger.LogInformation("ToggleBlockingAsync completed");
                     }
                     else
                     {

@@ -161,25 +161,11 @@ namespace SimBlock.Infrastructure.Windows
         {
             return Task.Run(() =>
             {
-                Console.WriteLine($"WindowsKeyboardHookService.SetSelectModeAsync: BEFORE SetSelectMode - Current mode: {_state.Mode}");
-                _logger.LogInformation("WindowsKeyboardHookService.SetSelectModeAsync: BEFORE SetSelectMode - Current mode: {CurrentMode}. Reason: {Reason}",
-                    _state.Mode, reason ?? "Not specified");
+                _logger.LogInformation("Setting keyboard blocking to select mode. Reason: {Reason}",
+                    reason ?? "Not specified");
 
-                try
-                {
-                    _state.SetSelectMode(config, reason);
-                    Console.WriteLine($"WindowsKeyboardHookService.SetSelectModeAsync: AFTER SetSelectMode - Current mode: {_state.Mode}");
-                    _logger.LogInformation("WindowsKeyboardHookService.SetSelectModeAsync: AFTER SetSelectMode - Current mode: {CurrentMode}", _state.Mode);
-                    
-                    BlockStateChanged?.Invoke(this, _state);
-                    Console.WriteLine($"WindowsKeyboardHookService.SetSelectModeAsync: AFTER BlockStateChanged event - Current mode: {_state.Mode}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"WindowsKeyboardHookService.SetSelectModeAsync: EXCEPTION: {ex.Message}");
-                    _logger.LogError(ex, "WindowsKeyboardHookService.SetSelectModeAsync: Exception occurred");
-                    throw;
-                }
+                _state.SetSelectMode(config, reason);
+                BlockStateChanged?.Invoke(this, _state);
             });
         }
         
@@ -207,27 +193,11 @@ namespace SimBlock.Infrastructure.Windows
                 }
                 
                 // Check if we should block the key using the new advanced blocking logic
-                var key = (Keys)kbStruct.vkCode;
-                bool shouldBlock = _state.IsKeyBlocked(key);
-                
-                // DIAGNOSTIC: Log key blocking decision
-                if (message == NativeMethods.WM_KEYDOWN)
-                {
-                    _logger.LogInformation("DIAGNOSTIC - Key press: {Key}, Mode: {Mode}, IsBlocked: {IsBlocked}, ShouldBlock: {ShouldBlock}",
-                        key, _state.Mode, _state.IsBlocked, shouldBlock);
-                    
-                    if (_state.Mode == BlockingMode.Advanced && _state.AdvancedConfig != null)
-                    {
-                        _logger.LogInformation("  Advanced config - BlockedKeys contains {Key}: {Contains}",
-                            key, _state.AdvancedConfig.BlockedKeys.Contains(key));
-                    }
-                }
-                
-                if (shouldBlock)
+                if (_state.IsKeyBlocked((Keys)kbStruct.vkCode))
                 {
                     // Block the key based on current mode and configuration
-                    _logger.LogInformation("BLOCKING keyboard input for key: {Key} (Mode: {Mode})",
-                        key, _state.Mode);
+                    _logger.LogDebug("Blocking keyboard input for key: {Key} (Mode: {Mode})",
+                        (Keys)kbStruct.vkCode, _state.Mode);
                     return (IntPtr)1; // Return non-zero to suppress the key
                 }
             }
