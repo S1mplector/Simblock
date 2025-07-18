@@ -58,8 +58,8 @@ namespace SimBlock.Presentation.Configuration
         public Color StatusBarBackColor { get; set; } = Color.FromArgb(240, 240, 240);
 
         // Window settings
-        public Size WindowSize { get; set; } = new Size(700, 500);
-        public int WindowPadding { get; set; } = 20;
+        public Size WindowSize { get; set; } = new Size(900, 800);
+        public int WindowPadding { get; set; } = 30;
 
         // Status bar settings
         public int TimeColumnWidth { get; set; } = 60;

@@ -32,6 +32,7 @@ namespace SimBlock.Presentation.Forms
         private readonly IUILayoutManager _layoutManager;
         private readonly IKeyboardShortcutManager _shortcutManager;
         private readonly IThemeManager _themeManager;
+        private readonly IBlockingVisualizationManager _visualizationManager;
 
         // UI Controls (managed by UILayoutManager)
         private IUILayoutManager.UIControls _uiControls = null!;
@@ -56,7 +57,8 @@ namespace SimBlock.Presentation.Forms
             IThemeManager themeManager,
             IKeyboardInfoService keyboardInfoService,
             IMouseInfoService mouseInfoService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IBlockingVisualizationManager visualizationManager)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
@@ -71,6 +73,7 @@ namespace SimBlock.Presentation.Forms
             _keyboardInfoService = keyboardInfoService ?? throw new ArgumentNullException(nameof(keyboardInfoService));
             _mouseInfoService = mouseInfoService ?? throw new ArgumentNullException(nameof(mouseInfoService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _visualizationManager = visualizationManager ?? throw new ArgumentNullException(nameof(visualizationManager));
             
             _viewModel = new MainWindowViewModel();
 
@@ -96,6 +99,11 @@ namespace SimBlock.Presentation.Forms
         {
             // Initialize layout using the layout manager
             _uiControls = _layoutManager.InitializeLayout(this);
+            
+            // Add visualization panel after layout is initialized
+            var visualizationPanel = _visualizationManager.CreateVisualizationPanel();
+            visualizationPanel.Dock = DockStyle.Top;
+            this.Controls.Add(visualizationPanel);
             
             // Initialize status bar
             _statusBarManager.Initialize(this);
@@ -261,6 +269,10 @@ namespace SimBlock.Presentation.Forms
             _viewModel.UpdateFromKeyboardState(state);
             UpdateUI();
             _statusBarManager.UpdateBlockingState(state.IsBlocked || _viewModel.IsMouseBlocked);
+            
+            // Update visualization
+            _visualizationManager.UpdateKeyboardVisualization(state);
+            _visualizationManager.SetKeyboardBlockingMode(_uiSettings.KeyboardBlockingMode, _uiSettings.AdvancedKeyboardConfig);
         }
 
         private void OnMouseStateChanged(object? sender, MouseBlockState state)
@@ -274,6 +286,10 @@ namespace SimBlock.Presentation.Forms
             _viewModel.UpdateFromMouseState(state);
             UpdateUI();
             _statusBarManager.UpdateBlockingState(_viewModel.IsKeyboardBlocked || state.IsBlocked);
+            
+            // Update visualization
+            _visualizationManager.UpdateMouseVisualization(state);
+            _visualizationManager.SetMouseBlockingMode(_uiSettings.MouseBlockingMode, _uiSettings.AdvancedMouseConfig);
         }
 
         private void OnStatusTimerTick(object? sender, EventArgs e)
