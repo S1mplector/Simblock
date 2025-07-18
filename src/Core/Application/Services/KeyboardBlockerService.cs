@@ -67,6 +67,22 @@ namespace SimBlock.Core.Application.Services
         {
             await _hookService.SetBlockingAsync(shouldBlock, "User request");
         }
+        
+        /// <summary>
+        /// Sets keyboard blocking to simple mode (blocks all keys when enabled)
+        /// </summary>
+        public async Task SetSimpleModeAsync()
+        {
+            await _hookService.SetSimpleModeAsync("User set simple mode");
+        }
+        
+        /// <summary>
+        /// Sets keyboard blocking to advanced mode with specific configuration
+        /// </summary>
+        public async Task SetAdvancedModeAsync(AdvancedKeyboardConfiguration config)
+        {
+            await _hookService.SetAdvancedModeAsync(config, "User set advanced mode");
+        }
 
         public Task ShowMainWindowAsync()
         {

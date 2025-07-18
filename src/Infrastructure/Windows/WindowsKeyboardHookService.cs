@@ -115,10 +115,40 @@ namespace SimBlock.Infrastructure.Windows
         {
             return Task.Run(() =>
             {
-                _logger.LogInformation("Toggling keyboard blocking. Current state: {CurrentState}. Reason: {Reason}", 
+                _logger.LogInformation("Toggling keyboard blocking. Current state: {CurrentState}. Reason: {Reason}",
                     _state.IsBlocked, reason ?? "Not specified");
 
                 _state.Toggle(reason);
+                BlockStateChanged?.Invoke(this, _state);
+            });
+        }
+        
+        /// <summary>
+        /// Sets the keyboard blocking to simple mode
+        /// </summary>
+        public Task SetSimpleModeAsync(string? reason = null)
+        {
+            return Task.Run(() =>
+            {
+                _logger.LogInformation("Setting keyboard blocking to simple mode. Reason: {Reason}",
+                    reason ?? "Not specified");
+
+                _state.SetSimpleMode(reason);
+                BlockStateChanged?.Invoke(this, _state);
+            });
+        }
+        
+        /// <summary>
+        /// Sets the keyboard blocking to advanced mode with specific configuration
+        /// </summary>
+        public Task SetAdvancedModeAsync(AdvancedKeyboardConfiguration config, string? reason = null)
+        {
+            return Task.Run(() =>
+            {
+                _logger.LogInformation("Setting keyboard blocking to advanced mode. Reason: {Reason}",
+                    reason ?? "Not specified");
+
+                _state.SetAdvancedMode(config, reason);
                 BlockStateChanged?.Invoke(this, _state);
             });
         }
@@ -146,11 +176,12 @@ namespace SimBlock.Infrastructure.Windows
                     // If only mouse is blocked, allow the key to pass through but still handle emergency unlock
                 }
                 
-                // Check if we should block the key
-                if (_state.IsBlocked)
+                // Check if we should block the key using the new advanced blocking logic
+                if (_state.IsKeyBlocked((Keys)kbStruct.vkCode))
                 {
-                    // Block all other keys when keyboard blocking is enabled
-                    _logger.LogDebug("Blocking keyboard input");
+                    // Block the key based on current mode and configuration
+                    _logger.LogDebug("Blocking keyboard input for key: {Key} (Mode: {Mode})",
+                        (Keys)kbStruct.vkCode, _state.Mode);
                     return (IntPtr)1; // Return non-zero to suppress the key
                 }
             }

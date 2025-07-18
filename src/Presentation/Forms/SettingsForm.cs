@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Interfaces;
+using SimBlock.Core.Domain.Enums;
+using SimBlock.Core.Domain.Entities;
+using SimBlock.Core.Application.Interfaces;
 
 namespace SimBlock.Presentation.Forms
 {
@@ -16,6 +19,9 @@ namespace SimBlock.Presentation.Forms
         private readonly IThemeManager _themeManager;
         private readonly UISettings _uiSettings;
         private readonly ILogger<SettingsForm> _logger;
+        private readonly ISettingsManager _settingsManager;
+        private readonly IKeyboardBlockerService _keyboardBlockerService;
+        private readonly IMouseBlockerService _mouseBlockerService;
 
         // UI Controls
         private Button _themeToggleButton = null!;
@@ -30,19 +36,52 @@ namespace SimBlock.Presentation.Forms
         private CheckBox _emergencyUnlockAltCheckBox = null!;
         private CheckBox _emergencyUnlockShiftCheckBox = null!;
         private CheckBox _startWithWindowsCheckBox = null!;
+        
+        // Advanced blocking controls
+        private GroupBox _blockingModeGroupBox = null!;
+        private RadioButton _simpleModeRadioButton = null!;
+        private RadioButton _advancedModeRadioButton = null!;
+        private GroupBox _advancedKeyboardGroupBox = null!;
+        private GroupBox _advancedMouseGroupBox = null!;
+        private Panel _advancedConfigPanel = null!;
+        
+        // Keyboard blocking controls
+        private CheckBox _blockModifierKeysCheckBox = null!;
+        private CheckBox _blockFunctionKeysCheckBox = null!;
+        private CheckBox _blockNumberKeysCheckBox = null!;
+        private CheckBox _blockLetterKeysCheckBox = null!;
+        private CheckBox _blockArrowKeysCheckBox = null!;
+        private CheckBox _blockSpecialKeysCheckBox = null!;
+        
+        // Mouse blocking controls
+        private CheckBox _blockLeftButtonCheckBox = null!;
+        private CheckBox _blockRightButtonCheckBox = null!;
+        private CheckBox _blockMiddleButtonCheckBox = null!;
+        private CheckBox _blockX1ButtonCheckBox = null!;
+        private CheckBox _blockX2ButtonCheckBox = null!;
+        private CheckBox _blockMouseWheelCheckBox = null!;
+        private CheckBox _blockMouseMovementCheckBox = null!;
+        private CheckBox _blockDoubleClickCheckBox = null!;
 
         public SettingsForm(
             IThemeManager themeManager,
             UISettings uiSettings,
-            ILogger<SettingsForm> logger)
+            ILogger<SettingsForm> logger,
+            ISettingsManager settingsManager,
+            IKeyboardBlockerService keyboardBlockerService,
+            IMouseBlockerService mouseBlockerService)
         {
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
+            _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
+            _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
 
             InitializeComponent();
             InitializeEventHandlers();
             InitializeStartupState();
+            LoadSettings();
             ApplyCurrentTheme();
         }
 
@@ -50,7 +89,7 @@ namespace SimBlock.Presentation.Forms
         {
             // Configure form properties
             Text = "Settings - SimBlock";
-            Size = new Size(500, 520);
+            Size = new Size(650, 750);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -112,6 +151,44 @@ namespace SimBlock.Presentation.Forms
                 AutoSize = true,
                 Checked = _uiSettings.StartWithWindows
             };
+
+            // Blocking mode group box
+            _blockingModeGroupBox = new GroupBox
+            {
+                Text = "Blocking Mode",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor
+            };
+
+            // Simple mode radio button
+            _simpleModeRadioButton = new RadioButton
+            {
+                Text = "Simple Mode (Block all input)",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Simple
+            };
+
+            // Advanced mode radio button
+            _advancedModeRadioButton = new RadioButton
+            {
+                Text = "Advanced Mode (Block selected keys/actions)",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced
+            };
+
+            // Advanced configuration panel
+            _advancedConfigPanel = new Panel
+            {
+                AutoScroll = true,
+                BackColor = _uiSettings.BackgroundColor,
+                Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced
+            };
+
+            CreateAdvancedControls();
 
             // Keyboard shortcuts group box
             _keyboardShortcutsGroupBox = new GroupBox
@@ -181,6 +258,194 @@ namespace SimBlock.Presentation.Forms
             _closeButton.FlatAppearance.BorderSize = 0;
         }
 
+        private void CreateAdvancedControls()
+        {
+            // Advanced keyboard configuration group box
+            _advancedKeyboardGroupBox = new GroupBox
+            {
+                Text = "Keyboard Blocking",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor,
+                Size = new Size(280, 200),
+                Location = new Point(10, 10)
+            };
+
+            // Keyboard blocking checkboxes
+            _blockModifierKeysCheckBox = new CheckBox
+            {
+                Text = "Modifier Keys (Ctrl, Alt, Shift, Win)",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 25),
+                Checked = _uiSettings.AdvancedKeyboardConfig?.BlockModifierKeys ?? false
+            };
+
+            _blockFunctionKeysCheckBox = new CheckBox
+            {
+                Text = "Function Keys (F1-F12)",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 50),
+                Checked = _uiSettings.AdvancedKeyboardConfig?.BlockFunctionKeys ?? false
+            };
+
+            _blockNumberKeysCheckBox = new CheckBox
+            {
+                Text = "Number Keys (0-9)",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 75),
+                Checked = _uiSettings.AdvancedKeyboardConfig?.BlockNumberKeys ?? false
+            };
+
+            _blockLetterKeysCheckBox = new CheckBox
+            {
+                Text = "Letter Keys (A-Z)",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 100),
+                Checked = _uiSettings.AdvancedKeyboardConfig?.BlockLetterKeys ?? false
+            };
+
+            _blockArrowKeysCheckBox = new CheckBox
+            {
+                Text = "Arrow Keys",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 125),
+                Checked = _uiSettings.AdvancedKeyboardConfig?.BlockArrowKeys ?? false
+            };
+
+            _blockSpecialKeysCheckBox = new CheckBox
+            {
+                Text = "Special Keys (Space, Enter, Tab, etc.)",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 150),
+                Checked = _uiSettings.AdvancedKeyboardConfig?.BlockSpecialKeys ?? false
+            };
+
+            // Add keyboard controls to group box
+            _advancedKeyboardGroupBox.Controls.Add(_blockModifierKeysCheckBox);
+            _advancedKeyboardGroupBox.Controls.Add(_blockFunctionKeysCheckBox);
+            _advancedKeyboardGroupBox.Controls.Add(_blockNumberKeysCheckBox);
+            _advancedKeyboardGroupBox.Controls.Add(_blockLetterKeysCheckBox);
+            _advancedKeyboardGroupBox.Controls.Add(_blockArrowKeysCheckBox);
+            _advancedKeyboardGroupBox.Controls.Add(_blockSpecialKeysCheckBox);
+
+            // Advanced mouse configuration group box
+            _advancedMouseGroupBox = new GroupBox
+            {
+                Text = "Mouse Blocking",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor,
+                Size = new Size(280, 200),
+                Location = new Point(300, 10)
+            };
+
+            // Mouse blocking checkboxes
+            _blockLeftButtonCheckBox = new CheckBox
+            {
+                Text = "Left Button",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 25),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockLeftButton ?? false
+            };
+
+            _blockRightButtonCheckBox = new CheckBox
+            {
+                Text = "Right Button",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 50),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockRightButton ?? false
+            };
+
+            _blockMiddleButtonCheckBox = new CheckBox
+            {
+                Text = "Middle Button",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 75),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockMiddleButton ?? false
+            };
+
+            _blockX1ButtonCheckBox = new CheckBox
+            {
+                Text = "X1 Button",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 100),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockX1Button ?? false
+            };
+
+            _blockX2ButtonCheckBox = new CheckBox
+            {
+                Text = "X2 Button",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(15, 125),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockX2Button ?? false
+            };
+
+            _blockMouseWheelCheckBox = new CheckBox
+            {
+                Text = "Mouse Wheel",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(140, 25),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockMouseWheel ?? false
+            };
+
+            _blockMouseMovementCheckBox = new CheckBox
+            {
+                Text = "Mouse Movement",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(140, 50),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockMouseMovement ?? false
+            };
+
+            _blockDoubleClickCheckBox = new CheckBox
+            {
+                Text = "Double Click",
+                Font = new Font("Segoe UI", 8),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Location = new Point(140, 75),
+                Checked = _uiSettings.AdvancedMouseConfig?.BlockDoubleClick ?? false
+            };
+
+            // Add mouse controls to group box
+            _advancedMouseGroupBox.Controls.Add(_blockLeftButtonCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockRightButtonCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockMiddleButtonCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockX1ButtonCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockX2ButtonCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockMouseWheelCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockMouseMovementCheckBox);
+            _advancedMouseGroupBox.Controls.Add(_blockDoubleClickCheckBox);
+
+            // Add group boxes to advanced config panel
+            _advancedConfigPanel.Controls.Add(_advancedKeyboardGroupBox);
+            _advancedConfigPanel.Controls.Add(_advancedMouseGroupBox);
+            _advancedConfigPanel.Size = new Size(590, 220);
+        }
+
         private void PopulateKeyComboBox()
         {
             var commonKeys = new[]
@@ -238,7 +503,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 4,
+                RowCount = 6,
                 Padding = new Padding(20),
                 BackColor = _uiSettings.BackgroundColor
             };
@@ -276,6 +541,23 @@ namespace SimBlock.Presentation.Forms
             // Add behavior panel to group box
             _behaviorGroupBox.Controls.Add(behaviorPanel);
             _behaviorGroupBox.Size = new Size(450, 60);
+
+            // Blocking mode controls panel
+            var blockingModePanel = new TableLayoutPanel
+            {
+                ColumnCount = 1,
+                RowCount = 2,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor
+            };
+
+            blockingModePanel.Controls.Add(_simpleModeRadioButton, 0, 0);
+            blockingModePanel.Controls.Add(_advancedModeRadioButton, 0, 1);
+            blockingModePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            // Add blocking mode panel to group box
+            _blockingModeGroupBox.Controls.Add(blockingModePanel);
+            _blockingModeGroupBox.Size = new Size(450, 80);
 
             // Keyboard shortcuts controls panel
             var keyboardShortcutsPanel = new TableLayoutPanel
@@ -323,10 +605,14 @@ namespace SimBlock.Presentation.Forms
             // Add to main panel
             mainPanel.Controls.Add(_appearanceGroupBox, 0, 0);
             mainPanel.Controls.Add(_behaviorGroupBox, 0, 1);
-            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 2);
-            mainPanel.Controls.Add(buttonPanel, 0, 3);
+            mainPanel.Controls.Add(_blockingModeGroupBox, 0, 2);
+            mainPanel.Controls.Add(_advancedConfigPanel, 0, 3);
+            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 4);
+            mainPanel.Controls.Add(buttonPanel, 0, 5);
 
             // Set row styles
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -349,6 +635,28 @@ namespace SimBlock.Presentation.Forms
             
             // Behavior settings event handlers
             _startWithWindowsCheckBox.CheckedChanged += OnStartWithWindowsChanged;
+            
+            // Blocking mode event handlers
+            _simpleModeRadioButton.CheckedChanged += OnBlockingModeChanged;
+            _advancedModeRadioButton.CheckedChanged += OnBlockingModeChanged;
+            
+            // Advanced keyboard configuration event handlers
+            _blockModifierKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
+            _blockFunctionKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
+            _blockNumberKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
+            _blockLetterKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
+            _blockArrowKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
+            _blockSpecialKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
+            
+            // Advanced mouse configuration event handlers
+            _blockLeftButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockRightButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockMiddleButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockX1ButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockX2ButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockMouseWheelCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockMouseMovementCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+            _blockDoubleClickCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
         }
 
         private void OnThemeToggleButtonClick(object? sender, EventArgs e)
@@ -379,6 +687,7 @@ namespace SimBlock.Presentation.Forms
                 {
                     _uiSettings.EmergencyUnlockKey = selectedKey;
                     _logger.LogInformation("Emergency unlock key changed to: {Key}", selectedKey);
+                    SaveSettings();
                 }
             }
             catch (Exception ex)
@@ -399,10 +708,123 @@ namespace SimBlock.Presentation.Forms
                     _uiSettings.EmergencyUnlockRequiresCtrl,
                     _uiSettings.EmergencyUnlockRequiresAlt,
                     _uiSettings.EmergencyUnlockRequiresShift);
+                SaveSettings();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing emergency unlock modifiers");
+            }
+        }
+
+        private async void OnBlockingModeChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                var radioButton = sender as RadioButton;
+                if (radioButton?.Checked != true)
+                    return;
+
+                if (radioButton == _simpleModeRadioButton)
+                {
+                    _uiSettings.KeyboardBlockingMode = BlockingMode.Simple;
+                    _uiSettings.MouseBlockingMode = BlockingMode.Simple;
+                    _advancedConfigPanel.Visible = false;
+                    _logger.LogInformation("Blocking mode changed to Simple");
+                    
+                    // Apply simple mode to active blocker services
+                    await _keyboardBlockerService.SetSimpleModeAsync();
+                    await _mouseBlockerService.SetSimpleModeAsync();
+                }
+                else if (radioButton == _advancedModeRadioButton)
+                {
+                    _uiSettings.KeyboardBlockingMode = BlockingMode.Advanced;
+                    _uiSettings.MouseBlockingMode = BlockingMode.Advanced;
+                    _advancedConfigPanel.Visible = true;
+                    _logger.LogInformation("Blocking mode changed to Advanced");
+                    
+                    // Apply advanced mode to active blocker services
+                    if (_uiSettings.AdvancedKeyboardConfig != null)
+                    {
+                        await _keyboardBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                    }
+                    if (_uiSettings.AdvancedMouseConfig != null)
+                    {
+                        await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
+                    }
+                }
+                SaveSettings();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing blocking mode");
+            }
+        }
+
+        private async void OnAdvancedKeyboardConfigChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Initialize advanced keyboard config if null
+                if (_uiSettings.AdvancedKeyboardConfig == null)
+                {
+                    _uiSettings.AdvancedKeyboardConfig = new AdvancedKeyboardConfiguration();
+                }
+
+                // Update configuration based on checkboxes
+                _uiSettings.AdvancedKeyboardConfig.BlockModifierKeys = _blockModifierKeysCheckBox.Checked;
+                _uiSettings.AdvancedKeyboardConfig.BlockFunctionKeys = _blockFunctionKeysCheckBox.Checked;
+                _uiSettings.AdvancedKeyboardConfig.BlockNumberKeys = _blockNumberKeysCheckBox.Checked;
+                _uiSettings.AdvancedKeyboardConfig.BlockLetterKeys = _blockLetterKeysCheckBox.Checked;
+                _uiSettings.AdvancedKeyboardConfig.BlockArrowKeys = _blockArrowKeysCheckBox.Checked;
+                _uiSettings.AdvancedKeyboardConfig.BlockSpecialKeys = _blockSpecialKeysCheckBox.Checked;
+
+                _logger.LogInformation("Advanced keyboard configuration updated");
+                SaveSettings();
+                
+                // Apply the updated configuration to the blocker service if in advanced mode
+                if (_uiSettings.KeyboardBlockingMode == BlockingMode.Advanced)
+                {
+                    await _keyboardBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating advanced keyboard configuration");
+            }
+        }
+
+        private async void OnAdvancedMouseConfigChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Initialize advanced mouse config if null
+                if (_uiSettings.AdvancedMouseConfig == null)
+                {
+                    _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
+                }
+
+                // Update configuration based on checkboxes
+                _uiSettings.AdvancedMouseConfig.BlockLeftButton = _blockLeftButtonCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockRightButton = _blockRightButtonCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockMiddleButton = _blockMiddleButtonCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockX1Button = _blockX1ButtonCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockX2Button = _blockX2ButtonCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockMouseWheel = _blockMouseWheelCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockMouseMovement = _blockMouseMovementCheckBox.Checked;
+                _uiSettings.AdvancedMouseConfig.BlockDoubleClick = _blockDoubleClickCheckBox.Checked;
+
+                _logger.LogInformation("Advanced mouse configuration updated");
+                SaveSettings();
+                
+                // Apply the updated configuration to the blocker service if in advanced mode
+                if (_uiSettings.MouseBlockingMode == BlockingMode.Advanced)
+                {
+                    await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating advanced mouse configuration");
             }
         }
 
@@ -415,6 +837,7 @@ namespace SimBlock.Presentation.Forms
                 
                 // Apply the startup setting
                 ApplyStartupSetting(_uiSettings.StartWithWindows);
+                SaveSettings();
             }
             catch (Exception ex)
             {
@@ -548,6 +971,32 @@ namespace SimBlock.Presentation.Forms
                 _behaviorGroupBox.ForeColor = _uiSettings.TextColor;
                 _startWithWindowsCheckBox.ForeColor = _uiSettings.TextColor;
                 
+                // Apply theme to blocking mode controls
+                _blockingModeGroupBox.ForeColor = _uiSettings.TextColor;
+                _simpleModeRadioButton.ForeColor = _uiSettings.TextColor;
+                _advancedModeRadioButton.ForeColor = _uiSettings.TextColor;
+                _advancedConfigPanel.BackColor = _uiSettings.BackgroundColor;
+                
+                // Apply theme to advanced keyboard controls
+                _advancedKeyboardGroupBox.ForeColor = _uiSettings.TextColor;
+                _blockModifierKeysCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockFunctionKeysCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockNumberKeysCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockLetterKeysCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockArrowKeysCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockSpecialKeysCheckBox.ForeColor = _uiSettings.TextColor;
+                
+                // Apply theme to advanced mouse controls
+                _advancedMouseGroupBox.ForeColor = _uiSettings.TextColor;
+                _blockLeftButtonCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockRightButtonCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockMiddleButtonCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockX1ButtonCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockX2ButtonCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockMouseWheelCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockMouseMovementCheckBox.ForeColor = _uiSettings.TextColor;
+                _blockDoubleClickCheckBox.ForeColor = _uiSettings.TextColor;
+                
                 // Apply theme to keyboard shortcut controls
                 _keyboardShortcutsGroupBox.ForeColor = _uiSettings.TextColor;
                 _emergencyUnlockLabel.ForeColor = _uiSettings.TextColor;
@@ -613,8 +1062,77 @@ namespace SimBlock.Presentation.Forms
             return _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light";
         }
 
+        private void LoadSettings()
+        {
+            try
+            {
+                // Load settings directly into the UISettings object
+                _settingsManager.LoadSettings();
+                
+                // Update UI controls to reflect loaded settings
+                UpdateUIFromSettings();
+                
+                _logger.LogInformation("Settings loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading settings");
+            }
+        }
+
+        private void UpdateUIFromSettings()
+        {
+            // Update blocking mode radio buttons
+            _simpleModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Simple;
+            _advancedModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
+            _advancedConfigPanel.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
+
+            // Update keyboard blocking checkboxes
+            _blockModifierKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockModifierKeys ?? false;
+            _blockFunctionKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockFunctionKeys ?? false;
+            _blockNumberKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockNumberKeys ?? false;
+            _blockLetterKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockLetterKeys ?? false;
+            _blockArrowKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockArrowKeys ?? false;
+            _blockSpecialKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockSpecialKeys ?? false;
+
+            // Update mouse blocking checkboxes
+            _blockLeftButtonCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockLeftButton ?? false;
+            _blockRightButtonCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockRightButton ?? false;
+            _blockMiddleButtonCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockMiddleButton ?? false;
+            _blockX1ButtonCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockX1Button ?? false;
+            _blockX2ButtonCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockX2Button ?? false;
+            _blockMouseWheelCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockMouseWheel ?? false;
+            _blockMouseMovementCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockMouseMovement ?? false;
+            _blockDoubleClickCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockDoubleClick ?? false;
+
+            // Update emergency unlock key
+            _emergencyUnlockKeyComboBox.SelectedValue = _uiSettings.EmergencyUnlockKey;
+            _emergencyUnlockCtrlCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresCtrl;
+            _emergencyUnlockAltCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresAlt;
+            _emergencyUnlockShiftCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresShift;
+
+            // Update startup checkbox
+            _startWithWindowsCheckBox.Checked = _uiSettings.StartWithWindows;
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                _settingsManager.SaveSettings();
+                _logger.LogInformation("Settings saved successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving settings");
+            }
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            // Save settings when form closes
+            SaveSettings();
+            
             // Unsubscribe from events
             _themeManager.ThemeChanged -= OnThemeChanged;
             base.OnFormClosing(e);

@@ -67,6 +67,22 @@ namespace SimBlock.Core.Application.Services
         {
             await _hookService.SetBlockingAsync(shouldBlock, "User request");
         }
+        
+        /// <summary>
+        /// Sets mouse blocking to simple mode (blocks all mouse actions when enabled)
+        /// </summary>
+        public async Task SetSimpleModeAsync()
+        {
+            await _hookService.SetSimpleModeAsync("User set simple mode");
+        }
+        
+        /// <summary>
+        /// Sets mouse blocking to advanced mode with specific configuration
+        /// </summary>
+        public async Task SetAdvancedModeAsync(AdvancedMouseConfiguration config)
+        {
+            await _hookService.SetAdvancedModeAsync(config, "User set advanced mode");
+        }
 
         public Task ShowMainWindowAsync()
         {

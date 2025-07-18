@@ -1,5 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
+using SimBlock.Core.Domain.Enums;
+using SimBlock.Core.Domain.Entities;
 
 namespace SimBlock.Presentation.Configuration
 {
@@ -31,6 +33,12 @@ namespace SimBlock.Presentation.Configuration
 
         // Startup settings
         public bool StartWithWindows { get; set; } = false;
+        
+        // Advanced blocking settings
+        public BlockingMode KeyboardBlockingMode { get; set; } = BlockingMode.Simple;
+        public BlockingMode MouseBlockingMode { get; set; } = BlockingMode.Simple;
+        public AdvancedKeyboardConfiguration AdvancedKeyboardConfig { get; set; } = new();
+        public AdvancedMouseConfiguration AdvancedMouseConfig { get; set; } = new();
 
         // Colors (will be dynamically set based on theme)
         public Color NormalColor { get; set; } = Color.Blue;

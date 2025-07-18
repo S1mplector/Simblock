@@ -118,10 +118,40 @@ namespace SimBlock.Infrastructure.Windows
         {
             return Task.Run(() =>
             {
-                _logger.LogInformation("Toggling mouse blocking. Current state: {CurrentState}. Reason: {Reason}", 
+                _logger.LogInformation("Toggling mouse blocking. Current state: {CurrentState}. Reason: {Reason}",
                     _state.IsBlocked, reason ?? "Not specified");
 
                 _state.Toggle(reason);
+                BlockStateChanged?.Invoke(this, _state);
+            });
+        }
+        
+        /// <summary>
+        /// Sets the mouse blocking to simple mode
+        /// </summary>
+        public Task SetSimpleModeAsync(string? reason = null)
+        {
+            return Task.Run(() =>
+            {
+                _logger.LogInformation("Setting mouse blocking to simple mode. Reason: {Reason}",
+                    reason ?? "Not specified");
+
+                _state.SetSimpleMode(reason);
+                BlockStateChanged?.Invoke(this, _state);
+            });
+        }
+        
+        /// <summary>
+        /// Sets the mouse blocking to advanced mode with specific configuration
+        /// </summary>
+        public Task SetAdvancedModeAsync(AdvancedMouseConfiguration config, string? reason = null)
+        {
+            return Task.Run(() =>
+            {
+                _logger.LogInformation("Setting mouse blocking to advanced mode. Reason: {Reason}",
+                    reason ?? "Not specified");
+
+                _state.SetAdvancedMode(config, reason);
                 BlockStateChanged?.Invoke(this, _state);
             });
         }
@@ -137,10 +167,11 @@ namespace SimBlock.Infrastructure.Windows
                 _logger.LogDebug("Mouse event: Message={Message}, X={X}, Y={Y}, MouseData={MouseData}",
                     GetMouseMessageName(message), mouseStruct.x, mouseStruct.y, mouseStruct.mouseData);
                 
-                // Check if we should block the mouse input
-                if (_state.IsBlocked)
+                // Check if we should block the mouse input using the new advanced blocking logic
+                if (_state.IsMouseActionBlocked(message, mouseStruct.mouseData))
                 {
-                    _logger.LogDebug("Blocking mouse input: {Message}", GetMouseMessageName(message));
+                    _logger.LogDebug("Blocking mouse input: {Message} (Mode: {Mode})",
+                        GetMouseMessageName(message), _state.Mode);
                     return (IntPtr)1; // Block the mouse input
                 }
             }
