@@ -45,6 +45,47 @@ namespace SimBlock.Core.Domain.Entities
         /// </summary>
         public bool BlockDoubleClick { get; set; } = false;
 
+        // Selection state tracking (used in Select mode)
+        /// <summary>
+        /// Selected left mouse button for blocking
+        /// </summary>
+        public bool SelectedLeftButton { get; set; } = false;
+        
+        /// <summary>
+        /// Selected right mouse button for blocking
+        /// </summary>
+        public bool SelectedRightButton { get; set; } = false;
+        
+        /// <summary>
+        /// Selected middle mouse button for blocking
+        /// </summary>
+        public bool SelectedMiddleButton { get; set; } = false;
+        
+        /// <summary>
+        /// Selected X1 mouse button for blocking
+        /// </summary>
+        public bool SelectedX1Button { get; set; } = false;
+        
+        /// <summary>
+        /// Selected X2 mouse button for blocking
+        /// </summary>
+        public bool SelectedX2Button { get; set; } = false;
+        
+        /// <summary>
+        /// Selected mouse wheel for blocking
+        /// </summary>
+        public bool SelectedMouseWheel { get; set; } = false;
+        
+        /// <summary>
+        /// Selected mouse movement for blocking
+        /// </summary>
+        public bool SelectedMouseMovement { get; set; } = false;
+        
+        /// <summary>
+        /// Selected double-click events for blocking
+        /// </summary>
+        public bool SelectedDoubleClick { get; set; } = false;
+
         /// <summary>
         /// Creates a deep copy of this configuration
         /// </summary>
@@ -59,7 +100,15 @@ namespace SimBlock.Core.Domain.Entities
                 BlockX2Button = BlockX2Button,
                 BlockMouseWheel = BlockMouseWheel,
                 BlockMouseMovement = BlockMouseMovement,
-                BlockDoubleClick = BlockDoubleClick
+                BlockDoubleClick = BlockDoubleClick,
+                SelectedLeftButton = SelectedLeftButton,
+                SelectedRightButton = SelectedRightButton,
+                SelectedMiddleButton = SelectedMiddleButton,
+                SelectedX1Button = SelectedX1Button,
+                SelectedX2Button = SelectedX2Button,
+                SelectedMouseWheel = SelectedMouseWheel,
+                SelectedMouseMovement = SelectedMouseMovement,
+                SelectedDoubleClick = SelectedDoubleClick
             };
         }
 
@@ -183,6 +232,117 @@ namespace SimBlock.Core.Domain.Entities
             return BlockLeftButton && BlockRightButton && BlockMiddleButton &&
                    BlockX1Button && BlockX2Button && BlockMouseWheel &&
                    BlockMouseMovement && BlockDoubleClick;
+        }
+
+        /// <summary>
+        /// Checks if a specific mouse component is selected for blocking (used in Select mode)
+        /// </summary>
+        public bool IsComponentSelected(string component)
+        {
+            return component switch
+            {
+                "LeftButton" => SelectedLeftButton,
+                "RightButton" => SelectedRightButton,
+                "WheelMiddle" => SelectedMiddleButton || SelectedMouseWheel,
+                "X1Button" => SelectedX1Button,
+                "X2Button" => SelectedX2Button,
+                "MouseSensor" => SelectedMouseMovement,
+                "DoubleClick" => SelectedDoubleClick,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Toggles the selection state of a specific mouse component (used in Select mode)
+        /// </summary>
+        public void ToggleComponentSelection(string component)
+        {
+            switch (component)
+            {
+                case "LeftButton":
+                    SelectedLeftButton = !SelectedLeftButton;
+                    break;
+                case "RightButton":
+                    SelectedRightButton = !SelectedRightButton;
+                    break;
+                case "WheelMiddle":
+                    SelectedMiddleButton = !SelectedMiddleButton;
+                    SelectedMouseWheel = !SelectedMouseWheel;
+                    break;
+                case "X1Button":
+                    SelectedX1Button = !SelectedX1Button;
+                    break;
+                case "X2Button":
+                    SelectedX2Button = !SelectedX2Button;
+                    break;
+                case "MouseSensor":
+                    SelectedMouseMovement = !SelectedMouseMovement;
+                    break;
+                case "DoubleClick":
+                    SelectedDoubleClick = !SelectedDoubleClick;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Clears all selected mouse components (used in Select mode)
+        /// </summary>
+        public void ClearSelection()
+        {
+            SelectedLeftButton = false;
+            SelectedRightButton = false;
+            SelectedMiddleButton = false;
+            SelectedX1Button = false;
+            SelectedX2Button = false;
+            SelectedMouseWheel = false;
+            SelectedMouseMovement = false;
+            SelectedDoubleClick = false;
+        }
+
+        /// <summary>
+        /// Converts selected components to blocked components and clears selection (used when applying selection)
+        /// </summary>
+        public void ApplySelection()
+        {
+            if (SelectedLeftButton) BlockLeftButton = true;
+            if (SelectedRightButton) BlockRightButton = true;
+            if (SelectedMiddleButton) BlockMiddleButton = true;
+            if (SelectedX1Button) BlockX1Button = true;
+            if (SelectedX2Button) BlockX2Button = true;
+            if (SelectedMouseWheel) BlockMouseWheel = true;
+            if (SelectedMouseMovement) BlockMouseMovement = true;
+            if (SelectedDoubleClick) BlockDoubleClick = true;
+            
+            ClearSelection();
+        }
+
+        /// <summary>
+        /// Checks if any mouse components are currently selected
+        /// </summary>
+        public bool HasSelectedComponents()
+        {
+            return SelectedLeftButton || SelectedRightButton || SelectedMiddleButton ||
+                   SelectedX1Button || SelectedX2Button || SelectedMouseWheel ||
+                   SelectedMouseMovement || SelectedDoubleClick;
+        }
+
+        /// <summary>
+        /// Gets a summary of what mouse components are selected
+        /// </summary>
+        public string GetSelectionSummary()
+        {
+            var selectedComponents = new List<string>();
+            
+            if (SelectedLeftButton) selectedComponents.Add("Left Button");
+            if (SelectedRightButton) selectedComponents.Add("Right Button");
+            if (SelectedMiddleButton) selectedComponents.Add("Middle Button");
+            if (SelectedX1Button) selectedComponents.Add("X1 Button");
+            if (SelectedX2Button) selectedComponents.Add("X2 Button");
+            if (SelectedMouseWheel) selectedComponents.Add("Mouse Wheel");
+            if (SelectedMouseMovement) selectedComponents.Add("Mouse Movement");
+            if (SelectedDoubleClick) selectedComponents.Add("Double Click");
+            
+            return selectedComponents.Count == 0 ? "None" : string.Join(", ", selectedComponents);
         }
     }
 }

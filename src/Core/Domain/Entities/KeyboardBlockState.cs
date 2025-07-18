@@ -63,6 +63,17 @@ namespace SimBlock.Core.Domain.Entities
         }
         
         /// <summary>
+        /// Sets the blocking mode to Select with specific configuration
+        /// </summary>
+        public void SetSelectMode(AdvancedKeyboardConfiguration config, string? reason = null)
+        {
+            Mode = BlockingMode.Select;
+            AdvancedConfig = config?.Clone();
+            LastToggleTime = DateTime.UtcNow;
+            LastToggleReason = reason;
+        }
+        
+        /// <summary>
         /// Checks if a specific key should be blocked based on current mode and configuration
         /// </summary>
         public bool IsKeyBlocked(Keys key)
@@ -78,6 +89,10 @@ namespace SimBlock.Core.Domain.Entities
             // In advanced mode, check the configuration
             if (Mode == BlockingMode.Advanced && AdvancedConfig != null)
                 return AdvancedConfig.IsKeyBlocked(key);
+                
+            // In select mode, nothing is blocked (it's just for selection)
+            if (Mode == BlockingMode.Select)
+                return false;
                 
             // Default to not blocked if no configuration
             return false;

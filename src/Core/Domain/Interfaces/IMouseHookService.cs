@@ -19,5 +19,6 @@ namespace SimBlock.Core.Domain.Interfaces
         Task ToggleBlockingAsync(string? reason = null);
         Task SetSimpleModeAsync(string? reason = null);
         Task SetAdvancedModeAsync(AdvancedMouseConfiguration config, string? reason = null);
+        Task SetSelectModeAsync(AdvancedMouseConfiguration config, string? reason = null);
     }
 }

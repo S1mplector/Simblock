@@ -46,6 +46,7 @@ namespace SimBlock.Presentation.Configuration
         public Color ErrorColor { get; set; } = Color.Red;
         public Color SuccessColor { get; set; } = Color.Green;
         public Color InactiveColor { get; set; } = Color.Gray;
+        public Color SelectedColor { get; set; } = Color.Orange;
 
         // Button colors
         public Color PrimaryButtonColor { get; set; } = Color.FromArgb(0, 120, 215);
@@ -110,6 +111,7 @@ namespace SimBlock.Presentation.Configuration
             WarningColor = Color.Orange;
             ErrorColor = Color.Red;
             SuccessColor = Color.Green;
+            SelectedColor = Color.FromArgb(255, 165, 0); // Orange
             
             // Button colors
             PrimaryButtonColor = Color.FromArgb(0, 120, 215);
@@ -132,6 +134,7 @@ namespace SimBlock.Presentation.Configuration
             WarningColor = Color.FromArgb(255, 165, 0); // Orange
             ErrorColor = Color.FromArgb(255, 99, 71); // Tomato
             SuccessColor = Color.FromArgb(50, 205, 50); // Lime green
+            SelectedColor = Color.FromArgb(255, 140, 0); // Dark orange
             
             // Button colors (adjusted for dark theme)
             PrimaryButtonColor = Color.FromArgb(0, 120, 215);

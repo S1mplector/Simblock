@@ -152,7 +152,22 @@ namespace SimBlock.Infrastructure.Windows
                 BlockStateChanged?.Invoke(this, _state);
             });
         }
+        
+        /// <summary>
+        /// Sets the keyboard blocking to select mode with specific configuration
+        /// </summary>
+        public Task SetSelectModeAsync(AdvancedKeyboardConfiguration config, string? reason = null)
+        {
+            return Task.Run(() =>
+            {
+                _logger.LogInformation("Setting keyboard blocking to select mode. Reason: {Reason}",
+                    reason ?? "Not specified");
 
+                _state.SetSelectMode(config, reason);
+                BlockStateChanged?.Invoke(this, _state);
+            });
+        }
+        
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)

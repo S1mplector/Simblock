@@ -101,6 +101,13 @@ namespace SimBlock.Presentation.Managers
                 _keyboardMode = mode;
                 _keyboardConfig = config;
                 
+                // For Select mode, ensure we're not actually blocking
+                if (mode == BlockingMode.Select)
+                {
+                    _keyboardBlocked = false;
+                    _logger.LogInformation("Keyboard set to Select mode - blocking disabled for selection");
+                }
+                
                 // Update the visualization with new mode
                 _keyboardVisualization.UpdateVisualization(_keyboardMode, _keyboardConfig, _keyboardBlocked);
                 
@@ -124,6 +131,13 @@ namespace SimBlock.Presentation.Managers
             {
                 _mouseMode = mode;
                 _mouseConfig = config;
+                
+                // For Select mode, ensure we're not actually blocking
+                if (mode == BlockingMode.Select)
+                {
+                    _mouseBlocked = false;
+                    _logger.LogInformation("Mouse set to Select mode - blocking disabled for selection");
+                }
                 
                 // Update the visualization with new mode
                 _mouseVisualization.UpdateVisualization(_mouseMode, _mouseConfig, _mouseBlocked);

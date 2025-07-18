@@ -62,6 +62,17 @@ namespace SimBlock.Core.Domain.Entities
         }
         
         /// <summary>
+        /// Sets the blocking mode to Select with specific configuration
+        /// </summary>
+        public void SetSelectMode(AdvancedMouseConfiguration config, string? reason = null)
+        {
+            Mode = BlockingMode.Select;
+            AdvancedConfig = config?.Clone();
+            LastToggleTime = DateTime.UtcNow;
+            LastToggleReason = reason;
+        }
+        
+        /// <summary>
         /// Checks if a specific mouse action should be blocked based on current mode and configuration
         /// </summary>
         public bool IsMouseActionBlocked(int mouseMessage, uint mouseData = 0)
@@ -88,6 +99,10 @@ namespace SimBlock.Core.Domain.Entities
                 
                 return AdvancedConfig.IsMouseActionBlocked(mouseMessage);
             }
+            
+            // In select mode, nothing is blocked (it's just for selection)
+            if (Mode == BlockingMode.Select)
+                return false;
                 
             // Default to not blocked if no configuration
             return false;

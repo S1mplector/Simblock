@@ -83,6 +83,30 @@ namespace SimBlock.Core.Application.Services
         {
             await _hookService.SetAdvancedModeAsync(config, "User set advanced mode");
         }
+        
+        /// <summary>
+        /// Sets keyboard blocking to select mode with specific configuration
+        /// </summary>
+        public async Task SetSelectModeAsync(AdvancedKeyboardConfiguration config)
+        {
+            await _hookService.SetSelectModeAsync(config, "User set select mode");
+        }
+        
+        /// <summary>
+        /// Applies current selection to blocking and switches to advanced mode
+        /// </summary>
+        public async Task ApplySelectionAsync()
+        {
+            var currentState = CurrentState;
+            if (currentState.AdvancedConfig != null)
+            {
+                // Apply selection to convert selected keys to blocked keys
+                currentState.AdvancedConfig.ApplySelection();
+                
+                // Switch to advanced mode with the updated configuration
+                await _hookService.SetAdvancedModeAsync(currentState.AdvancedConfig, "User applied selection");
+            }
+        }
 
         public Task ShowMainWindowAsync()
         {

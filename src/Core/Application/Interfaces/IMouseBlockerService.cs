@@ -19,6 +19,8 @@ namespace SimBlock.Core.Application.Interfaces
         Task SetBlockingAsync(bool shouldBlock);
         Task SetSimpleModeAsync();
         Task SetAdvancedModeAsync(AdvancedMouseConfiguration config);
+        Task SetSelectModeAsync(AdvancedMouseConfiguration config);
+        Task ApplySelectionAsync();
         Task ShowMainWindowAsync();
         Task HideToTrayAsync();
     }

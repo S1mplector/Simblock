@@ -22,6 +22,7 @@ namespace SimBlock.Presentation.Forms
         private readonly ISettingsManager _settingsManager;
         private readonly IKeyboardBlockerService _keyboardBlockerService;
         private readonly IMouseBlockerService _mouseBlockerService;
+        private readonly IBlockingVisualizationManager _visualizationManager;
 
         // UI Controls
         private Button _themeToggleButton = null!;
@@ -41,6 +42,7 @@ namespace SimBlock.Presentation.Forms
         private GroupBox _blockingModeGroupBox = null!;
         private RadioButton _simpleModeRadioButton = null!;
         private RadioButton _advancedModeRadioButton = null!;
+        private RadioButton _selectModeRadioButton = null!;
         private GroupBox _advancedKeyboardGroupBox = null!;
         private GroupBox _advancedMouseGroupBox = null!;
         private Panel _advancedConfigPanel = null!;
@@ -69,7 +71,8 @@ namespace SimBlock.Presentation.Forms
             ILogger<SettingsForm> logger,
             ISettingsManager settingsManager,
             IKeyboardBlockerService keyboardBlockerService,
-            IMouseBlockerService mouseBlockerService)
+            IMouseBlockerService mouseBlockerService,
+            IBlockingVisualizationManager visualizationManager)
         {
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
@@ -77,6 +80,7 @@ namespace SimBlock.Presentation.Forms
             _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
+            _visualizationManager = visualizationManager ?? throw new ArgumentNullException(nameof(visualizationManager));
 
             InitializeComponent();
             InitializeEventHandlers();
@@ -178,6 +182,16 @@ namespace SimBlock.Presentation.Forms
                 ForeColor = _uiSettings.TextColor,
                 AutoSize = true,
                 Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced
+            };
+
+            // Select mode radio button
+            _selectModeRadioButton = new RadioButton
+            {
+                Text = "Select Mode (Visual selection then block)",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Select
             };
 
             // Advanced configuration panel
@@ -546,18 +560,19 @@ namespace SimBlock.Presentation.Forms
             var blockingModePanel = new TableLayoutPanel
             {
                 ColumnCount = 1,
-                RowCount = 2,
+                RowCount = 3,
                 Dock = DockStyle.Fill,
                 BackColor = _uiSettings.BackgroundColor
             };
 
             blockingModePanel.Controls.Add(_simpleModeRadioButton, 0, 0);
             blockingModePanel.Controls.Add(_advancedModeRadioButton, 0, 1);
+            blockingModePanel.Controls.Add(_selectModeRadioButton, 0, 2);
             blockingModePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
             // Add blocking mode panel to group box
             _blockingModeGroupBox.Controls.Add(blockingModePanel);
-            _blockingModeGroupBox.Size = new Size(450, 80);
+            _blockingModeGroupBox.Size = new Size(450, 105);
 
             // Keyboard shortcuts controls panel
             var keyboardShortcutsPanel = new TableLayoutPanel
@@ -639,6 +654,7 @@ namespace SimBlock.Presentation.Forms
             // Blocking mode event handlers
             _simpleModeRadioButton.CheckedChanged += OnBlockingModeChanged;
             _advancedModeRadioButton.CheckedChanged += OnBlockingModeChanged;
+            _selectModeRadioButton.CheckedChanged += OnBlockingModeChanged;
             
             // Advanced keyboard configuration event handlers
             _blockModifierKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
@@ -734,6 +750,10 @@ namespace SimBlock.Presentation.Forms
                     // Apply simple mode to active blocker services
                     await _keyboardBlockerService.SetSimpleModeAsync();
                     await _mouseBlockerService.SetSimpleModeAsync();
+                    
+                    // Update visualization manager
+                    _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Simple);
+                    _visualizationManager.SetMouseBlockingMode(BlockingMode.Simple);
                 }
                 else if (radioButton == _advancedModeRadioButton)
                 {
@@ -751,6 +771,35 @@ namespace SimBlock.Presentation.Forms
                     {
                         await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
                     }
+                    
+                    // Update visualization manager
+                    _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Advanced, _uiSettings.AdvancedKeyboardConfig);
+                    _visualizationManager.SetMouseBlockingMode(BlockingMode.Advanced, _uiSettings.AdvancedMouseConfig);
+                }
+                else if (radioButton == _selectModeRadioButton)
+                {
+                    _uiSettings.KeyboardBlockingMode = BlockingMode.Select;
+                    _uiSettings.MouseBlockingMode = BlockingMode.Select;
+                    _advancedConfigPanel.Visible = false;
+                    _logger.LogInformation("Blocking mode changed to Select");
+                    
+                    // Initialize Advanced configurations if null for Select mode
+                    if (_uiSettings.AdvancedKeyboardConfig == null)
+                    {
+                        _uiSettings.AdvancedKeyboardConfig = new AdvancedKeyboardConfiguration();
+                    }
+                    if (_uiSettings.AdvancedMouseConfig == null)
+                    {
+                        _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
+                    }
+                    
+                    // Apply select mode to active blocker services
+                    await _keyboardBlockerService.SetSelectModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                    await _mouseBlockerService.SetSelectModeAsync(_uiSettings.AdvancedMouseConfig);
+                    
+                    // Update visualization manager to Select mode
+                    _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig);
+                    _visualizationManager.SetMouseBlockingMode(BlockingMode.Select, _uiSettings.AdvancedMouseConfig);
                 }
                 SaveSettings();
             }
@@ -975,6 +1024,7 @@ namespace SimBlock.Presentation.Forms
                 _blockingModeGroupBox.ForeColor = _uiSettings.TextColor;
                 _simpleModeRadioButton.ForeColor = _uiSettings.TextColor;
                 _advancedModeRadioButton.ForeColor = _uiSettings.TextColor;
+                _selectModeRadioButton.ForeColor = _uiSettings.TextColor;
                 _advancedConfigPanel.BackColor = _uiSettings.BackgroundColor;
                 
                 // Apply theme to advanced keyboard controls
@@ -1085,6 +1135,7 @@ namespace SimBlock.Presentation.Forms
             // Update blocking mode radio buttons
             _simpleModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Simple;
             _advancedModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
+            _selectModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Select;
             _advancedConfigPanel.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
 
             // Update keyboard blocking checkboxes

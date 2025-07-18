@@ -32,9 +32,13 @@ namespace SimBlock.Presentation.Controls
         private Color _blockedColor = Color.Red;
         private Color _allowedColor = Color.LightGreen;
         private Color _neutralColor = Color.LightGray;
+        private Color _selectedColor;
         private Color _textColor = Color.Black;
         private Color _mouseBodyColor = Color.FromArgb(220, 220, 220);
         private Color _mouseBodyShadow = Color.FromArgb(180, 180, 180);
+
+        // Events
+        public event EventHandler<string>? ComponentClicked;
 
         public MouseVisualizationControl(UISettings uiSettings)
         {
@@ -47,17 +51,20 @@ namespace SimBlock.Presentation.Controls
 
         private void InitializeComponent()
         {
-            SetStyle(ControlStyles.AllPaintingInWmPaint | 
-                    ControlStyles.UserPaint | 
-                    ControlStyles.DoubleBuffer | 
+            SetStyle(ControlStyles.AllPaintingInWmPaint |
+                    ControlStyles.UserPaint |
+                    ControlStyles.DoubleBuffer |
                     ControlStyles.ResizeRedraw, true);
             
             BackColor = Color.Transparent;
             Size = new Size(220, 220);
             
+            // Enable mouse events
+            this.MouseClick += OnMouseClick;
+            
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
-            tooltip.SetToolTip(this, "Mouse blocking visualization - Red components are blocked, Green are allowed");
+            tooltip.SetToolTip(this, "Mouse blocking visualization - Red components are blocked, Green are allowed, Orange are selected");
         }
 
         private void InitializeMouseLayout()
@@ -104,6 +111,7 @@ namespace SimBlock.Presentation.Controls
             _blockedColor = _uiSettings.ErrorColor;
             _allowedColor = _uiSettings.SuccessColor;
             _neutralColor = _uiSettings.BackgroundColor;
+            _selectedColor = _uiSettings.SelectedColor; // Selected state color
             _textColor = _uiSettings.TextColor;
             _mouseBodyColor = Color.FromArgb(220, 220, 220);
             _mouseBodyShadow = Color.FromArgb(180, 180, 180);
@@ -133,6 +141,9 @@ namespace SimBlock.Presentation.Controls
             
             // Draw mouse components
             DrawMouseComponents(g);
+            
+            // Draw legend
+            DrawLegend(g);
         }
 
         private void DrawMouseBody(Graphics g)
@@ -280,6 +291,15 @@ namespace SimBlock.Presentation.Controls
 
         private Color GetComponentColor(string component)
         {
+            if (_blockingMode == BlockingMode.Select && _advancedConfig != null)
+            {
+                // In select mode, show selected components in orange
+                if (_advancedConfig.IsComponentSelected(component))
+                    return _selectedColor;
+                else
+                    return _neutralColor;
+            }
+            
             if (!_isBlocked)
             {
                 return _neutralColor;
@@ -317,10 +337,18 @@ namespace SimBlock.Presentation.Controls
             int legendY = Height - 35;
             int legendX = 10;
             
-            // Draw legend items
-            DrawLegendItem(g, legendX, legendY, _blockedColor, "Blocked");
-            DrawLegendItem(g, legendX, legendY + 15, _allowedColor, "Allowed");
-            DrawLegendItem(g, legendX + 80, legendY, _neutralColor, "Inactive");
+            // Draw legend items based on current mode
+            if (_blockingMode == BlockingMode.Select)
+            {
+                DrawLegendItem(g, legendX, legendY, _selectedColor, "Selected");
+                DrawLegendItem(g, legendX, legendY + 15, _neutralColor, "Unselected");
+            }
+            else
+            {
+                DrawLegendItem(g, legendX, legendY, _blockedColor, "Blocked");
+                DrawLegendItem(g, legendX, legendY + 15, _allowedColor, "Allowed");
+                DrawLegendItem(g, legendX + 80, legendY, _neutralColor, "Inactive");
+            }
             
             // Draw mode indicator
             using (var font = new Font("Arial", 8, FontStyle.Bold))
@@ -383,6 +411,40 @@ namespace SimBlock.Presentation.Controls
             }
             
             return "Blocking state unknown";
+        }
+
+        /// <summary>
+        /// Handles mouse click events on the mouse visualization
+        /// </summary>
+        private void OnMouseClick(object? sender, MouseEventArgs e)
+        {
+            // Only handle clicks in Select mode
+            if (_blockingMode != BlockingMode.Select || _advancedConfig == null)
+                return;
+
+            // Find which component was clicked
+            foreach (var kvp in _mouseComponents)
+            {
+                var component = kvp.Key;
+                var rect = kvp.Value;
+                
+                // Skip the mouse body as it's not clickable
+                if (component == "MouseBody")
+                    continue;
+                
+                if (rect.Contains(e.Location))
+                {
+                    // Toggle selection for this component
+                    _advancedConfig.ToggleComponentSelection(component);
+                    
+                    // Raise the ComponentClicked event
+                    ComponentClicked?.Invoke(this, component);
+                    
+                    // Refresh the display
+                    Invalidate();
+                    break;
+                }
+            }
         }
     }
 }

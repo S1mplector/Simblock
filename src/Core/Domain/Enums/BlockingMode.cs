@@ -13,6 +13,11 @@ namespace SimBlock.Core.Domain.Enums
         /// <summary>
         /// Advanced mode - blocks only selected keys/mouse actions
         /// </summary>
-        Advanced
+        Advanced,
+        
+        /// <summary>
+        /// Select mode - allows user to select keys/mouse actions before blocking
+        /// </summary>
+        Select
     }
 }

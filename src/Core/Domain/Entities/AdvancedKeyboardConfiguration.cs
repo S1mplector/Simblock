@@ -13,6 +13,11 @@ namespace SimBlock.Core.Domain.Entities
         public HashSet<Keys> BlockedKeys { get; set; } = new();
         
         /// <summary>
+        /// Set of individual keys selected for blocking (used in Select mode)
+        /// </summary>
+        public HashSet<Keys> SelectedKeys { get; set; } = new();
+        
+        /// <summary>
         /// Block all modifier keys (Ctrl, Alt, Shift, Windows key)
         /// </summary>
         public bool BlockModifierKeys { get; set; } = false;
@@ -50,6 +55,7 @@ namespace SimBlock.Core.Domain.Entities
             return new AdvancedKeyboardConfiguration
             {
                 BlockedKeys = new HashSet<Keys>(BlockedKeys),
+                SelectedKeys = new HashSet<Keys>(SelectedKeys),
                 BlockModifierKeys = BlockModifierKeys,
                 BlockFunctionKeys = BlockFunctionKeys,
                 BlockNumberKeys = BlockNumberKeys,
@@ -218,6 +224,57 @@ namespace SimBlock.Core.Domain.Entities
                    BlockLetterKeys &&
                    BlockArrowKeys &&
                    BlockSpecialKeys;
+        }
+
+        /// <summary>
+        /// Checks if a specific key is selected for blocking (used in Select mode)
+        /// </summary>
+        public bool IsKeySelected(Keys key)
+        {
+            return SelectedKeys.Contains(key);
+        }
+
+        /// <summary>
+        /// Toggles the selection state of a specific key (used in Select mode)
+        /// </summary>
+        public void ToggleKeySelection(Keys key)
+        {
+            if (SelectedKeys.Contains(key))
+            {
+                SelectedKeys.Remove(key);
+            }
+            else
+            {
+                SelectedKeys.Add(key);
+            }
+        }
+
+        /// <summary>
+        /// Clears all selected keys (used in Select mode)
+        /// </summary>
+        public void ClearSelection()
+        {
+            SelectedKeys.Clear();
+        }
+
+        /// <summary>
+        /// Converts selected keys to blocked keys and clears selection (used when applying selection)
+        /// </summary>
+        public void ApplySelection()
+        {
+            foreach (var key in SelectedKeys)
+            {
+                BlockedKeys.Add(key);
+            }
+            SelectedKeys.Clear();
+        }
+
+        /// <summary>
+        /// Checks if any keys are currently selected
+        /// </summary>
+        public bool HasSelectedKeys()
+        {
+            return SelectedKeys.Count > 0;
         }
     }
 }

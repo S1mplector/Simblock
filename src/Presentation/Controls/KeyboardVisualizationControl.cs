@@ -32,7 +32,11 @@ namespace SimBlock.Presentation.Controls
         private Color _blockedColor = Color.Red;
         private Color _allowedColor = Color.LightGreen;
         private Color _neutralColor = Color.LightGray;
+        private Color _selectedColor;
         private Color _textColor = Color.Black;
+
+        // Events
+        public event EventHandler<Keys>? KeyClicked;
 
         public KeyboardVisualizationControl(UISettings uiSettings)
         {
@@ -45,17 +49,20 @@ namespace SimBlock.Presentation.Controls
 
         private void InitializeComponent()
         {
-            SetStyle(ControlStyles.AllPaintingInWmPaint | 
-                    ControlStyles.UserPaint | 
-                    ControlStyles.DoubleBuffer | 
+            SetStyle(ControlStyles.AllPaintingInWmPaint |
+                    ControlStyles.UserPaint |
+                    ControlStyles.DoubleBuffer |
                     ControlStyles.ResizeRedraw, true);
             
             BackColor = Color.Transparent;
             Size = new Size(750, 200);
             
+            // Enable mouse events
+            this.MouseClick += OnMouseClick;
+            
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
-            tooltip.SetToolTip(this, "Keyboard blocking visualization - Red keys are blocked, Green keys are allowed");
+            tooltip.SetToolTip(this, "Keyboard blocking visualization - Red keys are blocked, Green keys are allowed, Orange keys are selected");
         }
 
         private void InitializeKeyLayout()
@@ -314,6 +321,7 @@ namespace SimBlock.Presentation.Controls
             _blockedColor = _uiSettings.ErrorColor;
             _allowedColor = _uiSettings.SuccessColor;
             _neutralColor = _uiSettings.BackgroundColor;
+            _selectedColor = _uiSettings.SelectedColor; // Selected state color
             _textColor = _uiSettings.TextColor;
         }
 
@@ -376,6 +384,15 @@ namespace SimBlock.Presentation.Controls
 
         private Color GetKeyColor(Keys key)
         {
+            if (_blockingMode == BlockingMode.Select && _advancedConfig != null)
+            {
+                // In select mode, show selected keys in orange
+                if (_advancedConfig.IsKeySelected(key))
+                    return _selectedColor;
+                else
+                    return _neutralColor;
+            }
+            
             if (!_isBlocked)
             {
                 return _neutralColor;
@@ -407,12 +424,19 @@ namespace SimBlock.Presentation.Controls
             DrawLegendItem(g, legendX + 80, legendY, _allowedColor, "Allowed");
             DrawLegendItem(g, legendX + 160, legendY, _neutralColor, "Inactive");
             
+            // Show selected color in Select mode
+            if (_blockingMode == BlockingMode.Select)
+            {
+                DrawLegendItem(g, legendX + 240, legendY, _selectedColor, "Selected");
+            }
+            
             // Draw mode indicator
             using (var font = new Font("Arial", 8, FontStyle.Bold))
             using (var brush = new SolidBrush(_textColor))
             {
                 string modeText = $"Mode: {_blockingMode}";
-                g.DrawString(modeText, font, brush, legendX + 250, legendY + 5);
+                int modeX = _blockingMode == BlockingMode.Select ? legendX + 320 : legendX + 250;
+                g.DrawString(modeText, font, brush, modeX, legendY + 5);
             }
         }
 
@@ -463,6 +487,36 @@ namespace SimBlock.Presentation.Controls
             }
             
             return "Blocking state unknown";
+        }
+
+        /// <summary>
+        /// Handles mouse click events on the keyboard visualization
+        /// </summary>
+        private void OnMouseClick(object? sender, MouseEventArgs e)
+        {
+            // Only handle clicks in Select mode
+            if (_blockingMode != BlockingMode.Select || _advancedConfig == null)
+                return;
+
+            // Find which key was clicked
+            foreach (var kvp in _keyLayout)
+            {
+                var key = kvp.Key;
+                var rect = kvp.Value;
+                
+                if (rect.Contains(e.Location))
+                {
+                    // Toggle selection for this key
+                    _advancedConfig.ToggleKeySelection(key);
+                    
+                    // Raise the KeyClicked event
+                    KeyClicked?.Invoke(this, key);
+                    
+                    // Refresh the display
+                    Invalidate();
+                    break;
+                }
+            }
         }
     }
 }

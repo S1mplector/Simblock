@@ -19,6 +19,8 @@ namespace SimBlock.Core.Application.Interfaces
         Task SetBlockingAsync(bool shouldBlock);
         Task SetSimpleModeAsync();
         Task SetAdvancedModeAsync(AdvancedKeyboardConfiguration config);
+        Task SetSelectModeAsync(AdvancedKeyboardConfiguration config);
+        Task ApplySelectionAsync();
         Task ShowMainWindowAsync();
         Task HideToTrayAsync();
     }

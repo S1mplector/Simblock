@@ -1,4 +1,5 @@
 using SimBlock.Core.Domain.Entities;
+using SimBlock.Core.Domain.Enums;
 
 namespace SimBlock.Presentation.ViewModels
 {
@@ -22,17 +23,49 @@ namespace SimBlock.Presentation.ViewModels
         public void UpdateFromKeyboardState(KeyboardBlockState state)
         {
             IsKeyboardBlocked = state.IsBlocked;
-            KeyboardStatusText = state.IsBlocked ? "Keyboard is BLOCKED" : "Keyboard is unlocked";
-            KeyboardToggleButtonText = state.IsBlocked ? "Unblock Keyboard" : "Block Keyboard";
+            KeyboardStatusText = GetKeyboardStatusText(state);
+            KeyboardToggleButtonText = GetKeyboardToggleButtonText(state);
             KeyboardLastToggleTime = state.LastToggleTime;
         }
         
         public void UpdateFromMouseState(MouseBlockState state)
         {
             IsMouseBlocked = state.IsBlocked;
-            MouseStatusText = state.IsBlocked ? "Mouse is BLOCKED" : "Mouse is unlocked";
-            MouseToggleButtonText = state.IsBlocked ? "Unblock Mouse" : "Block Mouse";
+            MouseStatusText = GetMouseStatusText(state);
+            MouseToggleButtonText = GetMouseToggleButtonText(state);
             MouseLastToggleTime = state.LastToggleTime;
+        }
+        
+        private string GetKeyboardStatusText(KeyboardBlockState state)
+        {
+            if (state.Mode == BlockingMode.Select)
+                return "Select keys to block";
+            
+            return state.IsBlocked ? "Keyboard is BLOCKED" : "Keyboard is unlocked";
+        }
+        
+        private string GetKeyboardToggleButtonText(KeyboardBlockState state)
+        {
+            if (state.Mode == BlockingMode.Select)
+                return "Apply Selection";
+            
+            return state.IsBlocked ? "Unblock Keyboard" : "Block Keyboard";
+        }
+        
+        private string GetMouseStatusText(MouseBlockState state)
+        {
+            if (state.Mode == BlockingMode.Select)
+                return "Select mouse actions to block";
+            
+            return state.IsBlocked ? "Mouse is BLOCKED" : "Mouse is unlocked";
+        }
+        
+        private string GetMouseToggleButtonText(MouseBlockState state)
+        {
+            if (state.Mode == BlockingMode.Select)
+                return "Apply Selection";
+            
+            return state.IsBlocked ? "Unblock Mouse" : "Block Mouse";
         }
     }
 }

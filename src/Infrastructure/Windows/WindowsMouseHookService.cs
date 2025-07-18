@@ -155,6 +155,21 @@ namespace SimBlock.Infrastructure.Windows
                 BlockStateChanged?.Invoke(this, _state);
             });
         }
+        
+        /// <summary>
+        /// Sets the mouse blocking to select mode with specific configuration
+        /// </summary>
+        public Task SetSelectModeAsync(AdvancedMouseConfiguration config, string? reason = null)
+        {
+            return Task.Run(() =>
+            {
+                _logger.LogInformation("Setting mouse blocking to select mode. Reason: {Reason}",
+                    reason ?? "Not specified");
+
+                _state.SetSelectMode(config, reason);
+                BlockStateChanged?.Invoke(this, _state);
+            });
+        }
 
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {

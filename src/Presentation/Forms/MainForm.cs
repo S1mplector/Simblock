@@ -4,10 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Interfaces;
+using SimBlock.Core.Domain.Enums;
 using SimBlock.Presentation.ViewModels;
 using SimBlock.Infrastructure.Windows;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Interfaces;
+using SimBlock.Presentation.Controls;
 
 namespace SimBlock.Presentation.Forms
 {
@@ -139,6 +141,9 @@ namespace SimBlock.Presentation.Forms
             
             // Wire up theme manager events
             _themeManager.ThemeChanged += OnThemeChanged;
+            
+            // Wire up visualization control events for Select mode
+            WireUpVisualizationEvents();
         }
 
         private void InitializeTimer()
@@ -152,6 +157,110 @@ namespace SimBlock.Presentation.Forms
             _statusTimer.Tick += OnStatusTimerTick;
         }
 
+        private void WireUpVisualizationEvents()
+        {
+            try
+            {
+                // Get the visualization controls from the manager
+                var keyboardControl = _visualizationManager.GetKeyboardVisualizationControl() as KeyboardVisualizationControl;
+                var mouseControl = _visualizationManager.GetMouseVisualizationControl() as MouseVisualizationControl;
+
+                // Wire up keyboard visualization click events
+                if (keyboardControl != null)
+                {
+                    keyboardControl.KeyClicked += OnKeyboardVisualizationKeyClicked;
+                }
+
+                // Wire up mouse visualization click events
+                if (mouseControl != null)
+                {
+                    mouseControl.ComponentClicked += OnMouseVisualizationComponentClicked;
+                }
+
+                _logger.LogInformation("Visualization control events wired up successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error wiring up visualization events");
+            }
+        }
+
+        private async void OnKeyboardVisualizationKeyClicked(object? sender, Keys e)
+        {
+            try
+            {
+                _logger.LogInformation("Key clicked: {Key}, Current mode: {Mode}", e, _uiSettings.KeyboardBlockingMode);
+
+                // Only handle clicks in Select mode
+                if (_uiSettings.KeyboardBlockingMode != BlockingMode.Select)
+                {
+                    _logger.LogInformation("Ignoring key click - not in Select mode");
+                    return;
+                }
+
+                // Initialize Advanced configuration if null
+                if (_uiSettings.AdvancedKeyboardConfig == null)
+                {
+                    _logger.LogInformation("Initializing AdvancedKeyboardConfig for Select mode");
+                    _uiSettings.AdvancedKeyboardConfig = new AdvancedKeyboardConfiguration();
+                }
+
+                _logger.LogInformation("Key clicked in Select mode: {Key}", e);
+
+                // Toggle the selection state for the clicked key
+                _uiSettings.AdvancedKeyboardConfig.ToggleKeySelection(e);
+
+                _logger.LogInformation("Key selection toggled. Is key selected: {IsSelected}",
+                    _uiSettings.AdvancedKeyboardConfig.IsKeySelected(e));
+
+                // Update the visualization to show the new selection state
+                _visualizationManager.UpdateKeyboardVisualization(_keyboardBlockerService.CurrentState);
+                _visualizationManager.SetKeyboardBlockingMode(_uiSettings.KeyboardBlockingMode, _uiSettings.AdvancedKeyboardConfig);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling keyboard visualization key click");
+            }
+        }
+
+        private async void OnMouseVisualizationComponentClicked(object? sender, string e)
+        {
+            try
+            {
+                _logger.LogInformation("Mouse component clicked: {Component}, Current mode: {Mode}", e, _uiSettings.MouseBlockingMode);
+
+                // Only handle clicks in Select mode
+                if (_uiSettings.MouseBlockingMode != BlockingMode.Select)
+                {
+                    _logger.LogInformation("Ignoring mouse click - not in Select mode");
+                    return;
+                }
+
+                // Initialize Advanced configuration if null
+                if (_uiSettings.AdvancedMouseConfig == null)
+                {
+                    _logger.LogInformation("Initializing AdvancedMouseConfig for Select mode");
+                    _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
+                }
+
+                _logger.LogInformation("Mouse component clicked in Select mode: {Component}", e);
+
+                // Toggle the selection state for the clicked component
+                _uiSettings.AdvancedMouseConfig.ToggleComponentSelection(e);
+
+                _logger.LogInformation("Mouse component selection toggled. Is component selected: {IsSelected}",
+                    _uiSettings.AdvancedMouseConfig.IsComponentSelected(e));
+
+                // Update the visualization to show the new selection state
+                _visualizationManager.UpdateMouseVisualization(_mouseBlockerService.CurrentState);
+                _visualizationManager.SetMouseBlockingMode(_uiSettings.MouseBlockingMode, _uiSettings.AdvancedMouseConfig);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling mouse visualization component click");
+            }
+        }
+
         private async void OnKeyboardToggleButtonClick(object? sender, EventArgs e)
         {
             try
@@ -161,12 +270,24 @@ namespace SimBlock.Presentation.Forms
                 // Set button to processing state
                 _layoutManager.SetToggleButtonProcessing(_uiControls.KeyboardToggleButton, true);
                 
-                await _keyboardBlockerService.ToggleBlockingAsync();
+                // Check if we're in Select mode
+                if (_uiSettings.KeyboardBlockingMode == BlockingMode.Select)
+                {
+                    _logger.LogInformation("Applying keyboard selection in Select mode");
+                    
+                    // Apply the selection (convert to Advanced mode and start blocking)
+                    await _keyboardBlockerService.ApplySelectionAsync();
+                }
+                else
+                {
+                    // Normal toggle behavior
+                    await _keyboardBlockerService.ToggleBlockingAsync();
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error toggling keyboard blocking");
-                MessageBox.Show($"Failed to toggle keyboard blocking.\n\nError: {ex.Message}",
+                _logger.LogError(ex, "Error handling keyboard button click");
+                MessageBox.Show($"Failed to handle keyboard action.\n\nError: {ex.Message}",
                     "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -186,12 +307,24 @@ namespace SimBlock.Presentation.Forms
                 // Set button to processing state
                 _layoutManager.SetToggleButtonProcessing(_uiControls.MouseToggleButton, true);
                 
-                await _mouseBlockerService.ToggleBlockingAsync();
+                // Check if we're in Select mode
+                if (_uiSettings.MouseBlockingMode == BlockingMode.Select)
+                {
+                    _logger.LogInformation("Applying mouse selection in Select mode");
+                    
+                    // Apply the selection (convert to Advanced mode and start blocking)
+                    await _mouseBlockerService.ApplySelectionAsync();
+                }
+                else
+                {
+                    // Normal toggle behavior
+                    await _mouseBlockerService.ToggleBlockingAsync();
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error toggling mouse blocking");
-                MessageBox.Show($"Failed to toggle mouse blocking.\n\nError: {ex.Message}",
+                _logger.LogError(ex, "Error handling mouse button click");
+                MessageBox.Show($"Failed to handle mouse action.\n\nError: {ex.Message}",
                     "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
