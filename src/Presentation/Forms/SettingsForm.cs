@@ -26,6 +26,11 @@ namespace SimBlock.Presentation.Forms
 
         // UI Controls
         private Button _themeToggleButton = null!;
+        
+        // Visualization controls for Select mode
+        private SimBlock.Presentation.Controls.KeyboardVisualizationControl? _keyboardVisualizationControl;
+        private SimBlock.Presentation.Controls.MouseVisualizationControl? _mouseVisualizationControl;
+        private GroupBox? _visualizationGroupBox;
         private Button _closeButton = null!;
         private Label _themeLabel = null!;
         private GroupBox _appearanceGroupBox = null!;
@@ -93,7 +98,7 @@ namespace SimBlock.Presentation.Forms
         {
             // Configure form properties
             Text = "Settings - SimBlock";
-            Size = new Size(650, 750);
+            Size = new Size(650, 900); // Increased height to accommodate visualization controls
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -203,6 +208,7 @@ namespace SimBlock.Presentation.Forms
             };
 
             CreateAdvancedControls();
+            CreateVisualizationControls();
 
             // Keyboard shortcuts group box
             _keyboardShortcutsGroupBox = new GroupBox
@@ -460,6 +466,37 @@ namespace SimBlock.Presentation.Forms
             _advancedConfigPanel.Size = new Size(590, 220);
         }
 
+        private void CreateVisualizationControls()
+        {
+            // Create visualization group box
+            _visualizationGroupBox = new GroupBox
+            {
+                Text = "Select Mode - Click to Select Keys/Actions",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor,
+                Size = new Size(600, 350),
+                Visible = false // Initially hidden, shown only in Select mode
+            };
+
+            // Create keyboard visualization control
+            _keyboardVisualizationControl = new SimBlock.Presentation.Controls.KeyboardVisualizationControl(_uiSettings)
+            {
+                Location = new Point(10, 25),
+                Size = new Size(570, 200)
+            };
+
+            // Create mouse visualization control
+            _mouseVisualizationControl = new SimBlock.Presentation.Controls.MouseVisualizationControl(_uiSettings)
+            {
+                Location = new Point(10, 235),
+                Size = new Size(570, 100)
+            };
+
+            // Add controls to group box
+            _visualizationGroupBox.Controls.Add(_keyboardVisualizationControl);
+            _visualizationGroupBox.Controls.Add(_mouseVisualizationControl);
+        }
+
         private void PopulateKeyComboBox()
         {
             var commonKeys = new[]
@@ -517,7 +554,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
+                RowCount = 7,
                 Padding = new Padding(20),
                 BackColor = _uiSettings.BackgroundColor
             };
@@ -622,10 +659,13 @@ namespace SimBlock.Presentation.Forms
             mainPanel.Controls.Add(_behaviorGroupBox, 0, 1);
             mainPanel.Controls.Add(_blockingModeGroupBox, 0, 2);
             mainPanel.Controls.Add(_advancedConfigPanel, 0, 3);
-            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 4);
-            mainPanel.Controls.Add(buttonPanel, 0, 5);
+            if (_visualizationGroupBox != null)
+                mainPanel.Controls.Add(_visualizationGroupBox, 0, 4);
+            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 5);
+            mainPanel.Controls.Add(buttonPanel, 0, 6);
 
             // Set row styles
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -734,17 +774,27 @@ namespace SimBlock.Presentation.Forms
 
         private async void OnBlockingModeChanged(object? sender, EventArgs e)
         {
+            Console.WriteLine("SettingsForm.OnBlockingModeChanged: Event triggered");
+            
             try
             {
                 var radioButton = sender as RadioButton;
+                Console.WriteLine($"SettingsForm.OnBlockingModeChanged: RadioButton={radioButton?.Text}, Checked={radioButton?.Checked}");
+                
                 if (radioButton?.Checked != true)
+                {
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Radio button not checked, returning");
                     return;
+                }
 
                 if (radioButton == _simpleModeRadioButton)
                 {
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Simple mode selected");
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Simple;
                     _uiSettings.MouseBlockingMode = BlockingMode.Simple;
                     _advancedConfigPanel.Visible = false;
+                    if (_visualizationGroupBox != null)
+                        _visualizationGroupBox.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Simple");
                     
                     // Apply simple mode to active blocker services
@@ -757,9 +807,12 @@ namespace SimBlock.Presentation.Forms
                 }
                 else if (radioButton == _advancedModeRadioButton)
                 {
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Advanced mode selected");
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Advanced;
                     _uiSettings.MouseBlockingMode = BlockingMode.Advanced;
                     _advancedConfigPanel.Visible = true;
+                    if (_visualizationGroupBox != null)
+                        _visualizationGroupBox.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Advanced");
                     
                     // Apply advanced mode to active blocker services
@@ -778,6 +831,7 @@ namespace SimBlock.Presentation.Forms
                 }
                 else if (radioButton == _selectModeRadioButton)
                 {
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: SELECT MODE SELECTED!");
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Select;
                     _uiSettings.MouseBlockingMode = BlockingMode.Select;
                     _advancedConfigPanel.Visible = false;
@@ -786,25 +840,84 @@ namespace SimBlock.Presentation.Forms
                     // Initialize Advanced configurations if null for Select mode
                     if (_uiSettings.AdvancedKeyboardConfig == null)
                     {
+                        Console.WriteLine("SettingsForm.OnBlockingModeChanged: Creating new AdvancedKeyboardConfiguration for Select mode");
+                        _logger.LogInformation("Creating new AdvancedKeyboardConfiguration for Select mode");
                         _uiSettings.AdvancedKeyboardConfig = new AdvancedKeyboardConfiguration();
                     }
                     if (_uiSettings.AdvancedMouseConfig == null)
                     {
+                        Console.WriteLine("SettingsForm.OnBlockingModeChanged: Creating new AdvancedMouseConfiguration for Select mode");
+                        _logger.LogInformation("Creating new AdvancedMouseConfiguration for Select mode");
                         _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
                     }
                     
+                    // Clear any existing selections
+                    _uiSettings.AdvancedKeyboardConfig.ClearSelection();
+                    _uiSettings.AdvancedMouseConfig.ClearSelection();
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Cleared existing selections");
+                    
+                    // Show visualization controls for Select mode
+                    if (_visualizationGroupBox != null)
+                    {
+                        _visualizationGroupBox.Visible = true;
+                        Console.WriteLine("SettingsForm.OnBlockingModeChanged: Showing visualization controls");
+                        
+                        // Update visualization controls with Select mode
+                        if (_keyboardVisualizationControl != null)
+                        {
+                            _keyboardVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig, false);
+                        }
+                        if (_mouseVisualizationControl != null)
+                        {
+                            _mouseVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedMouseConfig, false);
+                        }
+                    }
+                    
                     // Apply select mode to active blocker services
-                    await _keyboardBlockerService.SetSelectModeAsync(_uiSettings.AdvancedKeyboardConfig);
-                    await _mouseBlockerService.SetSelectModeAsync(_uiSettings.AdvancedMouseConfig);
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Applying Select mode to keyboard blocker service");
+                    _logger.LogInformation("Applying Select mode to keyboard blocker service");
+                    
+                    try
+                    {
+                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: BEFORE keyboard SetSelectModeAsync - UISettings mode: {_uiSettings.KeyboardBlockingMode}, Service mode: {_keyboardBlockerService.CurrentState.Mode}");
+                        await _keyboardBlockerService.SetSelectModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: AFTER keyboard SetSelectModeAsync - UISettings mode: {_uiSettings.KeyboardBlockingMode}, Service mode: {_keyboardBlockerService.CurrentState.Mode}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: EXCEPTION during keyboard SetSelectModeAsync: {ex.Message}");
+                        _logger.LogError(ex, "Exception during keyboard SetSelectModeAsync");
+                    }
+                    
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Applying Select mode to mouse blocker service");
+                    _logger.LogInformation("Applying Select mode to mouse blocker service");
+                    
+                    try
+                    {
+                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: BEFORE mouse SetSelectModeAsync - UISettings mode: {_uiSettings.MouseBlockingMode}, Service mode: {_mouseBlockerService.CurrentState.Mode}");
+                        await _mouseBlockerService.SetSelectModeAsync(_uiSettings.AdvancedMouseConfig);
+                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: AFTER mouse SetSelectModeAsync - UISettings mode: {_uiSettings.MouseBlockingMode}, Service mode: {_mouseBlockerService.CurrentState.Mode}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"SettingsForm.OnBlockingModeChanged: EXCEPTION during mouse SetSelectModeAsync: {ex.Message}");
+                        _logger.LogError(ex, "Exception during mouse SetSelectModeAsync");
+                    }
                     
                     // Update visualization manager to Select mode
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Updating visualization manager to Select mode");
+                    _logger.LogInformation("Updating visualization manager to Select mode");
                     _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig);
                     _visualizationManager.SetMouseBlockingMode(BlockingMode.Select, _uiSettings.AdvancedMouseConfig);
+                    
+                    Console.WriteLine("SettingsForm.OnBlockingModeChanged: Select mode configuration complete");
+                    _logger.LogInformation("Select mode configuration complete");
                 }
                 SaveSettings();
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"SettingsForm.OnBlockingModeChanged: ERROR - {ex.Message}");
                 _logger.LogError(ex, "Error changing blocking mode");
             }
         }
@@ -1137,6 +1250,25 @@ namespace SimBlock.Presentation.Forms
             _advancedModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
             _selectModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Select;
             _advancedConfigPanel.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
+            
+            // Update visualization controls visibility based on mode
+            if (_visualizationGroupBox != null)
+            {
+                _visualizationGroupBox.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Select;
+                
+                // If Select mode is active, update the visualization controls
+                if (_uiSettings.KeyboardBlockingMode == BlockingMode.Select)
+                {
+                    if (_keyboardVisualizationControl != null && _uiSettings.AdvancedKeyboardConfig != null)
+                    {
+                        _keyboardVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig, false);
+                    }
+                    if (_mouseVisualizationControl != null && _uiSettings.AdvancedMouseConfig != null)
+                    {
+                        _mouseVisualizationControl.UpdateVisualization(BlockingMode.Select, _uiSettings.AdvancedMouseConfig, false);
+                    }
+                }
+            }
 
             // Update keyboard blocking checkboxes
             _blockModifierKeysCheckBox.Checked = _uiSettings.AdvancedKeyboardConfig?.BlockModifierKeys ?? false;

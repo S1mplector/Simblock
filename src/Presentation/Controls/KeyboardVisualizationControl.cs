@@ -330,11 +330,18 @@ namespace SimBlock.Presentation.Controls
         /// </summary>
         public void UpdateVisualization(BlockingMode mode, AdvancedKeyboardConfiguration? config, bool isBlocked)
         {
+            System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.UpdateVisualization: Mode={mode}, Config={config != null}, IsBlocked={isBlocked}");
+            if (config != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.UpdateVisualization: Config has {config.SelectedKeys.Count} selected keys");
+            }
+            
             _blockingMode = mode;
             _advancedConfig = config;
             _isBlocked = isBlocked;
             
             Invalidate(); // Trigger repaint
+            System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.UpdateVisualization: Invalidated display");
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -387,10 +394,10 @@ namespace SimBlock.Presentation.Controls
             if (_blockingMode == BlockingMode.Select && _advancedConfig != null)
             {
                 // In select mode, show selected keys in orange
-                if (_advancedConfig.IsKeySelected(key))
-                    return _selectedColor;
-                else
-                    return _neutralColor;
+                bool isSelected = _advancedConfig.IsKeySelected(key);
+                Color color = isSelected ? _selectedColor : _neutralColor;
+                System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.GetKeyColor: Key={key}, Selected={isSelected}, Color={color}, SelectedColor={_selectedColor}");
+                return color;
             }
             
             if (!_isBlocked)
@@ -494,9 +501,14 @@ namespace SimBlock.Presentation.Controls
         /// </summary>
         private void OnMouseClick(object? sender, MouseEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Mode={_blockingMode}, Location={e.Location}, Config={_advancedConfig != null}");
+            
             // Only handle clicks in Select mode
             if (_blockingMode != BlockingMode.Select || _advancedConfig == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Early return - Mode={_blockingMode}, Config={_advancedConfig != null}");
                 return;
+            }
 
             // Find which key was clicked
             foreach (var kvp in _keyLayout)
@@ -506,17 +518,24 @@ namespace SimBlock.Presentation.Controls
                 
                 if (rect.Contains(e.Location))
                 {
+                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Found key {key} at {rect}");
+                    
                     // Toggle selection for this key
                     _advancedConfig.ToggleKeySelection(key);
+                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Toggled selection for {key}");
                     
                     // Raise the KeyClicked event
                     KeyClicked?.Invoke(this, key);
+                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Raised KeyClicked event for {key}");
                     
                     // Refresh the display
                     Invalidate();
+                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Invalidated display");
                     break;
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: No key found at location {e.Location}");
         }
     }
 }

@@ -46,10 +46,14 @@ namespace SimBlock.Presentation.ViewModels
         
         private string GetKeyboardToggleButtonText(KeyboardBlockState state)
         {
+            string buttonText;
             if (state.Mode == BlockingMode.Select)
-                return "Apply Selection";
+                buttonText = "Apply Selection";
+            else
+                buttonText = state.IsBlocked ? "Unblock Keyboard" : "Block Keyboard";
             
-            return state.IsBlocked ? "Unblock Keyboard" : "Block Keyboard";
+            System.Diagnostics.Debug.WriteLine($"MainWindowViewModel.GetKeyboardToggleButtonText: Mode={state.Mode}, IsBlocked={state.IsBlocked}, ButtonText={buttonText}");
+            return buttonText;
         }
         
         private string GetMouseStatusText(MouseBlockState state)
@@ -62,10 +66,14 @@ namespace SimBlock.Presentation.ViewModels
         
         private string GetMouseToggleButtonText(MouseBlockState state)
         {
+            string buttonText;
             if (state.Mode == BlockingMode.Select)
-                return "Apply Selection";
+                buttonText = "Apply Selection";
+            else
+                buttonText = state.IsBlocked ? "Unblock Mouse" : "Block Mouse";
             
-            return state.IsBlocked ? "Unblock Mouse" : "Block Mouse";
+            System.Diagnostics.Debug.WriteLine($"MainWindowViewModel.GetMouseToggleButtonText: Mode={state.Mode}, IsBlocked={state.IsBlocked}, ButtonText={buttonText}");
+            return buttonText;
         }
     }
 }

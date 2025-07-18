@@ -163,11 +163,25 @@ namespace SimBlock.Infrastructure.Windows
         {
             return Task.Run(() =>
             {
-                _logger.LogInformation("Setting mouse blocking to select mode. Reason: {Reason}",
-                    reason ?? "Not specified");
+                Console.WriteLine($"WindowsMouseHookService.SetSelectModeAsync: BEFORE SetSelectMode - Current mode: {_state.Mode}");
+                _logger.LogInformation("WindowsMouseHookService.SetSelectModeAsync: BEFORE SetSelectMode - Current mode: {CurrentMode}. Reason: {Reason}",
+                    _state.Mode, reason ?? "Not specified");
 
-                _state.SetSelectMode(config, reason);
-                BlockStateChanged?.Invoke(this, _state);
+                try
+                {
+                    _state.SetSelectMode(config, reason);
+                    Console.WriteLine($"WindowsMouseHookService.SetSelectModeAsync: AFTER SetSelectMode - Current mode: {_state.Mode}");
+                    _logger.LogInformation("WindowsMouseHookService.SetSelectModeAsync: AFTER SetSelectMode - Current mode: {CurrentMode}", _state.Mode);
+                    
+                    BlockStateChanged?.Invoke(this, _state);
+                    Console.WriteLine($"WindowsMouseHookService.SetSelectModeAsync: AFTER BlockStateChanged event - Current mode: {_state.Mode}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"WindowsMouseHookService.SetSelectModeAsync: EXCEPTION: {ex.Message}");
+                    _logger.LogError(ex, "WindowsMouseHookService.SetSelectModeAsync: Exception occurred");
+                    throw;
+                }
             });
         }
 

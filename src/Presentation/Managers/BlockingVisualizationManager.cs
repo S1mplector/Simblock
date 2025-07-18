@@ -98,6 +98,8 @@ namespace SimBlock.Presentation.Managers
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"BlockingVisualizationManager.SetKeyboardBlockingMode: Mode={mode}, Config={config != null}");
+                
                 _keyboardMode = mode;
                 _keyboardConfig = config;
                 
@@ -106,10 +108,12 @@ namespace SimBlock.Presentation.Managers
                 {
                     _keyboardBlocked = false;
                     _logger.LogInformation("Keyboard set to Select mode - blocking disabled for selection");
+                    System.Diagnostics.Debug.WriteLine($"BlockingVisualizationManager.SetKeyboardBlockingMode: Select mode - Config null: {config == null}");
                 }
                 
                 // Update the visualization with new mode
                 _keyboardVisualization.UpdateVisualization(_keyboardMode, _keyboardConfig, _keyboardBlocked);
+                System.Diagnostics.Debug.WriteLine($"BlockingVisualizationManager.SetKeyboardBlockingMode: Updated visualization with Mode={_keyboardMode}, Config={_keyboardConfig != null}, Blocked={_keyboardBlocked}");
                 
                 _logger.LogInformation("Keyboard blocking mode set to {Mode}", mode);
                 
@@ -129,6 +133,8 @@ namespace SimBlock.Presentation.Managers
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"BlockingVisualizationManager.SetMouseBlockingMode: Mode={mode}, Config={config != null}");
+                
                 _mouseMode = mode;
                 _mouseConfig = config;
                 
@@ -137,10 +143,12 @@ namespace SimBlock.Presentation.Managers
                 {
                     _mouseBlocked = false;
                     _logger.LogInformation("Mouse set to Select mode - blocking disabled for selection");
+                    System.Diagnostics.Debug.WriteLine($"BlockingVisualizationManager.SetMouseBlockingMode: Select mode - Config null: {config == null}");
                 }
                 
                 // Update the visualization with new mode
                 _mouseVisualization.UpdateVisualization(_mouseMode, _mouseConfig, _mouseBlocked);
+                System.Diagnostics.Debug.WriteLine($"BlockingVisualizationManager.SetMouseBlockingMode: Updated visualization with Mode={_mouseMode}, Config={_mouseConfig != null}, Blocked={_mouseBlocked}");
                 
                 _logger.LogInformation("Mouse blocking mode set to {Mode}", mode);
                 

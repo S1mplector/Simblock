@@ -418,9 +418,14 @@ namespace SimBlock.Presentation.Controls
         /// </summary>
         private void OnMouseClick(object? sender, MouseEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: Mode={_blockingMode}, Location={e.Location}, Config={_advancedConfig != null}");
+            
             // Only handle clicks in Select mode
             if (_blockingMode != BlockingMode.Select || _advancedConfig == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: Early return - Mode={_blockingMode}, Config={_advancedConfig != null}");
                 return;
+            }
 
             // Find which component was clicked
             foreach (var kvp in _mouseComponents)
@@ -434,17 +439,24 @@ namespace SimBlock.Presentation.Controls
                 
                 if (rect.Contains(e.Location))
                 {
+                    System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: Found component {component} at {rect}");
+                    
                     // Toggle selection for this component
                     _advancedConfig.ToggleComponentSelection(component);
+                    System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: Toggled selection for {component}");
                     
                     // Raise the ComponentClicked event
                     ComponentClicked?.Invoke(this, component);
+                    System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: Raised ComponentClicked event for {component}");
                     
                     // Refresh the display
                     Invalidate();
+                    System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: Invalidated display");
                     break;
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: No component found at location {e.Location}");
         }
     }
 }

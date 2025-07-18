@@ -89,7 +89,21 @@ namespace SimBlock.Core.Application.Services
         /// </summary>
         public async Task SetSelectModeAsync(AdvancedMouseConfiguration config)
         {
-            await _hookService.SetSelectModeAsync(config, "User set select mode");
+            Console.WriteLine($"MouseBlockerService.SetSelectModeAsync: BEFORE hook service call - Current mode: {CurrentState.Mode}");
+            _logger.LogInformation("MouseBlockerService.SetSelectModeAsync: BEFORE hook service call - Current mode: {CurrentMode}", CurrentState.Mode);
+            
+            try
+            {
+                await _hookService.SetSelectModeAsync(config, "User set select mode");
+                Console.WriteLine($"MouseBlockerService.SetSelectModeAsync: AFTER hook service call - Current mode: {CurrentState.Mode}");
+                _logger.LogInformation("MouseBlockerService.SetSelectModeAsync: AFTER hook service call - Current mode: {CurrentMode}", CurrentState.Mode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"MouseBlockerService.SetSelectModeAsync: EXCEPTION: {ex.Message}");
+                _logger.LogError(ex, "MouseBlockerService.SetSelectModeAsync: Exception occurred");
+                throw;
+            }
         }
         
         /// <summary>

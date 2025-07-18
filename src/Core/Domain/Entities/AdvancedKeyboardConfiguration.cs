@@ -231,7 +231,9 @@ namespace SimBlock.Core.Domain.Entities
         /// </summary>
         public bool IsKeySelected(Keys key)
         {
-            return SelectedKeys.Contains(key);
+            bool isSelected = SelectedKeys.Contains(key);
+            System.Diagnostics.Debug.WriteLine($"AdvancedKeyboardConfiguration.IsKeySelected: Key={key}, Selected={isSelected}, Total Selected={SelectedKeys.Count}");
+            return isSelected;
         }
 
         /// <summary>
@@ -239,7 +241,8 @@ namespace SimBlock.Core.Domain.Entities
         /// </summary>
         public void ToggleKeySelection(Keys key)
         {
-            if (SelectedKeys.Contains(key))
+            bool wasSelected = SelectedKeys.Contains(key);
+            if (wasSelected)
             {
                 SelectedKeys.Remove(key);
             }
@@ -247,6 +250,9 @@ namespace SimBlock.Core.Domain.Entities
             {
                 SelectedKeys.Add(key);
             }
+            
+            bool isNowSelected = SelectedKeys.Contains(key);
+            System.Diagnostics.Debug.WriteLine($"AdvancedKeyboardConfiguration.ToggleKeySelection: Key={key}, Before={wasSelected}, After={isNowSelected}, Total Selected={SelectedKeys.Count}");
         }
 
         /// <summary>

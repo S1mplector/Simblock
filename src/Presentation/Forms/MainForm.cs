@@ -185,7 +185,7 @@ namespace SimBlock.Presentation.Forms
             }
         }
 
-        private async void OnKeyboardVisualizationKeyClicked(object? sender, Keys e)
+        private void OnKeyboardVisualizationKeyClicked(object? sender, Keys e)
         {
             try
             {
@@ -223,7 +223,7 @@ namespace SimBlock.Presentation.Forms
             }
         }
 
-        private async void OnMouseVisualizationComponentClicked(object? sender, string e)
+        private void OnMouseVisualizationComponentClicked(object? sender, string e)
         {
             try
             {
@@ -265,7 +265,16 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                _logger.LogInformation("Keyboard toggle button clicked");
+                _logger.LogInformation("=== KEYBOARD TOGGLE BUTTON CLICKED ===");
+                _logger.LogInformation("UISettings.KeyboardBlockingMode: {Mode}", _uiSettings.KeyboardBlockingMode);
+                _logger.LogInformation("KeyboardBlockerService.CurrentState.Mode: {Mode}", _keyboardBlockerService.CurrentState?.Mode);
+                
+                // Show diagnostic information in MessageBox
+                string diagnosticInfo = $"=== KEYBOARD TOGGLE BUTTON CLICKED ===\n" +
+                                      $"UISettings.KeyboardBlockingMode: {_uiSettings.KeyboardBlockingMode}\n" +
+                                      $"KeyboardBlockerService.CurrentState.Mode: {_keyboardBlockerService.CurrentState?.Mode}\n" +
+                                      $"Selected Keys Count: {_uiSettings.AdvancedKeyboardConfig?.SelectedKeys?.Count ?? 0}";
+                MessageBox.Show(diagnosticInfo, "Keyboard Toggle Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 
                 // Set button to processing state
                 _layoutManager.SetToggleButtonProcessing(_uiControls.KeyboardToggleButton, true);
@@ -273,14 +282,64 @@ namespace SimBlock.Presentation.Forms
                 // Check if we're in Select mode
                 if (_uiSettings.KeyboardBlockingMode == BlockingMode.Select)
                 {
-                    _logger.LogInformation("Applying keyboard selection in Select mode");
+                    _logger.LogInformation("=== APPLYING KEYBOARD SELECTION IN SELECT MODE ===");
                     
-                    // Apply the selection (convert to Advanced mode and start blocking)
-                    await _keyboardBlockerService.ApplySelectionAsync();
+                    // Get the configuration from UISettings and apply selection
+                    if (_uiSettings.AdvancedKeyboardConfig != null)
+                    {
+                        _logger.LogInformation("Found keyboard configuration with {SelectedCount} selected keys",
+                            _uiSettings.AdvancedKeyboardConfig.SelectedKeys.Count);
+                        
+                        // Log the selected keys before applying
+                        foreach (var key in _uiSettings.AdvancedKeyboardConfig.SelectedKeys)
+                        {
+                            _logger.LogInformation("Selected key: {Key}", key);
+                        }
+                        
+                        // Apply selection to convert selected keys to blocked keys
+                        _uiSettings.AdvancedKeyboardConfig.ApplySelection();
+                        
+                        // Log the blocked keys after applying
+                        _logger.LogInformation("After ApplySelection: {BlockedCount} blocked keys",
+                            _uiSettings.AdvancedKeyboardConfig.BlockedKeys.Count);
+                        foreach (var key in _uiSettings.AdvancedKeyboardConfig.BlockedKeys)
+                        {
+                            _logger.LogInformation("Blocked key: {Key}", key);
+                        }
+                        
+                        // Switch to advanced mode with the updated configuration
+                        _logger.LogInformation("Calling SetAdvancedModeAsync with configuration");
+                        await _keyboardBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                        _logger.LogInformation("SetAdvancedModeAsync completed");
+                        
+                        // DIAGNOSTIC: Check the blocking state
+                        _logger.LogInformation("DIAGNOSTIC - After SetAdvancedModeAsync:");
+                        _logger.LogInformation("  Mode: {Mode}", _keyboardBlockerService.CurrentState.Mode);
+                        _logger.LogInformation("  IsBlocked: {IsBlocked}", _keyboardBlockerService.CurrentState.IsBlocked);
+                        _logger.LogInformation("  BlockedKeys count: {Count}", _keyboardBlockerService.CurrentState.AdvancedConfig?.BlockedKeys?.Count ?? 0);
+                        
+                        // Now toggle blocking to actually enable it
+                        _logger.LogInformation("Calling ToggleBlockingAsync to enable blocking");
+                        await _keyboardBlockerService.ToggleBlockingAsync();
+                        _logger.LogInformation("ToggleBlockingAsync completed");
+                        
+                        // DIAGNOSTIC: Check the blocking state again
+                        _logger.LogInformation("DIAGNOSTIC - After ToggleBlockingAsync:");
+                        _logger.LogInformation("  Mode: {Mode}", _keyboardBlockerService.CurrentState.Mode);
+                        _logger.LogInformation("  IsBlocked: {IsBlocked}", _keyboardBlockerService.CurrentState.IsBlocked);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No keyboard configuration found for Select mode");
+                        // Initialize it
+                        _uiSettings.AdvancedKeyboardConfig = new AdvancedKeyboardConfiguration();
+                        _logger.LogInformation("Initialized new AdvancedKeyboardConfig");
+                    }
                 }
                 else
                 {
                     // Normal toggle behavior
+                    _logger.LogInformation("Not in Select mode, doing normal toggle. Mode: {Mode}", _uiSettings.KeyboardBlockingMode);
                     await _keyboardBlockerService.ToggleBlockingAsync();
                 }
             }
@@ -302,7 +361,16 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                _logger.LogInformation("Mouse toggle button clicked");
+                _logger.LogInformation("=== MOUSE TOGGLE BUTTON CLICKED ===");
+                _logger.LogInformation("UISettings.MouseBlockingMode: {Mode}", _uiSettings.MouseBlockingMode);
+                _logger.LogInformation("MouseBlockerService.CurrentState.Mode: {Mode}", _mouseBlockerService.CurrentState?.Mode);
+                
+                // Show diagnostic information in MessageBox
+                string diagnosticInfo = $"=== MOUSE TOGGLE BUTTON CLICKED ===\n" +
+                                      $"UISettings.MouseBlockingMode: {_uiSettings.MouseBlockingMode}\n" +
+                                      $"MouseBlockerService.CurrentState.Mode: {_mouseBlockerService.CurrentState?.Mode}\n" +
+                                      $"Has Selected Components: {_uiSettings.AdvancedMouseConfig?.HasSelectedComponents() ?? false}";
+                MessageBox.Show(diagnosticInfo, "Mouse Toggle Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 
                 // Set button to processing state
                 _layoutManager.SetToggleButtonProcessing(_uiControls.MouseToggleButton, true);
@@ -310,10 +378,51 @@ namespace SimBlock.Presentation.Forms
                 // Check if we're in Select mode
                 if (_uiSettings.MouseBlockingMode == BlockingMode.Select)
                 {
-                    _logger.LogInformation("Applying mouse selection in Select mode");
+                    _logger.LogInformation("=== APPLYING MOUSE SELECTION IN SELECT MODE ===");
                     
-                    // Apply the selection (convert to Advanced mode and start blocking)
-                    await _mouseBlockerService.ApplySelectionAsync();
+                    // Get the configuration from UISettings and apply selection
+                    if (_uiSettings.AdvancedMouseConfig != null)
+                    {
+                        _logger.LogInformation("Found mouse configuration - HasSelectedComponents: {HasSelected}",
+                            _uiSettings.AdvancedMouseConfig.HasSelectedComponents());
+                        
+                        // Log the selected components before applying
+                        _logger.LogInformation("Selected components: LeftButton={Left}, RightButton={Right}, MiddleButton={Middle}, X1={X1}, X2={X2}, Wheel={Wheel}, Movement={Movement}, DoubleClick={Double}",
+                            _uiSettings.AdvancedMouseConfig.SelectedLeftButton,
+                            _uiSettings.AdvancedMouseConfig.SelectedRightButton,
+                            _uiSettings.AdvancedMouseConfig.SelectedMiddleButton,
+                            _uiSettings.AdvancedMouseConfig.SelectedX1Button,
+                            _uiSettings.AdvancedMouseConfig.SelectedX2Button,
+                            _uiSettings.AdvancedMouseConfig.SelectedMouseWheel,
+                            _uiSettings.AdvancedMouseConfig.SelectedMouseMovement,
+                            _uiSettings.AdvancedMouseConfig.SelectedDoubleClick);
+                        
+                        // Apply selection to convert selected components to blocked components
+                        _uiSettings.AdvancedMouseConfig.ApplySelection();
+                        
+                        // Log the blocked components after applying
+                        _logger.LogInformation("After ApplySelection - Blocked components: LeftButton={Left}, RightButton={Right}, MiddleButton={Middle}, X1={X1}, X2={X2}, Wheel={Wheel}, Movement={Movement}, DoubleClick={Double}",
+                            _uiSettings.AdvancedMouseConfig.BlockLeftButton,
+                            _uiSettings.AdvancedMouseConfig.BlockRightButton,
+                            _uiSettings.AdvancedMouseConfig.BlockMiddleButton,
+                            _uiSettings.AdvancedMouseConfig.BlockX1Button,
+                            _uiSettings.AdvancedMouseConfig.BlockX2Button,
+                            _uiSettings.AdvancedMouseConfig.BlockMouseWheel,
+                            _uiSettings.AdvancedMouseConfig.BlockMouseMovement,
+                            _uiSettings.AdvancedMouseConfig.BlockDoubleClick);
+                        
+                        // Switch to advanced mode with the updated configuration
+                        _logger.LogInformation("Calling SetAdvancedModeAsync with configuration");
+                        await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
+                        _logger.LogInformation("SetAdvancedModeAsync completed");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No mouse configuration found for Select mode");
+                        // Initialize it
+                        _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
+                        _logger.LogInformation("Initialized new AdvancedMouseConfig");
+                    }
                 }
                 else
                 {
@@ -399,13 +508,17 @@ namespace SimBlock.Presentation.Forms
                 return;
             }
 
+            _logger.LogInformation("Keyboard state changed - Mode: {Mode}, IsBlocked: {IsBlocked}", state.Mode, state.IsBlocked);
+            
             _viewModel.UpdateFromKeyboardState(state);
             UpdateUI();
             _statusBarManager.UpdateBlockingState(state.IsBlocked || _viewModel.IsMouseBlocked);
             
             // Update visualization
             _visualizationManager.UpdateKeyboardVisualization(state);
-            _visualizationManager.SetKeyboardBlockingMode(_uiSettings.KeyboardBlockingMode, _uiSettings.AdvancedKeyboardConfig);
+            _visualizationManager.SetKeyboardBlockingMode(state.Mode, state.AdvancedConfig);
+            
+            _logger.LogInformation("Keyboard button text after update: {ButtonText}", _uiControls.KeyboardToggleButton.Text);
         }
 
         private void OnMouseStateChanged(object? sender, MouseBlockState state)
@@ -416,13 +529,17 @@ namespace SimBlock.Presentation.Forms
                 return;
             }
 
+            _logger.LogInformation("Mouse state changed - Mode: {Mode}, IsBlocked: {IsBlocked}", state.Mode, state.IsBlocked);
+            
             _viewModel.UpdateFromMouseState(state);
             UpdateUI();
             _statusBarManager.UpdateBlockingState(_viewModel.IsKeyboardBlocked || state.IsBlocked);
             
             // Update visualization
             _visualizationManager.UpdateMouseVisualization(state);
-            _visualizationManager.SetMouseBlockingMode(_uiSettings.MouseBlockingMode, _uiSettings.AdvancedMouseConfig);
+            _visualizationManager.SetMouseBlockingMode(state.Mode, state.AdvancedConfig);
+            
+            _logger.LogInformation("Mouse button text after update: {ButtonText}", _uiControls.MouseToggleButton.Text);
         }
 
         private void OnStatusTimerTick(object? sender, EventArgs e)
