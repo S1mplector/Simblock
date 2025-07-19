@@ -40,6 +40,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <EmbeddedResource Include="src\Presentation\Resources\Images\logo.ico" />
+    <EmbeddedResource Include="src\Presentation\Resources\Images\mouse.png" />
   </ItemGroup>
 
 </Project>

@@ -173,7 +173,7 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.SuccessColor
             };
 
-            controls.MouseLogoIcon = _logoManager.CreateLogoPictureBox();
+            controls.MouseLogoIcon = _logoManager.CreateMousePictureBox();
 
             controls.MouseNameLabel = new Label
             {
@@ -379,7 +379,7 @@ namespace SimBlock.Presentation.Managers
             controls.MouseLastToggleLabel.Text = $"Last toggle: {viewModel.MouseLastToggleTime:HH:mm:ss}";
 
             // Update logo appearance
-            _logoManager.UpdateLogoState(controls.MouseLogoIcon, viewModel.IsMouseBlocked);
+            _logoManager.UpdateLogoState(controls.MouseLogoIcon, viewModel.IsMouseBlocked, isMouseIcon: true);
         }
 
         /// <summary>

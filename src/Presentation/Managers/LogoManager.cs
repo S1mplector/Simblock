@@ -40,6 +40,20 @@ namespace SimBlock.Presentation.Managers
         }
 
         /// <summary>
+        /// Creates a PictureBox with the mouse image
+        /// </summary>
+        public PictureBox CreateMousePictureBox()
+        {
+            return new PictureBox
+            {
+                Size = _uiSettings.LogoSize,
+                Anchor = AnchorStyles.None,
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                Image = CreateMouseImage()
+            };
+        }
+
+        /// <summary>
         /// Creates the application icon
         /// </summary>
         public Icon CreateApplicationIcon()
@@ -79,16 +93,16 @@ namespace SimBlock.Presentation.Managers
         }
 
         /// <summary>
-        /// Updates the logo appearance based on keyboard blocking state
+        /// Updates the logo appearance based on blocking state
         /// </summary>
-        public void UpdateLogoState(PictureBox logoPictureBox, bool isBlocked)
+        public void UpdateLogoState(PictureBox logoPictureBox, bool isBlocked, bool isMouseIcon = false)
         {
             if (logoPictureBox?.Image == null) return;
 
             try
             {
-                // Create a new image based on the current state
-                var originalImage = CreateLogoImage();
+                // Create a new image based on the current state and icon type
+                var originalImage = isMouseIcon ? CreateMouseImage() : CreateLogoImage();
                 if (originalImage == null) return;
 
                 // Dispose previous image to prevent memory leaks
@@ -159,6 +173,45 @@ namespace SimBlock.Presentation.Managers
         }
 
         /// <summary>
+        /// Creates the mouse image from resources or fallback
+        /// </summary>
+        private Image? CreateMouseImage()
+        {
+            try
+            {
+                // Try to load the mouse.png file from embedded resources
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceName = "SimBlock.src.Presentation.Resources.Images.mouse.png";
+                
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    return Image.FromStream(stream);
+                }
+                else
+                {
+                    // Fallback to file system if embedded resource not found
+                    string imagePath = Path.Combine(Application.StartupPath, "src", "Presentation", "Resources", "Images", "mouse.png");
+                    
+                    if (File.Exists(imagePath))
+                    {
+                        return Image.FromFile(imagePath);
+                    }
+                    else
+                    {
+                        // Final fallback to a programmatic mouse icon
+                        return CreateFallbackMouseImage();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load mouse image, using fallback");
+                return CreateFallbackMouseImage();
+            }
+        }
+
+        /// <summary>
         /// Creates a fallback logo image programmatically
         /// </summary>
         private Image CreateFallbackLogoImage()
@@ -169,6 +222,22 @@ namespace SimBlock.Presentation.Managers
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.FillEllipse(Brushes.Blue, 6, 6, 36, 36);
                 g.DrawString("K", new Font("Arial", 24, FontStyle.Bold), 
+                    Brushes.White, 12, 8);
+            }
+            return bitmap;
+        }
+
+        /// <summary>
+        /// Creates a fallback mouse image programmatically
+        /// </summary>
+        private Image CreateFallbackMouseImage()
+        {
+            var bitmap = new Bitmap(_uiSettings.LogoSize.Width, _uiSettings.LogoSize.Height);
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.FillEllipse(Brushes.Gray, 6, 6, 36, 36);
+                g.DrawString("M", new Font("Arial", 24, FontStyle.Bold),
                     Brushes.White, 12, 8);
             }
             return bitmap;

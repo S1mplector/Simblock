@@ -15,13 +15,18 @@ namespace SimBlock.Presentation.Interfaces
         PictureBox CreateLogoPictureBox();
 
         /// <summary>
+        /// Creates a PictureBox with the mouse image
+        /// </summary>
+        PictureBox CreateMousePictureBox();
+
+        /// <summary>
         /// Creates the application icon
         /// </summary>
         Icon CreateApplicationIcon();
 
         /// <summary>
-        /// Updates the logo appearance based on keyboard blocking state
+        /// Updates the logo appearance based on blocking state
         /// </summary>
-        void UpdateLogoState(PictureBox logoPictureBox, bool isBlocked);
+        void UpdateLogoState(PictureBox logoPictureBox, bool isBlocked, bool isMouseIcon = false);
     }
 }
