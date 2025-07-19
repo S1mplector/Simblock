@@ -142,8 +142,8 @@ namespace SimBlock.Presentation.Controls
             // Draw mouse components
             DrawMouseComponents(g);
             
-            // Draw legend
-            DrawLegend(g);
+            // Legend removed per user request
+            // DrawLegend(g);
         }
 
         private void DrawMouseBody(Graphics g)
@@ -350,13 +350,7 @@ namespace SimBlock.Presentation.Controls
                 DrawLegendItem(g, legendX + 80, legendY, _neutralColor, "Inactive");
             }
             
-            // Draw mode indicator
-            using (var font = new Font("Arial", 8, FontStyle.Bold))
-            using (var brush = new SolidBrush(_textColor))
-            {
-                string modeText = $"Mode: {_blockingMode}";
-                g.DrawString(modeText, font, brush, legendX + 80, legendY + 15);
-            }
+            // Remove redundant mode indicator - it's displayed elsewhere and not needed here
         }
 
         private void DrawLegendItem(Graphics g, int x, int y, Color color, string text)

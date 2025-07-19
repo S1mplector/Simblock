@@ -45,7 +45,6 @@ namespace SimBlock.Presentation.Forms
         // Emergency unlock feedback tracking
         private System.Windows.Forms.Timer? _emergencyFeedbackTimer = null;
         private bool _showingEmergencyFeedback = false;
-
         public MainForm(
             IKeyboardBlockerService keyboardBlockerService,
             IMouseBlockerService mouseBlockerService,
@@ -696,10 +695,7 @@ namespace SimBlock.Presentation.Forms
                 if (!_viewModel.IsKeyboardBlocked && !_viewModel.IsMouseBlocked)
                     return;
 
-                // Don't start new feedback if already showing
-                if (_showingEmergencyFeedback)
-                    return;
-
+                // Allow updating feedback even if already showing to reflect current attempt count
                 // Stop any existing emergency feedback timer
                 if (_emergencyFeedbackTimer != null)
                 {
@@ -723,11 +719,12 @@ namespace SimBlock.Presentation.Forms
                     _uiControls.MouseToggleButton.BackColor = _uiSettings.ErrorColor;
                 }
                 
-                // Reset button after 1 second
+                // Reset button after 1.5 seconds (longer to ensure visibility)
                 _emergencyFeedbackTimer = new System.Windows.Forms.Timer();
-                _emergencyFeedbackTimer.Interval = 1000;
+                _emergencyFeedbackTimer.Interval = 1500;
                 _emergencyFeedbackTimer.Tick += (s, e) =>
                 {
+                    _emergencyFeedbackTimer?.Stop();
                     ResetEmergencyFeedback();
                 };
                 _emergencyFeedbackTimer.Start();
@@ -735,6 +732,8 @@ namespace SimBlock.Presentation.Forms
                 // Flash the window to draw attention
                 this.Activate();
                 this.BringToFront();
+                
+                _logger.LogInformation("Emergency unlock feedback displayed: attempt {AttemptCount}/3", attemptCount);
             }
             catch (Exception ex)
             {

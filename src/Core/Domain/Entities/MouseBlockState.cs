@@ -68,6 +68,10 @@ namespace SimBlock.Core.Domain.Entities
         {
             Mode = BlockingMode.Select;
             AdvancedConfig = config?.Clone();
+            
+            // Clear blocking settings from Advanced mode to prevent interference with Select mode visualization
+            AdvancedConfig?.PrepareForSelectMode();
+            
             LastToggleTime = DateTime.UtcNow;
             LastToggleReason = reason;
         }

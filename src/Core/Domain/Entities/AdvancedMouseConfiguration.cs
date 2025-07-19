@@ -317,6 +317,24 @@ namespace SimBlock.Core.Domain.Entities
         }
 
         /// <summary>
+        /// Prepares this configuration for Select mode by clearing all blocking settings while preserving selection state
+        /// </summary>
+        public void PrepareForSelectMode()
+        {
+            // Clear all blocking settings so they don't interfere with Select mode visualization
+            BlockLeftButton = false;
+            BlockRightButton = false;
+            BlockMiddleButton = false;
+            BlockX1Button = false;
+            BlockX2Button = false;
+            BlockMouseWheel = false;
+            BlockMouseMovement = false;
+            BlockDoubleClick = false;
+            
+            // Keep selection state intact - no need to modify Selected* properties
+        }
+
+        /// <summary>
         /// Checks if any mouse components are currently selected
         /// </summary>
         public bool HasSelectedComponents()

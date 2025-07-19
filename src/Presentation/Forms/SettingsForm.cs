@@ -31,6 +31,7 @@ namespace SimBlock.Presentation.Forms
         private SimBlock.Presentation.Controls.KeyboardVisualizationControl? _keyboardVisualizationControl;
         private SimBlock.Presentation.Controls.MouseVisualizationControl? _mouseVisualizationControl;
         private GroupBox? _visualizationGroupBox;
+        private Panel? _legendPanel;
         private Button _closeButton = null!;
         private Label _themeLabel = null!;
         private GroupBox _appearanceGroupBox = null!;
@@ -474,7 +475,7 @@ namespace SimBlock.Presentation.Forms
                 Text = "Select Mode - Click to Select Keys/Actions",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = _uiSettings.TextColor,
-                Size = new Size(600, 500), // Further increased height for better visualization spacing
+                Size = new Size(600, 520), // Increased height to accommodate legend at bottom
                 Visible = false // Initially hidden, shown only in Select mode
             };
 
@@ -492,22 +493,36 @@ namespace SimBlock.Presentation.Forms
                 Size = new Size(570, 250) // Further increased height to ensure full visibility
             };
 
+            // Create legend panel at the bottom
+            _legendPanel = new Panel
+            {
+                Location = new Point(10, 480), // Positioned at bottom of group box
+                Size = new Size(570, 25),
+                BackColor = _uiSettings.BackgroundColor
+            };
+
             // Hook up event handlers to save settings when selections change
             _keyboardVisualizationControl.KeyClicked += (sender, key) =>
             {
                 _logger.LogInformation("Key selection changed in visualization: {Key}", key);
                 SaveSettings(); // Save immediately when selection changes
+                RefreshLegend(_legendPanel); // Refresh legend when selection changes
             };
 
             _mouseVisualizationControl.ComponentClicked += (sender, component) =>
             {
                 _logger.LogInformation("Mouse component selection changed: {Component}", component);
                 SaveSettings(); // Save immediately when selection changes
+                RefreshLegend(_legendPanel); // Refresh legend when selection changes
             };
+
+            // Create initial legend
+            RefreshLegend(_legendPanel);
 
             // Add controls to group box
             _visualizationGroupBox.Controls.Add(_keyboardVisualizationControl);
             _visualizationGroupBox.Controls.Add(_mouseVisualizationControl);
+            _visualizationGroupBox.Controls.Add(_legendPanel);
         }
 
         private void PopulateKeyComboBox()
@@ -805,6 +820,12 @@ namespace SimBlock.Presentation.Forms
                         _visualizationGroupBox.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Simple");
                     
+                    // Refresh legend to hide "Selected" indicator
+                    if (_legendPanel != null)
+                    {
+                        RefreshLegend(_legendPanel);
+                    }
+                    
                     // Apply simple mode to active blocker services
                     await _keyboardBlockerService.SetSimpleModeAsync();
                     await _mouseBlockerService.SetSimpleModeAsync();
@@ -821,6 +842,12 @@ namespace SimBlock.Presentation.Forms
                     if (_visualizationGroupBox != null)
                         _visualizationGroupBox.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Advanced");
+                    
+                    // Refresh legend to hide "Selected" indicator
+                    if (_legendPanel != null)
+                    {
+                        RefreshLegend(_legendPanel);
+                    }
                     
                     // Apply advanced mode to active blocker services
                     if (_uiSettings.AdvancedKeyboardConfig != null)
@@ -897,6 +924,12 @@ namespace SimBlock.Presentation.Forms
                             // Re-hook event handler after mode change
                             _mouseVisualizationControl.ComponentClicked -= OnVisualizationComponentClicked;
                             _mouseVisualizationControl.ComponentClicked += OnVisualizationComponentClicked;
+                        }
+                        
+                        // Refresh legend to show "Selected" indicator
+                        if (_legendPanel != null)
+                        {
+                            RefreshLegend(_legendPanel);
                         }
                     }
                     
@@ -1293,8 +1326,35 @@ namespace SimBlock.Presentation.Forms
             _blockMouseMovementCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockMouseMovement ?? false;
             _blockDoubleClickCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockDoubleClick ?? false;
 
-            // Update emergency unlock key
-            _emergencyUnlockKeyComboBox.SelectedValue = _uiSettings.EmergencyUnlockKey;
+            // Update emergency unlock key - ensure ComboBox is properly updated
+            try
+            {
+                _emergencyUnlockKeyComboBox.SelectedValue = _uiSettings.EmergencyUnlockKey;
+                
+                // If SelectedValue didn't work (which can happen), try finding by value
+                if (_emergencyUnlockKeyComboBox.SelectedValue?.Equals(_uiSettings.EmergencyUnlockKey) != true)
+                {
+                    for (int i = 0; i < _emergencyUnlockKeyComboBox.Items.Count; i++)
+                    {
+                        var item = _emergencyUnlockKeyComboBox.Items[i];
+                        if (item is { } itemObj)
+                        {
+                            var valueProperty = itemObj.GetType().GetProperty("Value");
+                            if (valueProperty?.GetValue(itemObj)?.Equals(_uiSettings.EmergencyUnlockKey) == true)
+                            {
+                                _emergencyUnlockKeyComboBox.SelectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error setting emergency unlock key in ComboBox, defaulting to A");
+                _emergencyUnlockKeyComboBox.SelectedIndex = 0; // Default to first item (A)
+            }
+            
             _emergencyUnlockCtrlCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresCtrl;
             _emergencyUnlockAltCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresAlt;
             _emergencyUnlockShiftCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresShift;
@@ -1340,6 +1400,59 @@ namespace SimBlock.Presentation.Forms
         {
             _logger.LogInformation("Mouse component selection changed: {Component}", component);
             SaveSettings(); // Save immediately when selection changes
+        }
+
+        /// <summary>
+        /// Refreshes the legend panel with current color indicators
+        /// </summary>
+        private void RefreshLegend(Panel legendPanel)
+        {
+            // Clear existing legend items
+            legendPanel.Controls.Clear();
+            
+            int x = 0;
+            
+            // Add legend items based on current mode
+            CreateLegendItem(legendPanel, ref x, _uiSettings.ErrorColor, "Blocked");
+            CreateLegendItem(legendPanel, ref x, _uiSettings.SuccessColor, "Allowed");
+            CreateLegendItem(legendPanel, ref x, _uiSettings.BackgroundColor, "Inactive");
+            
+            // Show selected color in Select mode
+            if (_selectModeRadioButton?.Checked == true)
+            {
+                CreateLegendItem(legendPanel, ref x, _uiSettings.SelectedColor, "Selected");
+            }
+        }
+
+        /// <summary>
+        /// Creates a single legend item (color box + text) in the legend panel
+        /// </summary>
+        private void CreateLegendItem(Panel parent, ref int x, Color color, string text)
+        {
+            // Create color box
+            var colorBox = new Panel
+            {
+                Location = new Point(x, 6),
+                Size = new Size(12, 12),
+                BackColor = color,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            parent.Controls.Add(colorBox);
+            
+            // Create text label
+            var textLabel = new Label
+            {
+                Location = new Point(x + 15, 4),
+                Size = new Size(60, 16),
+                Text = text,
+                ForeColor = _uiSettings.TextColor,
+                Font = new Font("Arial", 8),
+                BackColor = Color.Transparent
+            };
+            parent.Controls.Add(textLabel);
+            
+            // Update x position for next item
+            x += 80;
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

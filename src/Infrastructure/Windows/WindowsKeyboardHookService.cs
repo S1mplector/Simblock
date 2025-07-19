@@ -312,7 +312,13 @@ namespace SimBlock.Infrastructure.Windows
                     bool shiftMatch = !_uiSettings.EmergencyUnlockRequiresShift || _shiftPressed;
                     
                     // Ensure at least one modifier is required and pressed
-                    bool hasRequiredModifiers = (_uiSettings.EmergencyUnlockRequiresCtrl && _ctrlPressed) ||
+                    // Fix: Check if ANY required modifier is being used, not just if it's pressed
+                    bool hasAnyRequiredModifier = _uiSettings.EmergencyUnlockRequiresCtrl ||
+                                                 _uiSettings.EmergencyUnlockRequiresAlt ||
+                                                 _uiSettings.EmergencyUnlockRequiresShift;
+                    
+                    bool hasRequiredModifiers = !hasAnyRequiredModifier || // If no modifiers required, always true
+                                               (_uiSettings.EmergencyUnlockRequiresCtrl && _ctrlPressed) ||
                                                (_uiSettings.EmergencyUnlockRequiresAlt && _altPressed) ||
                                                (_uiSettings.EmergencyUnlockRequiresShift && _shiftPressed);
                     

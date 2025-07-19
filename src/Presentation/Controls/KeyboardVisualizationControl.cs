@@ -55,7 +55,7 @@ namespace SimBlock.Presentation.Controls
                     ControlStyles.ResizeRedraw, true);
             
             BackColor = Color.Transparent;
-            Size = new Size(750, 200);
+            Size = new Size(750, 220); // Increased height to prevent intersection
             
             // Enable mouse events
             this.MouseClick += OnMouseClick;
@@ -385,8 +385,8 @@ namespace SimBlock.Presentation.Controls
                 }
             }
             
-            // Draw legend
-            DrawLegend(g);
+            // Legend moved to bottom of visualization group box in SettingsForm
+            // DrawLegend(g);
         }
 
         private Color GetKeyColor(Keys key)
@@ -423,7 +423,7 @@ namespace SimBlock.Presentation.Controls
 
         private void DrawLegend(Graphics g)
         {
-            int legendY = Height - 20;
+            int legendY = Height - 18; // Positioned to avoid intersection with keyboard while leaving space for text
             int legendX = 10;
             
             // Draw legend items
@@ -437,14 +437,7 @@ namespace SimBlock.Presentation.Controls
                 DrawLegendItem(g, legendX + 240, legendY, _selectedColor, "Selected");
             }
             
-            // Draw mode indicator
-            using (var font = new Font("Arial", 8, FontStyle.Bold))
-            using (var brush = new SolidBrush(_textColor))
-            {
-                string modeText = $"Mode: {_blockingMode}";
-                int modeX = _blockingMode == BlockingMode.Select ? legendX + 320 : legendX + 250;
-                g.DrawString(modeText, font, brush, modeX, legendY + 5);
-            }
+            // Remove redundant mode indicator - it's displayed elsewhere and not needed here
         }
 
         private void DrawLegendItem(Graphics g, int x, int y, Color color, string text)
