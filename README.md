@@ -3,7 +3,7 @@
     <br><br>
 </div>
 
-# SimBlock - Simple Input Device Blocker Utility
+# Simblock - Simple Input Device Blocker Utility
 
 A lightweight Windows application that allows you to temporarily block all keyboard 
 and mouse input globally with a single toggle button, designed to safely clean your peripherals.
@@ -91,7 +91,23 @@ src/
 5. Click the toggle button again or use the emergency combination to unlock input.
 6. Minimize to system tray for easy access, click on the icon to toggle state
 
+## Global Hook Installation
+
+During the initial startup, Simblock registers low-level system hooks using the Windows [`SetWindowsHookEx`](src/Infrastructure/Windows/WindowsKeyboardHookService.cs) API with `WH_KEYBOARD_LL` and `WH_MOUSE_LL` parameters. This process establishes a global message filter that intercepts all keyboard and mouse events system-wide before they reach target applications.
+
+**Expected Behavior During Initialization:**
+- **Hook Registration Phase**: The application installs hooks into the Windows message chain, which may cause brief input latency (2-5 seconds)
+- **Message Loop Integration**: Simblock integrates with the Windows message pump to process input events in real-time
+- **Performance Impact**: Temporary cursor stuttering or input delays may occur as the system adjusts to the new hook procedures
+
+**Technical Details:**
+- Hooks operate at kernel-level with high priority message processing
+- Input events are intercepted, evaluated, and either passed through or suppressed based on blocking state
+- The application uses optimized message handling and performance overhead is minimized after initialization
+
+Future releases will implement lazy hook loading and improved message processing algorithms to reduce initialization impact.
+
 ## Security Note
 
-This application requires administrative privileges to install global keyboard hooks. It only blocks keyboard input locally and does not transmit any data. You are welcome to inspect the source code. 
+This application requires administrative privileges to install global keyboard hooks. It only blocks keyboard input locally and does not transmit any data. You are welcome to inspect the source code.
 
