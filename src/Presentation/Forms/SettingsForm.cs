@@ -36,12 +36,6 @@ namespace SimBlock.Presentation.Forms
         private Label _themeLabel = null!;
         private GroupBox _appearanceGroupBox = null!;
         private GroupBox _behaviorGroupBox = null!;
-        private GroupBox _keyboardShortcutsGroupBox = null!;
-        private Label _emergencyUnlockLabel = null!;
-        private ComboBox _emergencyUnlockKeyComboBox = null!;
-        private CheckBox _emergencyUnlockCtrlCheckBox = null!;
-        private CheckBox _emergencyUnlockAltCheckBox = null!;
-        private CheckBox _emergencyUnlockShiftCheckBox = null!;
         private CheckBox _startWithWindowsCheckBox = null!;
         
         // Advanced blocking controls
@@ -211,59 +205,6 @@ namespace SimBlock.Presentation.Forms
             CreateAdvancedControls();
             CreateVisualizationControls();
 
-            // Keyboard shortcuts group box
-            _keyboardShortcutsGroupBox = new GroupBox
-            {
-                Text = "Keyboard Shortcuts",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = _uiSettings.TextColor
-            };
-
-            // Emergency unlock label
-            _emergencyUnlockLabel = new Label
-            {
-                Text = "Emergency Unlock:",
-                Font = new Font("Segoe UI", 9),
-                ForeColor = _uiSettings.TextColor,
-                AutoSize = true
-            };
-
-            // Emergency unlock key combo box
-            _emergencyUnlockKeyComboBox = new ComboBox
-            {
-                Font = new Font("Segoe UI", 9),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Size = new Size(100, 25)
-            };
-            PopulateKeyComboBox();
-
-            // Emergency unlock modifier checkboxes
-            _emergencyUnlockCtrlCheckBox = new CheckBox
-            {
-                Text = "Ctrl",
-                Font = new Font("Segoe UI", 9),
-                ForeColor = _uiSettings.TextColor,
-                AutoSize = true,
-                Checked = _uiSettings.EmergencyUnlockRequiresCtrl
-            };
-
-            _emergencyUnlockAltCheckBox = new CheckBox
-            {
-                Text = "Alt",
-                Font = new Font("Segoe UI", 9),
-                ForeColor = _uiSettings.TextColor,
-                AutoSize = true,
-                Checked = _uiSettings.EmergencyUnlockRequiresAlt
-            };
-
-            _emergencyUnlockShiftCheckBox = new CheckBox
-            {
-                Text = "Shift",
-                Font = new Font("Segoe UI", 9),
-                ForeColor = _uiSettings.TextColor,
-                AutoSize = true,
-                Checked = _uiSettings.EmergencyUnlockRequiresShift
-            };
 
             // Close button
             _closeButton = new Button
@@ -525,55 +466,6 @@ namespace SimBlock.Presentation.Forms
             _visualizationGroupBox.Controls.Add(_legendPanel);
         }
 
-        private void PopulateKeyComboBox()
-        {
-            var commonKeys = new[]
-            {
-                new { Display = "A", Value = Keys.A },
-                new { Display = "B", Value = Keys.B },
-                new { Display = "C", Value = Keys.C },
-                new { Display = "D", Value = Keys.D },
-                new { Display = "E", Value = Keys.E },
-                new { Display = "F", Value = Keys.F },
-                new { Display = "G", Value = Keys.G },
-                new { Display = "H", Value = Keys.H },
-                new { Display = "I", Value = Keys.I },
-                new { Display = "J", Value = Keys.J },
-                new { Display = "K", Value = Keys.K },
-                new { Display = "L", Value = Keys.L },
-                new { Display = "M", Value = Keys.M },
-                new { Display = "N", Value = Keys.N },
-                new { Display = "O", Value = Keys.O },
-                new { Display = "P", Value = Keys.P },
-                new { Display = "Q", Value = Keys.Q },
-                new { Display = "R", Value = Keys.R },
-                new { Display = "S", Value = Keys.S },
-                new { Display = "T", Value = Keys.T },
-                new { Display = "U", Value = Keys.U },
-                new { Display = "V", Value = Keys.V },
-                new { Display = "W", Value = Keys.W },
-                new { Display = "X", Value = Keys.X },
-                new { Display = "Y", Value = Keys.Y },
-                new { Display = "Z", Value = Keys.Z },
-                new { Display = "F1", Value = Keys.F1 },
-                new { Display = "F2", Value = Keys.F2 },
-                new { Display = "F3", Value = Keys.F3 },
-                new { Display = "F4", Value = Keys.F4 },
-                new { Display = "F5", Value = Keys.F5 },
-                new { Display = "F6", Value = Keys.F6 },
-                new { Display = "F7", Value = Keys.F7 },
-                new { Display = "F8", Value = Keys.F8 },
-                new { Display = "F9", Value = Keys.F9 },
-                new { Display = "F10", Value = Keys.F10 },
-                new { Display = "F11", Value = Keys.F11 },
-                new { Display = "F12", Value = Keys.F12 }
-            };
-
-            _emergencyUnlockKeyComboBox.DataSource = commonKeys;
-            _emergencyUnlockKeyComboBox.DisplayMember = "Display";
-            _emergencyUnlockKeyComboBox.ValueMember = "Value";
-            _emergencyUnlockKeyComboBox.SelectedValue = _uiSettings.EmergencyUnlockKey;
-        }
 
         private void LayoutControls()
         {
@@ -582,7 +474,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 7,
+                RowCount = 6,
                 Padding = new Padding(20),
                 BackColor = _uiSettings.BackgroundColor
             };
@@ -639,39 +531,6 @@ namespace SimBlock.Presentation.Forms
             _blockingModeGroupBox.Controls.Add(blockingModePanel);
             _blockingModeGroupBox.Size = new Size(450, 105);
 
-            // Keyboard shortcuts controls panel
-            var keyboardShortcutsPanel = new TableLayoutPanel
-            {
-                ColumnCount = 2,
-                RowCount = 2,
-                Dock = DockStyle.Fill,
-                BackColor = _uiSettings.BackgroundColor
-            };
-
-            // First row: Emergency unlock label and key combo box
-            keyboardShortcutsPanel.Controls.Add(_emergencyUnlockLabel, 0, 0);
-            keyboardShortcutsPanel.Controls.Add(_emergencyUnlockKeyComboBox, 1, 0);
-
-            // Second row: Modifier checkboxes
-            var modifierPanel = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.LeftToRight,
-                AutoSize = true,
-                BackColor = _uiSettings.BackgroundColor
-            };
-            modifierPanel.Controls.Add(_emergencyUnlockCtrlCheckBox);
-            modifierPanel.Controls.Add(_emergencyUnlockAltCheckBox);
-            modifierPanel.Controls.Add(_emergencyUnlockShiftCheckBox);
-
-            keyboardShortcutsPanel.Controls.Add(new Label { Text = "Modifiers:", Font = new Font("Segoe UI", 9), ForeColor = _uiSettings.TextColor, AutoSize = true }, 0, 1);
-            keyboardShortcutsPanel.Controls.Add(modifierPanel, 1, 1);
-
-            keyboardShortcutsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            keyboardShortcutsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-            // Add keyboard shortcuts panel to group box
-            _keyboardShortcutsGroupBox.Controls.Add(keyboardShortcutsPanel);
-            _keyboardShortcutsGroupBox.Size = new Size(450, 120);
 
             // Button panel for close button
             var buttonPanel = new FlowLayoutPanel
@@ -689,11 +548,9 @@ namespace SimBlock.Presentation.Forms
             mainPanel.Controls.Add(_advancedConfigPanel, 0, 3);
             if (_visualizationGroupBox != null)
                 mainPanel.Controls.Add(_visualizationGroupBox, 0, 4);
-            mainPanel.Controls.Add(_keyboardShortcutsGroupBox, 0, 5);
-            mainPanel.Controls.Add(buttonPanel, 0, 6);
+            mainPanel.Controls.Add(buttonPanel, 0, 5);
 
             // Set row styles
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -709,12 +566,6 @@ namespace SimBlock.Presentation.Forms
             _themeToggleButton.Click += OnThemeToggleButtonClick;
             _closeButton.Click += OnCloseButtonClick;
             _themeManager.ThemeChanged += OnThemeChanged;
-            
-            // Emergency unlock shortcut event handlers
-            _emergencyUnlockKeyComboBox.SelectedIndexChanged += OnEmergencyUnlockKeyChanged;
-            _emergencyUnlockCtrlCheckBox.CheckedChanged += OnEmergencyUnlockModifierChanged;
-            _emergencyUnlockAltCheckBox.CheckedChanged += OnEmergencyUnlockModifierChanged;
-            _emergencyUnlockShiftCheckBox.CheckedChanged += OnEmergencyUnlockModifierChanged;
             
             // Behavior settings event handlers
             _startWithWindowsCheckBox.CheckedChanged += OnStartWithWindowsChanged;
@@ -763,42 +614,6 @@ namespace SimBlock.Presentation.Forms
             Close();
         }
 
-        private void OnEmergencyUnlockKeyChanged(object? sender, EventArgs e)
-        {
-            try
-            {
-                if (_emergencyUnlockKeyComboBox.SelectedValue is Keys selectedKey)
-                {
-                    _uiSettings.EmergencyUnlockKey = selectedKey;
-                    _logger.LogInformation("Emergency unlock key changed to: {Key}", selectedKey);
-                    SaveSettings();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error changing emergency unlock key");
-            }
-        }
-
-        private void OnEmergencyUnlockModifierChanged(object? sender, EventArgs e)
-        {
-            try
-            {
-                _uiSettings.EmergencyUnlockRequiresCtrl = _emergencyUnlockCtrlCheckBox.Checked;
-                _uiSettings.EmergencyUnlockRequiresAlt = _emergencyUnlockAltCheckBox.Checked;
-                _uiSettings.EmergencyUnlockRequiresShift = _emergencyUnlockShiftCheckBox.Checked;
-                
-                _logger.LogInformation("Emergency unlock modifiers changed - Ctrl: {Ctrl}, Alt: {Alt}, Shift: {Shift}",
-                    _uiSettings.EmergencyUnlockRequiresCtrl,
-                    _uiSettings.EmergencyUnlockRequiresAlt,
-                    _uiSettings.EmergencyUnlockRequiresShift);
-                SaveSettings();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error changing emergency unlock modifiers");
-            }
-        }
 
         private async void OnBlockingModeChanged(object? sender, EventArgs e)
         {
@@ -1192,14 +1007,6 @@ namespace SimBlock.Presentation.Forms
                 _blockMouseMovementCheckBox.ForeColor = _uiSettings.TextColor;
                 _blockDoubleClickCheckBox.ForeColor = _uiSettings.TextColor;
                 
-                // Apply theme to keyboard shortcut controls
-                _keyboardShortcutsGroupBox.ForeColor = _uiSettings.TextColor;
-                _emergencyUnlockLabel.ForeColor = _uiSettings.TextColor;
-                _emergencyUnlockKeyComboBox.BackColor = _uiSettings.BackgroundColor;
-                _emergencyUnlockKeyComboBox.ForeColor = _uiSettings.TextColor;
-                _emergencyUnlockCtrlCheckBox.ForeColor = _uiSettings.TextColor;
-                _emergencyUnlockAltCheckBox.ForeColor = _uiSettings.TextColor;
-                _emergencyUnlockShiftCheckBox.ForeColor = _uiSettings.TextColor;
                 
                 // Apply theme to all panels
                 ApplyThemeToControls(Controls);
@@ -1326,38 +1133,6 @@ namespace SimBlock.Presentation.Forms
             _blockMouseMovementCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockMouseMovement ?? false;
             _blockDoubleClickCheckBox.Checked = _uiSettings.AdvancedMouseConfig?.BlockDoubleClick ?? false;
 
-            // Update emergency unlock key - ensure ComboBox is properly updated
-            try
-            {
-                _emergencyUnlockKeyComboBox.SelectedValue = _uiSettings.EmergencyUnlockKey;
-                
-                // If SelectedValue didn't work (which can happen), try finding by value
-                if (_emergencyUnlockKeyComboBox.SelectedValue?.Equals(_uiSettings.EmergencyUnlockKey) != true)
-                {
-                    for (int i = 0; i < _emergencyUnlockKeyComboBox.Items.Count; i++)
-                    {
-                        var item = _emergencyUnlockKeyComboBox.Items[i];
-                        if (item is { } itemObj)
-                        {
-                            var valueProperty = itemObj.GetType().GetProperty("Value");
-                            if (valueProperty?.GetValue(itemObj)?.Equals(_uiSettings.EmergencyUnlockKey) == true)
-                            {
-                                _emergencyUnlockKeyComboBox.SelectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error setting emergency unlock key in ComboBox, defaulting to A");
-                _emergencyUnlockKeyComboBox.SelectedIndex = 0; // Default to first item (A)
-            }
-            
-            _emergencyUnlockCtrlCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresCtrl;
-            _emergencyUnlockAltCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresAlt;
-            _emergencyUnlockShiftCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresShift;
 
             // Update startup checkbox
             _startWithWindowsCheckBox.Checked = _uiSettings.StartWithWindows;

@@ -25,11 +25,11 @@ namespace SimBlock.Presentation.Configuration
         // Theme settings
         public Theme CurrentTheme { get; set; } = Theme.Light;
 
-        // Emergency unlock shortcut settings
-        public Keys EmergencyUnlockKey { get; set; } = Keys.U;
-        public bool EmergencyUnlockRequiresCtrl { get; set; } = true;
-        public bool EmergencyUnlockRequiresAlt { get; set; } = true;
-        public bool EmergencyUnlockRequiresShift { get; set; } = false;
+        // Emergency unlock shortcut settings (hard-coded to Ctrl+Alt+U)
+        public Keys EmergencyUnlockKey { get; } = Keys.U;
+        public bool EmergencyUnlockRequiresCtrl { get; } = true;
+        public bool EmergencyUnlockRequiresAlt { get; } = true;
+        public bool EmergencyUnlockRequiresShift { get; } = false;
 
         // Startup settings
         public bool StartWithWindows { get; set; } = false;
