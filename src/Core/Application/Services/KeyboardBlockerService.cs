@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Interfaces;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Core.Application.Services
 {
@@ -38,12 +39,26 @@ namespace SimBlock.Core.Application.Services
 
         public async Task InitializeAsync()
         {
+            await InitializeAsync(null);
+        }
+
+        public async Task InitializeAsync(IInitializationProgress? progress)
+        {
             _logger.LogInformation("Initializing KeyboardBlocker service...");
             
+            progress?.ReportProgress(0, "Installing keyboard hooks...");
+            await Task.Delay(100); // Small delay to show progress
+            
             await _hookService.InstallHookAsync();
+            
+            progress?.ReportProgress(30, "Setting up system tray...");
+            await Task.Delay(100);
+            
             _trayService.Show();
             _trayService.UpdateIcon(false);
             _trayService.UpdateTooltip("SimBlock - Keyboard unlocked");
+            
+            progress?.ReportProgress(50, "Keyboard service initialized");
             
             _logger.LogInformation("KeyboardBlocker service initialized successfully");
         }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Interfaces;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Core.Application.Services
 {
@@ -38,12 +39,25 @@ namespace SimBlock.Core.Application.Services
 
         public async Task InitializeAsync()
         {
+            await InitializeAsync(null);
+        }
+
+        public async Task InitializeAsync(IInitializationProgress? progress)
+        {
             _logger.LogInformation("Initializing MouseBlocker service...");
             
+            progress?.ReportProgress(50, "Installing mouse hooks...");
+            await Task.Delay(100); // Small delay to show progress
+            
             await _hookService.InstallHookAsync();
-            _trayService.Show();
-            _trayService.UpdateIcon(false);
-            _trayService.UpdateTooltip("SimBlock - Mouse unlocked");
+            
+            progress?.ReportProgress(80, "Mouse hooks installed...");
+            await Task.Delay(100);
+            
+            // Don't control tray service here - let keyboard service handle it
+            // to avoid conflicts since both services share the same tray instance
+            
+            progress?.ReportProgress(100, "Mouse service initialized");
             
             _logger.LogInformation("MouseBlocker service initialized successfully");
         }
