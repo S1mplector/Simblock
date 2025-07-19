@@ -34,6 +34,13 @@ namespace SimBlock.Presentation.Controls
         private Color _neutralColor = Color.LightGray;
         private Color _selectedColor;
         private Color _textColor = Color.Black;
+        
+        // Drag selection state
+        private bool _isDragging = false;
+        private bool _mouseDown = false;
+        private Point _dragStartPoint;
+        private Rectangle _selectionRectangle;
+        private const int DragThreshold = 5; // Minimum pixels to move before starting drag
 
         // Events
         public event EventHandler<Keys>? KeyClicked;
@@ -59,10 +66,13 @@ namespace SimBlock.Presentation.Controls
             
             // Enable mouse events
             this.MouseClick += OnMouseClick;
+            this.MouseDown += OnMouseDown;
+            this.MouseMove += OnMouseMove;
+            this.MouseUp += OnMouseUp;
             
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
-            tooltip.SetToolTip(this, "Keyboard blocking visualization - Red keys are blocked, Green keys are allowed, Orange keys are selected");
+            tooltip.SetToolTip(this, "Keyboard blocking visualization - Click or drag to select keys");
         }
 
         private void InitializeKeyLayout()
@@ -385,6 +395,17 @@ namespace SimBlock.Presentation.Controls
                 }
             }
             
+            // Draw drag selection rectangle if dragging
+            if (_isDragging && !_selectionRectangle.IsEmpty)
+            {
+                using (var brush = new SolidBrush(Color.FromArgb(50, 0, 120, 215))) // Semi-transparent blue
+                using (var pen = new Pen(Color.FromArgb(100, 0, 120, 215), 1)) // Blue border
+                {
+                    g.FillRectangle(brush, _selectionRectangle);
+                    g.DrawRectangle(pen, _selectionRectangle);
+                }
+            }
+            
             // Legend moved to bottom of visualization group box in SettingsForm
             // DrawLegend(g);
         }
@@ -529,6 +550,84 @@ namespace SimBlock.Presentation.Controls
             }
             
             System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: No key found at location {e.Location}");
+        }
+
+        /// <summary>
+        /// Handles mouse down events for drag selection
+        /// </summary>
+        private void OnMouseDown(object? sender, MouseEventArgs e)
+        {
+            if (_blockingMode != BlockingMode.Select || _advancedConfig == null || e.Button != MouseButtons.Left)
+                return;
+
+            _mouseDown = true;
+            _dragStartPoint = e.Location;
+            _selectionRectangle = Rectangle.Empty;
+            // Don't set _isDragging = true yet - wait for movement threshold
+        }
+
+        /// <summary>
+        /// Handles mouse move events for drag selection
+        /// </summary>
+        private void OnMouseMove(object? sender, MouseEventArgs e)
+        {
+            if (!_mouseDown)
+                return;
+
+            // Check if we've moved beyond the drag threshold
+            int deltaX = Math.Abs(e.X - _dragStartPoint.X);
+            int deltaY = Math.Abs(e.Y - _dragStartPoint.Y);
+            
+            if (!_isDragging && (deltaX > DragThreshold || deltaY > DragThreshold))
+            {
+                // Start dragging only after threshold is exceeded
+                _isDragging = true;
+            }
+            
+            if (_isDragging)
+            {
+                // Calculate selection rectangle
+                int x = Math.Min(_dragStartPoint.X, e.X);
+                int y = Math.Min(_dragStartPoint.Y, e.Y);
+                int width = Math.Abs(e.X - _dragStartPoint.X);
+                int height = Math.Abs(e.Y - _dragStartPoint.Y);
+                
+                _selectionRectangle = new Rectangle(x, y, width, height);
+                Invalidate(); // Trigger repaint to show selection rectangle
+            }
+        }
+
+        /// <summary>
+        /// Handles mouse up events for drag selection
+        /// </summary>
+        private void OnMouseUp(object? sender, MouseEventArgs e)
+        {
+            if (!_mouseDown)
+                return;
+
+            // Only process drag selection if we actually started dragging
+            if (_isDragging && !_selectionRectangle.IsEmpty)
+            {
+                foreach (var kvp in _keyLayout)
+                {
+                    var key = kvp.Key;
+                    var keyRect = kvp.Value;
+                    
+                    if (_selectionRectangle.IntersectsWith(keyRect))
+                    {
+                        _advancedConfig?.ToggleKeySelection(key);
+                    }
+                }
+                
+                // Raise event to notify of selection changes
+                KeyClicked?.Invoke(this, Keys.None);
+                Invalidate(); // Clear selection rectangle
+            }
+
+            // Reset all drag states
+            _mouseDown = false;
+            _isDragging = false;
+            _selectionRectangle = Rectangle.Empty;
         }
     }
 }

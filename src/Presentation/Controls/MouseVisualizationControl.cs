@@ -37,6 +37,13 @@ namespace SimBlock.Presentation.Controls
         private Color _mouseBodyColor = Color.FromArgb(220, 220, 220);
         private Color _mouseBodyShadow = Color.FromArgb(180, 180, 180);
 
+        // Drag selection state
+        private bool _isDragging = false;
+        private bool _mouseDown = false;
+        private Point _dragStartPoint;
+        private Rectangle _selectionRectangle;
+        private const int DragThreshold = 5; // Minimum pixels to move before starting drag
+
         // Events
         public event EventHandler<string>? ComponentClicked;
 
@@ -61,10 +68,13 @@ namespace SimBlock.Presentation.Controls
             
             // Enable mouse events
             this.MouseClick += OnMouseClick;
+            this.MouseDown += OnMouseDown;
+            this.MouseMove += OnMouseMove;
+            this.MouseUp += OnMouseUp;
             
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
-            tooltip.SetToolTip(this, "Mouse blocking visualization - Red components are blocked, Green are allowed, Orange are selected");
+            tooltip.SetToolTip(this, "Mouse blocking visualization - Click or drag to select components");
         }
 
         private void InitializeMouseLayout()
@@ -141,6 +151,17 @@ namespace SimBlock.Presentation.Controls
             
             // Draw mouse components
             DrawMouseComponents(g);
+            
+            // Draw drag selection rectangle if dragging
+            if (_isDragging && !_selectionRectangle.IsEmpty)
+            {
+                using (var brush = new SolidBrush(Color.FromArgb(50, 0, 120, 215))) // Semi-transparent blue
+                using (var pen = new Pen(Color.FromArgb(100, 0, 120, 215), 1)) // Blue border
+                {
+                    g.FillRectangle(brush, _selectionRectangle);
+                    g.DrawRectangle(pen, _selectionRectangle);
+                }
+            }
             
             // Legend removed per user request
             // DrawLegend(g);
@@ -451,6 +472,88 @@ namespace SimBlock.Presentation.Controls
             }
             
             System.Diagnostics.Debug.WriteLine($"MouseVisualizationControl.OnMouseClick: No component found at location {e.Location}");
+        }
+
+        /// <summary>
+        /// Handles mouse down events for drag selection
+        /// </summary>
+        private void OnMouseDown(object? sender, MouseEventArgs e)
+        {
+            if (_blockingMode != BlockingMode.Select || _advancedConfig == null || e.Button != MouseButtons.Left)
+                return;
+
+            _mouseDown = true;
+            _dragStartPoint = e.Location;
+            _selectionRectangle = Rectangle.Empty;
+            // Don't set _isDragging = true yet - wait for movement threshold
+        }
+
+        /// <summary>
+        /// Handles mouse move events for drag selection
+        /// </summary>
+        private void OnMouseMove(object? sender, MouseEventArgs e)
+        {
+            if (!_mouseDown)
+                return;
+
+            // Check if we've moved beyond the drag threshold
+            int deltaX = Math.Abs(e.X - _dragStartPoint.X);
+            int deltaY = Math.Abs(e.Y - _dragStartPoint.Y);
+            
+            if (!_isDragging && (deltaX > DragThreshold || deltaY > DragThreshold))
+            {
+                // Start dragging only after threshold is exceeded
+                _isDragging = true;
+            }
+            
+            if (_isDragging)
+            {
+                // Calculate selection rectangle
+                int x = Math.Min(_dragStartPoint.X, e.X);
+                int y = Math.Min(_dragStartPoint.Y, e.Y);
+                int width = Math.Abs(e.X - _dragStartPoint.X);
+                int height = Math.Abs(e.Y - _dragStartPoint.Y);
+                
+                _selectionRectangle = new Rectangle(x, y, width, height);
+                Invalidate(); // Trigger repaint to show selection rectangle
+            }
+        }
+
+        /// <summary>
+        /// Handles mouse up events for drag selection
+        /// </summary>
+        private void OnMouseUp(object? sender, MouseEventArgs e)
+        {
+            if (!_mouseDown)
+                return;
+
+            // Only process drag selection if we actually started dragging
+            if (_isDragging && !_selectionRectangle.IsEmpty)
+            {
+                foreach (var kvp in _mouseComponents)
+                {
+                    var component = kvp.Key;
+                    var componentRect = kvp.Value;
+                    
+                    // Skip the mouse body as it's not selectable
+                    if (component == "MouseBody")
+                        continue;
+                    
+                    if (_selectionRectangle.IntersectsWith(componentRect))
+                    {
+                        _advancedConfig?.ToggleComponentSelection(component);
+                    }
+                }
+                
+                // Raise event to notify of selection changes
+                ComponentClicked?.Invoke(this, "DragSelection");
+                Invalidate(); // Clear selection rectangle
+            }
+
+            // Reset all drag states
+            _mouseDown = false;
+            _isDragging = false;
+            _selectionRectangle = Rectangle.Empty;
         }
     }
 }
