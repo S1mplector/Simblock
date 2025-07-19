@@ -25,11 +25,11 @@ and mouse input globally with a single toggle button, designed to safely clean y
    <img src="docs/images/settings.png" alt="Settings" width="400">
    <p><i>User configurable settings</i></p>
 
-   <img src="docs/images/advanced_mode.png" alt="Settings" width="400">
-   <p><i>Advanced blocking</i></p>
+   <img src="docs/images/advanced_mode.png" alt="Advanced blocking" width="400">
+   <p><i>Advanced blocking mode</i></p>
 
-   <img src="docs/images/select_mode.png" alt="Settings" width="400">
-   <p><i>Advanced blocking</i></p>
+   <img src="docs/images/select_mode.png" alt="Select Blocking" width="400">
+   <p><i>Manual selection blocking mode</i></p>
    
    <img src="docs/images/tray.png" alt="Tray" width="300">
    <p><i>Minimized to tray</i></p>
