@@ -3,7 +3,7 @@
     <br><br>
 </div>
 
-# Simblock - Simple Input Device Blocker Utility
+# Simblock - Simple Input Blocker
 
 A lightweight Windows application that allows you to temporarily block all keyboard 
 and mouse input globally with a single toggle button, designed to safely clean your peripherals.
