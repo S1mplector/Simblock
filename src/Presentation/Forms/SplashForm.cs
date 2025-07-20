@@ -29,6 +29,9 @@ namespace SimBlock.Presentation.Forms
         // Progress tracking
         private int _currentProgress = 0;
         private string _currentStatus = "Initializing...";
+        private bool _isLoadingApplication = false;
+        private System.Windows.Forms.Timer _spinnerTimer = null!;
+        private int _spinnerAngle = 0;
 
         public SplashForm(
             UISettings uiSettings,
@@ -44,8 +47,30 @@ namespace SimBlock.Presentation.Forms
             InitializeComponent();
             ApplyTheme();
 
+            // Initialize spinner timer
+            _spinnerTimer = new System.Windows.Forms.Timer { Interval = 50 };
+            _spinnerTimer.Tick += OnSpinnerTick;
+
             // Subscribe to theme changes
             _themeManager.ThemeChanged += OnThemeChanged;
+        }
+
+        /// <summary>
+        /// Shows loading application state with spinner
+        /// </summary>
+        public void ShowLoadingApplication()
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(ShowLoadingApplication));
+                return;
+            }
+
+            _isLoadingApplication = true;
+            _currentStatus = "Loading application...";
+            _statusLabel.Text = _currentStatus;
+            _spinnerTimer.Start();
+            _progressPanel.Invalidate();
         }
 
         /// <summary>
@@ -182,6 +207,12 @@ namespace SimBlock.Presentation.Forms
             _logger.LogDebug("Splash screen components initialized");
         }
 
+        private void OnSpinnerTick(object? sender, EventArgs e)
+        {
+            _spinnerAngle = (_spinnerAngle + 15) % 360;
+            _progressPanel.Invalidate();
+        }
+
         private void OnProgressPanelPaint(object? sender, PaintEventArgs e)
         {
             try
@@ -189,48 +220,75 @@ namespace SimBlock.Presentation.Forms
                 var g = e.Graphics;
                 var rect = _progressPanel.ClientRectangle;
 
-                // Add some margin
-                var progressRect = new Rectangle(
-                    rect.X + 20,
-                    rect.Y + (rect.Height - 8) / 2,
-                    rect.Width - 40,
-                    8
-                );
-
-                // Draw background (unfilled portion)
-                using (var backgroundBrush = new SolidBrush(_uiSettings.InactiveColor))
+                if (_isLoadingApplication)
                 {
-                    g.FillRectangle(backgroundBrush, progressRect);
-                }
+                    // Draw spinner
+                    var centerX = rect.Width / 2;
+                    var centerY = rect.Height / 2;
+                    var radius = 8;
 
-                // Calculate filled width
-                var filledWidth = (int)(progressRect.Width * (_currentProgress / 100.0));
-                if (filledWidth > 0)
-                {
-                    var filledRect = new Rectangle(
-                        progressRect.X,
-                        progressRect.Y,
-                        filledWidth,
-                        progressRect.Height
-                    );
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
 
-                    // Draw filled portion with gradient for modern look
-                    using (var fillBrush = new LinearGradientBrush(
-                        filledRect,
-                        _uiSettings.PrimaryButtonColor,
-                        Color.FromArgb(Math.Min(255, _uiSettings.PrimaryButtonColor.R + 30),
-                                     Math.Min(255, _uiSettings.PrimaryButtonColor.G + 30),
-                                     Math.Min(255, _uiSettings.PrimaryButtonColor.B + 30)),
-                        LinearGradientMode.Vertical))
+                    for (int i = 0; i < 8; i++)
                     {
-                        g.FillRectangle(fillBrush, filledRect);
+                        var angle = (_spinnerAngle + i * 45) * Math.PI / 180;
+                        var alpha = (int)(255 * (1.0 - i / 8.0));
+                        var color = Color.FromArgb(alpha, _uiSettings.PrimaryButtonColor);
+
+                        var x = centerX + (int)(Math.Cos(angle) * radius);
+                        var y = centerY + (int)(Math.Sin(angle) * radius);
+
+                        using (var brush = new SolidBrush(color))
+                        {
+                            g.FillEllipse(brush, x - 2, y - 2, 4, 4);
+                        }
                     }
                 }
-
-                // Draw border for clean look
-                using (var borderPen = new Pen(_uiSettings.TextColor, 1))
+                else
                 {
-                    g.DrawRectangle(borderPen, progressRect);
+                    // Draw progress bar
+                    var progressRect = new Rectangle(
+                        rect.X + 20,
+                        rect.Y + (rect.Height - 8) / 2,
+                        rect.Width - 40,
+                        8
+                    );
+
+                    // Draw background (unfilled portion)
+                    using (var backgroundBrush = new SolidBrush(_uiSettings.InactiveColor))
+                    {
+                        g.FillRectangle(backgroundBrush, progressRect);
+                    }
+
+                    // Calculate filled width
+                    var filledWidth = (int)(progressRect.Width * (_currentProgress / 100.0));
+                    if (filledWidth > 0)
+                    {
+                        var filledRect = new Rectangle(
+                            progressRect.X,
+                            progressRect.Y,
+                            filledWidth,
+                            progressRect.Height
+                        );
+
+                        // Draw filled portion with gradient for modern look
+                        using (var fillBrush = new LinearGradientBrush(
+                            filledRect,
+                            _uiSettings.PrimaryButtonColor,
+                            Color.FromArgb(Math.Min(255, _uiSettings.PrimaryButtonColor.R + 30),
+                                         Math.Min(255, _uiSettings.PrimaryButtonColor.G + 30),
+                                         Math.Min(255, _uiSettings.PrimaryButtonColor.B + 30)),
+                            LinearGradientMode.Vertical))
+                        {
+                            g.FillRectangle(fillBrush, filledRect);
+                        }
+                    }
+
+                    // Draw border for clean look
+                    using (var borderPen = new Pen(_uiSettings.TextColor, 1))
+                    {
+                        g.DrawRectangle(borderPen, progressRect);
+                    }
                 }
             }
             catch (Exception ex)
@@ -296,6 +354,10 @@ namespace SimBlock.Presentation.Forms
                     {
                         _themeManager.ThemeChanged -= OnThemeChanged;
                     }
+
+                    // Stop and dispose spinner timer
+                    _spinnerTimer?.Stop();
+                    _spinnerTimer?.Dispose();
 
                     // Dispose logo image
                     _logoBox?.Image?.Dispose();

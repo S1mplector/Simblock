@@ -45,13 +45,13 @@ namespace SimBlock.Infrastructure.Windows
 
                 // Use WMI to get keyboard information
                 var keyboardName = GetKeyboardNameFromWMI();
-                
+
                 // Update cache
                 _cachedKeyboardName = keyboardName;
                 _lastCacheUpdate = DateTime.Now;
-                
+
                 _logger.LogDebug("Retrieved keyboard name: {KeyboardName}", keyboardName);
-                
+
                 return keyboardName;
             }
             catch (Exception ex)
@@ -73,13 +73,13 @@ namespace SimBlock.Infrastructure.Windows
 
                 // For now, we'll use the current input language
                 var language = GetCurrentInputLanguage();
-                
+
                 // Update cache
                 _cachedKeyboardLanguage = language;
                 _lastCacheUpdate = DateTime.Now;
-                
+
                 _logger.LogDebug("Retrieved keyboard language: {Language}", language);
-                
+
                 return language;
             }
             catch (Exception ex)
@@ -129,15 +129,15 @@ namespace SimBlock.Infrastructure.Windows
                 // Clean up the output and parse it
                 var cleanOutput = output.Replace("&amp;", "&");
                 var lines = cleanOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                
+
                 // Find the first valid keyboard entry
                 string bestKeyboardName = "Standard Keyboard";
                 bool foundUSBKeyboard = false;
-                
+
                 foreach (var line in lines.Skip(1)) // Skip header
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
-                    
+
                     var parts = line.Split(',');
                     if (parts.Length >= 4)
                     {
@@ -186,10 +186,10 @@ namespace SimBlock.Infrastructure.Windows
                     var vidStart = deviceId.IndexOf("VID_") + 4;
                     var vidEnd = deviceId.IndexOf("&", vidStart);
                     if (vidEnd == -1) vidEnd = deviceId.Length;
-                    
+
                     var vid = deviceId.Substring(vidStart, Math.Min(4, vidEnd - vidStart));
                     var manufacturer = GetManufacturerFromVID(vid);
-                    
+
                     if (!string.IsNullOrEmpty(manufacturer))
                     {
                         return $"{manufacturer} Keyboard (VID: {vid.ToUpper()})";
@@ -227,7 +227,7 @@ namespace SimBlock.Infrastructure.Windows
         {
             if (string.IsNullOrEmpty(vid))
                 return null;
-                
+
             return vid.ToUpper() switch
             {
                 "0414" => "Logitech",
@@ -254,7 +254,7 @@ namespace SimBlock.Infrastructure.Windows
 
             // Remove quotes and extra whitespace
             name = name.Trim().Trim('"');
-            
+
             // If the name is too technical, make it more user-friendly
             if (name.Contains("HID") || name.Contains("USB") || name.Contains("VID_") || name.Contains("PID_"))
             {

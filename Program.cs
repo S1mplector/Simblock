@@ -84,6 +84,12 @@ namespace SimBlock
                         // Mark initialization as successful
                         initializationSuccessful = true;
 
+                        // Switch to loading application state with spinner
+                        splashForm.ShowLoadingApplication();
+
+                        // Small delay to show the loading state
+                        await Task.Delay(1000);
+
                         // Close splash form - this will end the Application.Run() below
                         splashForm.Close();
                     }
