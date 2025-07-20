@@ -1,4 +1,5 @@
 using SimBlock.Core.Domain.Entities;
+using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Core.Application.Interfaces
 {
@@ -14,6 +15,7 @@ namespace SimBlock.Core.Application.Interfaces
         MouseBlockState CurrentState { get; }
         
         Task InitializeAsync();
+        Task InitializeAsync(IInitializationProgress? progress);
         Task ShutdownAsync();
         Task ToggleBlockingAsync();
         Task SetBlockingAsync(bool shouldBlock);
