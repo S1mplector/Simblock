@@ -38,6 +38,15 @@ namespace SimBlock.Presentation.Forms
         private GroupBox _behaviorGroupBox = null!;
         private CheckBox _startWithWindowsCheckBox = null!;
         
+        // Emergency unlock shortcut controls
+        private GroupBox _emergencyUnlockGroupBox = null!;
+        private Label _emergencyUnlockLabel = null!;
+        private ComboBox _emergencyUnlockKeyComboBox = null!;
+        private CheckBox _emergencyUnlockCtrlCheckBox = null!;
+        private CheckBox _emergencyUnlockAltCheckBox = null!;
+        private CheckBox _emergencyUnlockShiftCheckBox = null!;
+        private Label _emergencyUnlockPreviewLabel = null!;
+        
         // Advanced blocking controls
         private GroupBox _blockingModeGroupBox = null!;
         private RadioButton _simpleModeRadioButton = null!;
@@ -155,6 +164,16 @@ namespace SimBlock.Presentation.Forms
                 AutoSize = true,
                 Checked = _uiSettings.StartWithWindows
             };
+            
+            // Emergency unlock group box
+            _emergencyUnlockGroupBox = new GroupBox
+            {
+                Text = "Emergency Unlock Shortcut",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor
+            };
+            
+            CreateEmergencyUnlockControls();
 
             // Blocking mode group box
             _blockingModeGroupBox = new GroupBox
@@ -407,6 +426,115 @@ namespace SimBlock.Presentation.Forms
             _advancedConfigPanel.Controls.Add(_advancedMouseGroupBox);
             _advancedConfigPanel.Size = new Size(590, 220);
         }
+        
+        private void CreateEmergencyUnlockControls()
+        {
+            // Emergency unlock label
+            _emergencyUnlockLabel = new Label
+            {
+                Text = "Key:",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true
+            };
+
+            // Emergency unlock key combo box
+            _emergencyUnlockKeyComboBox = new ComboBox
+            {
+                Font = new Font("Segoe UI", 9),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Size = new Size(80, 25),
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+            
+            // Populate with common keys
+            var commonKeys = new[] { Keys.U, Keys.E, Keys.Q, Keys.X, Keys.Z, Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5, Keys.F6, Keys.F7, Keys.F8, Keys.F9, Keys.F10, Keys.F11, Keys.F12 };
+            foreach (var key in commonKeys)
+            {
+                _emergencyUnlockKeyComboBox.Items.Add(key);
+            }
+            _emergencyUnlockKeyComboBox.SelectedItem = _uiSettings.EmergencyUnlockKey;
+
+            // Modifier checkboxes
+            _emergencyUnlockCtrlCheckBox = new CheckBox
+            {
+                Text = "Ctrl",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.EmergencyUnlockRequiresCtrl
+            };
+
+            _emergencyUnlockAltCheckBox = new CheckBox
+            {
+                Text = "Alt",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.EmergencyUnlockRequiresAlt
+            };
+
+            _emergencyUnlockShiftCheckBox = new CheckBox
+            {
+                Text = "Shift",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.EmergencyUnlockRequiresShift
+            };
+
+            // Preview label
+            _emergencyUnlockPreviewLabel = new Label
+            {
+                Text = GetEmergencyUnlockPreviewText(),
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = _uiSettings.PrimaryButtonColor,
+                AutoSize = true
+            };
+        }
+        
+        private void LayoutEmergencyUnlockControls()
+        {
+            var emergencyUnlockPanel = new TableLayoutPanel
+            {
+                ColumnCount = 6,
+                RowCount = 2,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor
+            };
+
+            // First row: Key selection
+            emergencyUnlockPanel.Controls.Add(_emergencyUnlockLabel, 0, 0);
+            emergencyUnlockPanel.Controls.Add(_emergencyUnlockKeyComboBox, 1, 0);
+            emergencyUnlockPanel.Controls.Add(_emergencyUnlockCtrlCheckBox, 2, 0);
+            emergencyUnlockPanel.Controls.Add(_emergencyUnlockAltCheckBox, 3, 0);
+            emergencyUnlockPanel.Controls.Add(_emergencyUnlockShiftCheckBox, 4, 0);
+            
+            // Second row: Preview
+            var previewLabel = new Label
+            {
+                Text = "Current shortcut:",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true
+            };
+            emergencyUnlockPanel.Controls.Add(previewLabel, 0, 1);
+            emergencyUnlockPanel.Controls.Add(_emergencyUnlockPreviewLabel, 1, 1);
+            emergencyUnlockPanel.SetColumnSpan(_emergencyUnlockPreviewLabel, 4);
+
+            // Set column styles
+            emergencyUnlockPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            emergencyUnlockPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            emergencyUnlockPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            emergencyUnlockPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            emergencyUnlockPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            emergencyUnlockPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            // Add to group box
+            _emergencyUnlockGroupBox.Controls.Add(emergencyUnlockPanel);
+            _emergencyUnlockGroupBox.Size = new Size(450, 80);
+        }
 
         private void CreateVisualizationControls()
         {
@@ -512,6 +640,9 @@ namespace SimBlock.Presentation.Forms
             // Add behavior panel to group box
             _behaviorGroupBox.Controls.Add(behaviorPanel);
             _behaviorGroupBox.Size = new Size(450, 60);
+            
+            // Emergency unlock controls layout
+            LayoutEmergencyUnlockControls();
 
             // Blocking mode controls panel
             var blockingModePanel = new TableLayoutPanel
@@ -542,15 +673,18 @@ namespace SimBlock.Presentation.Forms
             buttonPanel.Controls.Add(_closeButton);
 
             // Add to main panel
+            mainPanel.RowCount = 7; // Increased to accommodate emergency unlock group
             mainPanel.Controls.Add(_appearanceGroupBox, 0, 0);
             mainPanel.Controls.Add(_behaviorGroupBox, 0, 1);
-            mainPanel.Controls.Add(_blockingModeGroupBox, 0, 2);
-            mainPanel.Controls.Add(_advancedConfigPanel, 0, 3);
+            mainPanel.Controls.Add(_emergencyUnlockGroupBox, 0, 2);
+            mainPanel.Controls.Add(_blockingModeGroupBox, 0, 3);
+            mainPanel.Controls.Add(_advancedConfigPanel, 0, 4);
             if (_visualizationGroupBox != null)
-                mainPanel.Controls.Add(_visualizationGroupBox, 0, 4);
-            mainPanel.Controls.Add(buttonPanel, 0, 5);
+                mainPanel.Controls.Add(_visualizationGroupBox, 0, 5);
+            mainPanel.Controls.Add(buttonPanel, 0, 6);
 
             // Set row styles
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -569,6 +703,12 @@ namespace SimBlock.Presentation.Forms
             
             // Behavior settings event handlers
             _startWithWindowsCheckBox.CheckedChanged += OnStartWithWindowsChanged;
+            
+            // Emergency unlock shortcut event handlers
+            _emergencyUnlockKeyComboBox.SelectedIndexChanged += OnEmergencyUnlockSettingChanged;
+            _emergencyUnlockCtrlCheckBox.CheckedChanged += OnEmergencyUnlockSettingChanged;
+            _emergencyUnlockAltCheckBox.CheckedChanged += OnEmergencyUnlockSettingChanged;
+            _emergencyUnlockShiftCheckBox.CheckedChanged += OnEmergencyUnlockSettingChanged;
             
             // Blocking mode event handlers
             _simpleModeRadioButton.CheckedChanged += OnBlockingModeChanged;
@@ -835,6 +975,53 @@ namespace SimBlock.Presentation.Forms
             {
                 _logger.LogError(ex, "Error updating advanced mouse configuration");
             }
+        }
+
+        private void OnEmergencyUnlockSettingChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Update settings from UI controls
+                if (_emergencyUnlockKeyComboBox.SelectedItem != null)
+                {
+                    _uiSettings.EmergencyUnlockKey = (Keys)_emergencyUnlockKeyComboBox.SelectedItem;
+                }
+                _uiSettings.EmergencyUnlockRequiresCtrl = _emergencyUnlockCtrlCheckBox.Checked;
+                _uiSettings.EmergencyUnlockRequiresAlt = _emergencyUnlockAltCheckBox.Checked;
+                _uiSettings.EmergencyUnlockRequiresShift = _emergencyUnlockShiftCheckBox.Checked;
+                
+                // Update preview
+                _emergencyUnlockPreviewLabel.Text = GetEmergencyUnlockPreviewText();
+                
+                _logger.LogInformation("Emergency unlock shortcut changed to: {Shortcut}", _emergencyUnlockPreviewLabel.Text);
+                SaveSettings();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing emergency unlock shortcut setting");
+                MessageBox.Show($"Failed to change emergency unlock shortcut.\n\nError: {ex.Message}",
+                    "SimBlock Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        private string GetEmergencyUnlockPreviewText()
+        {
+            var modifiers = new List<string>();
+            
+            if (_uiSettings.EmergencyUnlockRequiresCtrl)
+                modifiers.Add("Ctrl");
+            if (_uiSettings.EmergencyUnlockRequiresAlt)
+                modifiers.Add("Alt");
+            if (_uiSettings.EmergencyUnlockRequiresShift)
+                modifiers.Add("Shift");
+            
+            var shortcut = string.Join("+", modifiers);
+            if (shortcut.Length > 0)
+                shortcut += "+";
+            
+            shortcut += _uiSettings.EmergencyUnlockKey.ToString();
+            
+            return shortcut + " (3 times)";
         }
 
         private void OnStartWithWindowsChanged(object? sender, EventArgs e)
@@ -1136,6 +1323,13 @@ namespace SimBlock.Presentation.Forms
 
             // Update startup checkbox
             _startWithWindowsCheckBox.Checked = _uiSettings.StartWithWindows;
+            
+            // Update emergency unlock settings
+            _emergencyUnlockKeyComboBox.SelectedItem = _uiSettings.EmergencyUnlockKey;
+            _emergencyUnlockCtrlCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresCtrl;
+            _emergencyUnlockAltCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresAlt;
+            _emergencyUnlockShiftCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresShift;
+            _emergencyUnlockPreviewLabel.Text = GetEmergencyUnlockPreviewText();
         }
 
         private void SaveSettings()

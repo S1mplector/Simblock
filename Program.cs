@@ -51,7 +51,7 @@ namespace SimBlock
                 // Create splash form
                 var splashForm = host.Services.GetRequiredService<SplashForm>();
                 bool initializationSuccessful = false;
-                
+
                 // Set up initialization to run after splash form is shown
                 splashForm.Shown += async (sender, e) =>
                 {
@@ -83,7 +83,7 @@ namespace SimBlock
 
                         // Mark initialization as successful
                         initializationSuccessful = true;
-                        
+
                         // Close splash form - this will end the Application.Run() below
                         splashForm.Close();
                     }
@@ -98,7 +98,7 @@ namespace SimBlock
 
                 // Start the message loop with the splash screen
                 Application.Run(splashForm);
-                
+
                 // Dispose splash form to free resources
                 splashForm.Dispose();
 
@@ -119,7 +119,7 @@ namespace SimBlock
                         var mouseInfoService = host.Services.GetRequiredService<IMouseInfoService>();
                         var visualizationManager = host.Services.GetRequiredService<IBlockingVisualizationManager>();
                         var mainFormLogger = host.Services.GetRequiredService<ILogger<MainForm>>();
-                        
+
                         // Create MainForm only after successful initialization
                         var mainForm = new MainForm(
                             keyboardBlockerService,
@@ -137,10 +137,10 @@ namespace SimBlock
                             host.Services,
                             visualizationManager
                         );
-                        
+
                         // Run main form
                         Application.Run(mainForm);
-                        
+
                         // Shutdown services after form is closed
                         keyboardBlockerService.ShutdownAsync().Wait();
                         mouseBlockerService.ShutdownAsync().Wait();
@@ -181,7 +181,7 @@ namespace SimBlock
                     services.AddSingleton<IKeyboardHookService, WindowsKeyboardHookService>();
                     services.AddSingleton<IKeyboardInfoService, WindowsKeyboardInfoService>();
                     services.AddSingleton<IMouseInfoService, WindowsMouseInfoService>();
-                    
+
                     // Register mouse hook service with custom factory to avoid circular dependency
                     services.AddSingleton<IMouseHookService>(provider =>
                     {
@@ -211,7 +211,7 @@ namespace SimBlock
                     // MainForm is created manually in Main() to avoid disposal issues
                     services.AddTransient<SimBlock.Presentation.Forms.SettingsForm>();
                     services.AddTransient<SplashForm>();
-                    
+
                     // Register splash screen services
                     services.AddSingleton<ISplashScreenManager, SplashScreenManager>();
                     services.AddTransient<InitializationProgressReporter>();

@@ -268,8 +268,11 @@ namespace SimBlock.Presentation.Managers
             // Theme settings
             _uiSettings.ApplyTheme(settingsData.CurrentTheme);
             
-            // Emergency unlock shortcut settings are now hard-coded (Ctrl+Alt+U)
-            // Skip loading these values as they are read-only properties
+            // Emergency unlock shortcut settings (now configurable)
+            _uiSettings.EmergencyUnlockKey = settingsData.EmergencyUnlockKey;
+            _uiSettings.EmergencyUnlockRequiresCtrl = settingsData.EmergencyUnlockRequiresCtrl;
+            _uiSettings.EmergencyUnlockRequiresAlt = settingsData.EmergencyUnlockRequiresAlt;
+            _uiSettings.EmergencyUnlockRequiresShift = settingsData.EmergencyUnlockRequiresShift;
             
             // Startup settings
             _uiSettings.StartWithWindows = settingsData.StartWithWindows;
