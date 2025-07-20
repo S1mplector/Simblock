@@ -255,13 +255,13 @@ namespace SimBlock.Presentation.Forms
             try
             {
                 BackColor = _uiSettings.BackgroundColor;
-                
+
                 if (_titleLabel != null)
                     _titleLabel.ForeColor = _uiSettings.TextColor;
-                
+
                 if (_versionLabel != null)
                     _versionLabel.ForeColor = _uiSettings.InactiveColor;
-                
+
                 if (_statusLabel != null)
                     _statusLabel.ForeColor = _uiSettings.TextColor;
 

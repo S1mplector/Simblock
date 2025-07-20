@@ -44,38 +44,9 @@ namespace SimBlock
 
                 logger.LogInformation("Starting SimBlock application...");
 
-                // Get all required services for MainForm first
+                // Get required services for initialization
                 var keyboardBlockerService = host.Services.GetRequiredService<IKeyboardBlockerService>();
                 var mouseBlockerService = host.Services.GetRequiredService<IMouseBlockerService>();
-                var uiSettings = host.Services.GetRequiredService<UISettings>();
-                var statusBarManager = host.Services.GetRequiredService<IStatusBarManager>();
-                var logoManager = host.Services.GetRequiredService<ILogoManager>();
-                var layoutManager = host.Services.GetRequiredService<IUILayoutManager>();
-                var shortcutManager = host.Services.GetRequiredService<IKeyboardShortcutManager>();
-                var resourceMonitor = host.Services.GetRequiredService<IResourceMonitor>();
-                var themeManager = host.Services.GetRequiredService<IThemeManager>();
-                var keyboardInfoService = host.Services.GetRequiredService<IKeyboardInfoService>();
-                var mouseInfoService = host.Services.GetRequiredService<IMouseInfoService>();
-                var visualizationManager = host.Services.GetRequiredService<IBlockingVisualizationManager>();
-                var mainFormLogger = host.Services.GetRequiredService<ILogger<MainForm>>();
-                
-                // Create MainForm before initialization to ensure it exists
-                var mainForm = new MainForm(
-                    keyboardBlockerService,
-                    mouseBlockerService,
-                    mainFormLogger,
-                    uiSettings,
-                    statusBarManager,
-                    logoManager,
-                    layoutManager,
-                    shortcutManager,
-                    resourceMonitor,
-                    themeManager,
-                    keyboardInfoService,
-                    mouseInfoService,
-                    host.Services,
-                    visualizationManager
-                );
 
                 // Create splash form
                 var splashForm = host.Services.GetRequiredService<SplashForm>();
@@ -131,12 +102,43 @@ namespace SimBlock
                 // Dispose splash form to free resources
                 splashForm.Dispose();
 
-                // If initialization was successful, run the main form
+                // If initialization was successful, create and run the main form
                 if (initializationSuccessful)
                 {
                     try
                     {
-                        // Run main form (already created above)
+                        // Get all required services for MainForm after successful initialization
+                        var uiSettings = host.Services.GetRequiredService<UISettings>();
+                        var statusBarManager = host.Services.GetRequiredService<IStatusBarManager>();
+                        var logoManager = host.Services.GetRequiredService<ILogoManager>();
+                        var layoutManager = host.Services.GetRequiredService<IUILayoutManager>();
+                        var shortcutManager = host.Services.GetRequiredService<IKeyboardShortcutManager>();
+                        var resourceMonitor = host.Services.GetRequiredService<IResourceMonitor>();
+                        var themeManager = host.Services.GetRequiredService<IThemeManager>();
+                        var keyboardInfoService = host.Services.GetRequiredService<IKeyboardInfoService>();
+                        var mouseInfoService = host.Services.GetRequiredService<IMouseInfoService>();
+                        var visualizationManager = host.Services.GetRequiredService<IBlockingVisualizationManager>();
+                        var mainFormLogger = host.Services.GetRequiredService<ILogger<MainForm>>();
+                        
+                        // Create MainForm only after successful initialization
+                        var mainForm = new MainForm(
+                            keyboardBlockerService,
+                            mouseBlockerService,
+                            mainFormLogger,
+                            uiSettings,
+                            statusBarManager,
+                            logoManager,
+                            layoutManager,
+                            shortcutManager,
+                            resourceMonitor,
+                            themeManager,
+                            keyboardInfoService,
+                            mouseInfoService,
+                            host.Services,
+                            visualizationManager
+                        );
+                        
+                        // Run main form
                         Application.Run(mainForm);
                         
                         // Shutdown services after form is closed
