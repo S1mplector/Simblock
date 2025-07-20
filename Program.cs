@@ -119,6 +119,7 @@ namespace SimBlock
                         var mouseInfoService = host.Services.GetRequiredService<IMouseInfoService>();
                         var visualizationManager = host.Services.GetRequiredService<IBlockingVisualizationManager>();
                         var mainFormLogger = host.Services.GetRequiredService<ILogger<MainForm>>();
+                        var systemTrayService = host.Services.GetRequiredService<ISystemTrayService>();
 
                         // Create MainForm only after successful initialization
                         var mainForm = new MainForm(
@@ -135,7 +136,8 @@ namespace SimBlock
                             keyboardInfoService,
                             mouseInfoService,
                             host.Services,
-                            visualizationManager
+                            visualizationManager,
+                            systemTrayService
                         );
 
                         // Run main form

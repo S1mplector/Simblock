@@ -35,6 +35,7 @@ namespace SimBlock.Presentation.Forms
         private readonly IKeyboardShortcutManager _shortcutManager;
         private readonly IThemeManager _themeManager;
         private readonly IBlockingVisualizationManager _visualizationManager;
+        private readonly ISystemTrayService _systemTrayService;
 
         // UI Controls (managed by UILayoutManager)
         private IUILayoutManager.UIControls _uiControls = null!;
@@ -59,7 +60,8 @@ namespace SimBlock.Presentation.Forms
             IKeyboardInfoService keyboardInfoService,
             IMouseInfoService mouseInfoService,
             IServiceProvider serviceProvider,
-            IBlockingVisualizationManager visualizationManager)
+            IBlockingVisualizationManager visualizationManager,
+            ISystemTrayService systemTrayService)
         {
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
@@ -75,6 +77,7 @@ namespace SimBlock.Presentation.Forms
             _mouseInfoService = mouseInfoService ?? throw new ArgumentNullException(nameof(mouseInfoService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _visualizationManager = visualizationManager ?? throw new ArgumentNullException(nameof(visualizationManager));
+            _systemTrayService = systemTrayService ?? throw new ArgumentNullException(nameof(systemTrayService));
             
             _viewModel = new MainWindowViewModel();
 
@@ -143,6 +146,10 @@ namespace SimBlock.Presentation.Forms
             
             // Wire up visualization control events for Select mode
             WireUpVisualizationEvents();
+            
+            // Wire up system tray events
+            _systemTrayService.ToggleMouseBlockRequested += (s, e) => OnMouseToggleButtonClick(s, e);
+            _systemTrayService.OpenSettingsRequested += (s, e) => OnSettingsButtonClick(s, e);
         }
 
         private void InitializeTimer()

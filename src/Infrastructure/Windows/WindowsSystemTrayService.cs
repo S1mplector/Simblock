@@ -17,6 +17,8 @@ namespace SimBlock.Infrastructure.Windows
         public event EventHandler? TrayIconClicked;
         public event EventHandler? ShowWindowRequested;
         public event EventHandler? ExitRequested;
+        public event EventHandler? ToggleMouseBlockRequested;
+        public event EventHandler? OpenSettingsRequested;
 
         public bool IsVisible => _notifyIcon?.Visible ?? false;
 
@@ -36,8 +38,14 @@ namespace SimBlock.Infrastructure.Windows
             var showWindowItem = new ToolStripMenuItem("Show Window");
             showWindowItem.Click += (s, e) => ShowWindowRequested?.Invoke(this, EventArgs.Empty);
             
-            var toggleItem = new ToolStripMenuItem("Toggle Keyboard Block");
-            toggleItem.Click += (s, e) => TrayIconClicked?.Invoke(this, EventArgs.Empty);
+            var toggleKeyboardItem = new ToolStripMenuItem("Toggle Keyboard Block");
+            toggleKeyboardItem.Click += (s, e) => TrayIconClicked?.Invoke(this, EventArgs.Empty);
+            
+            var toggleMouseItem = new ToolStripMenuItem("Toggle Mouse Block");
+            toggleMouseItem.Click += (s, e) => ToggleMouseBlockRequested?.Invoke(this, EventArgs.Empty);
+            
+            var settingsItem = new ToolStripMenuItem("Open Settings");
+            settingsItem.Click += (s, e) => OpenSettingsRequested?.Invoke(this, EventArgs.Empty);
             
             var exitItem = new ToolStripMenuItem("Exit");
             exitItem.Click += (s, e) => ExitRequested?.Invoke(this, EventArgs.Empty);
@@ -45,7 +53,10 @@ namespace SimBlock.Infrastructure.Windows
             _contextMenu.Items.AddRange(new ToolStripItem[] {
                 showWindowItem,
                 new ToolStripSeparator(),
-                toggleItem,
+                toggleKeyboardItem,
+                toggleMouseItem,
+                new ToolStripSeparator(),
+                settingsItem,
                 new ToolStripSeparator(),
                 exitItem
             });

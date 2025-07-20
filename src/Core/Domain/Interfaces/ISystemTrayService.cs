@@ -6,15 +6,17 @@ namespace SimBlock.Core.Domain.Interfaces
     public interface ISystemTrayService
     {
         bool IsVisible { get; }
-        
+
         void Show();
         void Hide();
         void UpdateIcon(bool isBlocked);
         void UpdateTooltip(string tooltip);
         void ShowNotification(string title, string message);
-        
+
         event EventHandler? TrayIconClicked;
         event EventHandler? ShowWindowRequested;
         event EventHandler? ExitRequested;
+        event EventHandler? ToggleMouseBlockRequested;
+        event EventHandler? OpenSettingsRequested;
     }
 }
