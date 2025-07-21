@@ -26,7 +26,7 @@ namespace SimBlock.Presentation.Forms
 
         // UI Controls
         private Button _themeToggleButton = null!;
-        
+
         // Visualization controls for Select mode
         private SimBlock.Presentation.Controls.KeyboardVisualizationControl? _keyboardVisualizationControl;
         private SimBlock.Presentation.Controls.MouseVisualizationControl? _mouseVisualizationControl;
@@ -37,7 +37,7 @@ namespace SimBlock.Presentation.Forms
         private GroupBox _appearanceGroupBox = null!;
         private GroupBox _behaviorGroupBox = null!;
         private CheckBox _startWithWindowsCheckBox = null!;
-        
+
         // Emergency unlock shortcut controls
         private GroupBox _emergencyUnlockGroupBox = null!;
         private Label _emergencyUnlockLabel = null!;
@@ -46,7 +46,7 @@ namespace SimBlock.Presentation.Forms
         private CheckBox _emergencyUnlockAltCheckBox = null!;
         private CheckBox _emergencyUnlockShiftCheckBox = null!;
         private Label _emergencyUnlockPreviewLabel = null!;
-        
+
         // Advanced blocking controls
         private GroupBox _blockingModeGroupBox = null!;
         private RadioButton _simpleModeRadioButton = null!;
@@ -55,7 +55,7 @@ namespace SimBlock.Presentation.Forms
         private GroupBox _advancedKeyboardGroupBox = null!;
         private GroupBox _advancedMouseGroupBox = null!;
         private Panel _advancedConfigPanel = null!;
-        
+
         // Keyboard blocking controls
         private CheckBox _blockModifierKeysCheckBox = null!;
         private CheckBox _blockFunctionKeysCheckBox = null!;
@@ -63,7 +63,7 @@ namespace SimBlock.Presentation.Forms
         private CheckBox _blockLetterKeysCheckBox = null!;
         private CheckBox _blockArrowKeysCheckBox = null!;
         private CheckBox _blockSpecialKeysCheckBox = null!;
-        
+
         // Mouse blocking controls
         private CheckBox _blockLeftButtonCheckBox = null!;
         private CheckBox _blockRightButtonCheckBox = null!;
@@ -73,6 +73,14 @@ namespace SimBlock.Presentation.Forms
         private CheckBox _blockMouseWheelCheckBox = null!;
         private CheckBox _blockMouseMovementCheckBox = null!;
         private CheckBox _blockDoubleClickCheckBox = null!;
+
+        // Auto-update controls
+        private GroupBox _autoUpdateGroupBox = null!;
+        private CheckBox _autoUpdateEnabledCheckBox = null!;
+        private CheckBox _autoUpdateNotifyOnlyCheckBox = null!;
+        private Label _autoUpdateIntervalLabel = null!;
+        private ComboBox _autoUpdateIntervalComboBox = null!;
+        private Button _checkForUpdatesButton = null!;
 
         public SettingsForm(
             IThemeManager themeManager,
@@ -164,7 +172,7 @@ namespace SimBlock.Presentation.Forms
                 AutoSize = true,
                 Checked = _uiSettings.StartWithWindows
             };
-            
+
             // Emergency unlock group box
             _emergencyUnlockGroupBox = new GroupBox
             {
@@ -172,7 +180,7 @@ namespace SimBlock.Presentation.Forms
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = _uiSettings.TextColor
             };
-            
+
             CreateEmergencyUnlockControls();
 
             // Blocking mode group box
@@ -223,7 +231,7 @@ namespace SimBlock.Presentation.Forms
 
             CreateAdvancedControls();
             CreateVisualizationControls();
-
+            CreateAutoUpdateControls();
 
             // Close button
             _closeButton = new Button
@@ -426,7 +434,7 @@ namespace SimBlock.Presentation.Forms
             _advancedConfigPanel.Controls.Add(_advancedMouseGroupBox);
             _advancedConfigPanel.Size = new Size(590, 220);
         }
-        
+
         private void CreateEmergencyUnlockControls()
         {
             // Emergency unlock label
@@ -447,7 +455,7 @@ namespace SimBlock.Presentation.Forms
                 BackColor = _uiSettings.BackgroundColor,
                 ForeColor = _uiSettings.TextColor
             };
-            
+
             // Populate with common keys
             var commonKeys = new[] { Keys.U, Keys.E, Keys.Q, Keys.X, Keys.Z, Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5, Keys.F6, Keys.F7, Keys.F8, Keys.F9, Keys.F10, Keys.F11, Keys.F12 };
             foreach (var key in commonKeys)
@@ -493,7 +501,7 @@ namespace SimBlock.Presentation.Forms
                 AutoSize = true
             };
         }
-        
+
         private void LayoutEmergencyUnlockControls()
         {
             var emergencyUnlockPanel = new TableLayoutPanel
@@ -510,7 +518,7 @@ namespace SimBlock.Presentation.Forms
             emergencyUnlockPanel.Controls.Add(_emergencyUnlockCtrlCheckBox, 2, 0);
             emergencyUnlockPanel.Controls.Add(_emergencyUnlockAltCheckBox, 3, 0);
             emergencyUnlockPanel.Controls.Add(_emergencyUnlockShiftCheckBox, 4, 0);
-            
+
             // Second row: Preview
             var previewLabel = new Label
             {
@@ -534,6 +542,45 @@ namespace SimBlock.Presentation.Forms
             // Add to group box
             _emergencyUnlockGroupBox.Controls.Add(emergencyUnlockPanel);
             _emergencyUnlockGroupBox.Size = new Size(450, 80);
+        }
+
+        private void LayoutAutoUpdateControls()
+        {
+            // Create auto-update panel
+            var autoUpdatePanel = new TableLayoutPanel
+            {
+                ColumnCount = 2,
+                RowCount = 4,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor
+            };
+
+            // Add controls to panel
+            autoUpdatePanel.Controls.Add(_autoUpdateEnabledCheckBox, 0, 0);
+            autoUpdatePanel.SetColumnSpan(_autoUpdateEnabledCheckBox, 2);
+
+            autoUpdatePanel.Controls.Add(_autoUpdateNotifyOnlyCheckBox, 0, 1);
+            autoUpdatePanel.SetColumnSpan(_autoUpdateNotifyOnlyCheckBox, 2);
+
+            autoUpdatePanel.Controls.Add(_autoUpdateIntervalLabel, 0, 2);
+            autoUpdatePanel.Controls.Add(_autoUpdateIntervalComboBox, 1, 2);
+
+            autoUpdatePanel.Controls.Add(_checkForUpdatesButton, 0, 3);
+            autoUpdatePanel.SetColumnSpan(_checkForUpdatesButton, 2);
+
+            // Set column styles
+            autoUpdatePanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            autoUpdatePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            // Set row styles
+            autoUpdatePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            autoUpdatePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            autoUpdatePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            autoUpdatePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            // Add panel to group box
+            _autoUpdateGroupBox.Controls.Add(autoUpdatePanel);
+            _autoUpdateGroupBox.Size = new Size(450, 140);
         }
 
         private void CreateVisualizationControls()
@@ -594,6 +641,96 @@ namespace SimBlock.Presentation.Forms
             _visualizationGroupBox.Controls.Add(_legendPanel);
         }
 
+        private void CreateAutoUpdateControls()
+        {
+            // Auto-update group box
+            _autoUpdateGroupBox = new GroupBox
+            {
+                Text = "Auto Update",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor
+            };
+
+            // Enable auto-update checkbox
+            _autoUpdateEnabledCheckBox = new CheckBox
+            {
+                Text = "Enable automatic updates",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.AutoUpdateEnabled
+            };
+
+            // Notify only checkbox
+            _autoUpdateNotifyOnlyCheckBox = new CheckBox
+            {
+                Text = "Notify only (don't auto-install)",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true,
+                Checked = _uiSettings.AutoUpdateNotifyOnly,
+                Enabled = _uiSettings.AutoUpdateEnabled
+            };
+
+            // Update interval label
+            _autoUpdateIntervalLabel = new Label
+            {
+                Text = "Check interval:",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true
+            };
+
+            // Update interval combo box
+            _autoUpdateIntervalComboBox = new ComboBox
+            {
+                Font = new Font("Segoe UI", 9),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Size = new Size(120, 25),
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor,
+                Enabled = _uiSettings.AutoUpdateEnabled
+            };
+
+            // Populate interval options
+            var intervals = new Dictionary<string, int>
+            {
+                { "Every hour", 1 },
+                { "Every 2 hours", 2 },
+                { "Every 4 hours", 4 },
+                { "Every 6 hours", 6 },
+                { "Every 12 hours", 12 },
+                { "Daily", 24 },
+                { "Weekly", 168 }
+            };
+
+            foreach (var interval in intervals)
+            {
+                _autoUpdateIntervalComboBox.Items.Add(interval.Key);
+                if (interval.Value == _uiSettings.AutoUpdateCheckIntervalHours)
+                {
+                    _autoUpdateIntervalComboBox.SelectedItem = interval.Key;
+                }
+            }
+
+            // Default to "Every 4 hours" if no match found
+            if (_autoUpdateIntervalComboBox.SelectedItem == null)
+            {
+                _autoUpdateIntervalComboBox.SelectedItem = "Every 4 hours";
+            }
+
+            // Check for updates button
+            _checkForUpdatesButton = new Button
+            {
+                Text = "Check for Updates Now",
+                Font = new Font("Segoe UI", 9),
+                Size = new Size(150, 30),
+                BackColor = _uiSettings.SecondaryButtonColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            _checkForUpdatesButton.FlatAppearance.BorderSize = 0;
+        }
 
         private void LayoutControls()
         {
@@ -640,7 +777,7 @@ namespace SimBlock.Presentation.Forms
             // Add behavior panel to group box
             _behaviorGroupBox.Controls.Add(behaviorPanel);
             _behaviorGroupBox.Size = new Size(450, 60);
-            
+
             // Emergency unlock controls layout
             LayoutEmergencyUnlockControls();
 
@@ -662,6 +799,8 @@ namespace SimBlock.Presentation.Forms
             _blockingModeGroupBox.Controls.Add(blockingModePanel);
             _blockingModeGroupBox.Size = new Size(450, 105);
 
+            // Auto-update controls layout
+            LayoutAutoUpdateControls();
 
             // Button panel for close button
             var buttonPanel = new FlowLayoutPanel
@@ -673,15 +812,16 @@ namespace SimBlock.Presentation.Forms
             buttonPanel.Controls.Add(_closeButton);
 
             // Add to main panel
-            mainPanel.RowCount = 7; // Increased to accommodate emergency unlock group
+            mainPanel.RowCount = 8; // Increased to accommodate auto-update group
             mainPanel.Controls.Add(_appearanceGroupBox, 0, 0);
             mainPanel.Controls.Add(_behaviorGroupBox, 0, 1);
             mainPanel.Controls.Add(_emergencyUnlockGroupBox, 0, 2);
             mainPanel.Controls.Add(_blockingModeGroupBox, 0, 3);
             mainPanel.Controls.Add(_advancedConfigPanel, 0, 4);
+            mainPanel.Controls.Add(_autoUpdateGroupBox, 0, 5);
             if (_visualizationGroupBox != null)
-                mainPanel.Controls.Add(_visualizationGroupBox, 0, 5);
-            mainPanel.Controls.Add(buttonPanel, 0, 6);
+                mainPanel.Controls.Add(_visualizationGroupBox, 0, 6);
+            mainPanel.Controls.Add(buttonPanel, 0, 7);
 
             // Set row styles
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -700,21 +840,21 @@ namespace SimBlock.Presentation.Forms
             _themeToggleButton.Click += OnThemeToggleButtonClick;
             _closeButton.Click += OnCloseButtonClick;
             _themeManager.ThemeChanged += OnThemeChanged;
-            
+
             // Behavior settings event handlers
             _startWithWindowsCheckBox.CheckedChanged += OnStartWithWindowsChanged;
-            
+
             // Emergency unlock shortcut event handlers
             _emergencyUnlockKeyComboBox.SelectedIndexChanged += OnEmergencyUnlockSettingChanged;
             _emergencyUnlockCtrlCheckBox.CheckedChanged += OnEmergencyUnlockSettingChanged;
             _emergencyUnlockAltCheckBox.CheckedChanged += OnEmergencyUnlockSettingChanged;
             _emergencyUnlockShiftCheckBox.CheckedChanged += OnEmergencyUnlockSettingChanged;
-            
+
             // Blocking mode event handlers
             _simpleModeRadioButton.CheckedChanged += OnBlockingModeChanged;
             _advancedModeRadioButton.CheckedChanged += OnBlockingModeChanged;
             _selectModeRadioButton.CheckedChanged += OnBlockingModeChanged;
-            
+
             // Advanced keyboard configuration event handlers
             _blockModifierKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
             _blockFunctionKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
@@ -722,7 +862,7 @@ namespace SimBlock.Presentation.Forms
             _blockLetterKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
             _blockArrowKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
             _blockSpecialKeysCheckBox.CheckedChanged += OnAdvancedKeyboardConfigChanged;
-            
+
             // Advanced mouse configuration event handlers
             _blockLeftButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
             _blockRightButtonCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
@@ -732,6 +872,12 @@ namespace SimBlock.Presentation.Forms
             _blockMouseWheelCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
             _blockMouseMovementCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
             _blockDoubleClickCheckBox.CheckedChanged += OnAdvancedMouseConfigChanged;
+
+            // Auto-update event handlers
+            _autoUpdateEnabledCheckBox.CheckedChanged += OnAutoUpdateEnabledChanged;
+            _autoUpdateNotifyOnlyCheckBox.CheckedChanged += OnAutoUpdateNotifyOnlyChanged;
+            _autoUpdateIntervalComboBox.SelectedIndexChanged += OnAutoUpdateIntervalChanged;
+            _checkForUpdatesButton.Click += OnCheckForUpdatesButtonClick;
         }
 
         private void OnThemeToggleButtonClick(object? sender, EventArgs e)
@@ -760,7 +906,7 @@ namespace SimBlock.Presentation.Forms
             try
             {
                 var radioButton = sender as RadioButton;
-                
+
                 if (radioButton?.Checked != true)
                 {
                     return;
@@ -774,17 +920,17 @@ namespace SimBlock.Presentation.Forms
                     if (_visualizationGroupBox != null)
                         _visualizationGroupBox.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Simple");
-                    
+
                     // Refresh legend to hide "Selected" indicator
                     if (_legendPanel != null)
                     {
                         RefreshLegend(_legendPanel);
                     }
-                    
+
                     // Apply simple mode to active blocker services
                     await _keyboardBlockerService.SetSimpleModeAsync();
                     await _mouseBlockerService.SetSimpleModeAsync();
-                    
+
                     // Update visualization manager
                     _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Simple);
                     _visualizationManager.SetMouseBlockingMode(BlockingMode.Simple);
@@ -797,13 +943,13 @@ namespace SimBlock.Presentation.Forms
                     if (_visualizationGroupBox != null)
                         _visualizationGroupBox.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Advanced");
-                    
+
                     // Refresh legend to hide "Selected" indicator
                     if (_legendPanel != null)
                     {
                         RefreshLegend(_legendPanel);
                     }
-                    
+
                     // Apply advanced mode to active blocker services
                     if (_uiSettings.AdvancedKeyboardConfig != null)
                     {
@@ -813,7 +959,7 @@ namespace SimBlock.Presentation.Forms
                     {
                         await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
                     }
-                    
+
                     // Update visualization manager
                     _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Advanced, _uiSettings.AdvancedKeyboardConfig);
                     _visualizationManager.SetMouseBlockingMode(BlockingMode.Advanced, _uiSettings.AdvancedMouseConfig);
@@ -824,7 +970,7 @@ namespace SimBlock.Presentation.Forms
                     _uiSettings.MouseBlockingMode = BlockingMode.Select;
                     _advancedConfigPanel.Visible = false;
                     _logger.LogInformation("Blocking mode changed to Select");
-                    
+
                     // Initialize Advanced configurations if null for Select mode
                     if (_uiSettings.AdvancedKeyboardConfig == null)
                     {
@@ -836,7 +982,7 @@ namespace SimBlock.Presentation.Forms
                         _logger.LogInformation("Creating new AdvancedMouseConfiguration for Select mode");
                         _uiSettings.AdvancedMouseConfig = new AdvancedMouseConfiguration();
                     }
-                    
+
                     // Clear any existing selections AND advanced mode category flags
                     _uiSettings.AdvancedKeyboardConfig.ClearSelection();
                     // Also clear the category-based blocking flags from Advanced mode
@@ -846,7 +992,7 @@ namespace SimBlock.Presentation.Forms
                     _uiSettings.AdvancedKeyboardConfig.BlockLetterKeys = false;
                     _uiSettings.AdvancedKeyboardConfig.BlockArrowKeys = false;
                     _uiSettings.AdvancedKeyboardConfig.BlockSpecialKeys = false;
-                    
+
                     _uiSettings.AdvancedMouseConfig.ClearSelection();
                     // Also clear the mouse blocking flags from Advanced mode
                     _uiSettings.AdvancedMouseConfig.BlockLeftButton = false;
@@ -857,14 +1003,14 @@ namespace SimBlock.Presentation.Forms
                     _uiSettings.AdvancedMouseConfig.BlockMouseWheel = false;
                     _uiSettings.AdvancedMouseConfig.BlockMouseMovement = false;
                     _uiSettings.AdvancedMouseConfig.BlockDoubleClick = false;
-                    
+
                     _logger.LogInformation("Cleared existing selections and Advanced mode flags");
-                    
+
                     // Show visualization controls for Select mode
                     if (_visualizationGroupBox != null)
                     {
                         _visualizationGroupBox.Visible = true;
-                        
+
                         // Update visualization controls with Select mode
                         if (_keyboardVisualizationControl != null)
                         {
@@ -880,24 +1026,24 @@ namespace SimBlock.Presentation.Forms
                             _mouseVisualizationControl.ComponentClicked -= OnVisualizationComponentClicked;
                             _mouseVisualizationControl.ComponentClicked += OnVisualizationComponentClicked;
                         }
-                        
+
                         // Refresh legend to show "Selected" indicator
                         if (_legendPanel != null)
                         {
                             RefreshLegend(_legendPanel);
                         }
                     }
-                    
+
                     // Apply select mode to active blocker services
                     _logger.LogInformation("Applying Select mode to blocker services");
-                    
+
                     await _keyboardBlockerService.SetSelectModeAsync(_uiSettings.AdvancedKeyboardConfig);
                     await _mouseBlockerService.SetSelectModeAsync(_uiSettings.AdvancedMouseConfig);
-                    
+
                     // Update visualization manager to Select mode
                     _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Select, _uiSettings.AdvancedKeyboardConfig);
                     _visualizationManager.SetMouseBlockingMode(BlockingMode.Select, _uiSettings.AdvancedMouseConfig);
-                    
+
                     _logger.LogInformation("Select mode configuration complete");
                 }
                 SaveSettings();
@@ -929,7 +1075,7 @@ namespace SimBlock.Presentation.Forms
 
                 _logger.LogInformation("Advanced keyboard configuration updated");
                 SaveSettings();
-                
+
                 // Apply the updated configuration to the blocker service if in advanced mode
                 if (_uiSettings.KeyboardBlockingMode == BlockingMode.Advanced)
                 {
@@ -964,7 +1110,7 @@ namespace SimBlock.Presentation.Forms
 
                 _logger.LogInformation("Advanced mouse configuration updated");
                 SaveSettings();
-                
+
                 // Apply the updated configuration to the blocker service if in advanced mode
                 if (_uiSettings.MouseBlockingMode == BlockingMode.Advanced)
                 {
@@ -989,10 +1135,10 @@ namespace SimBlock.Presentation.Forms
                 _uiSettings.EmergencyUnlockRequiresCtrl = _emergencyUnlockCtrlCheckBox.Checked;
                 _uiSettings.EmergencyUnlockRequiresAlt = _emergencyUnlockAltCheckBox.Checked;
                 _uiSettings.EmergencyUnlockRequiresShift = _emergencyUnlockShiftCheckBox.Checked;
-                
+
                 // Update preview
                 _emergencyUnlockPreviewLabel.Text = GetEmergencyUnlockPreviewText();
-                
+
                 _logger.LogInformation("Emergency unlock shortcut changed to: {Shortcut}", _emergencyUnlockPreviewLabel.Text);
                 SaveSettings();
             }
@@ -1003,24 +1149,24 @@ namespace SimBlock.Presentation.Forms
                     "SimBlock Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        
+
         private string GetEmergencyUnlockPreviewText()
         {
             var modifiers = new List<string>();
-            
+
             if (_uiSettings.EmergencyUnlockRequiresCtrl)
                 modifiers.Add("Ctrl");
             if (_uiSettings.EmergencyUnlockRequiresAlt)
                 modifiers.Add("Alt");
             if (_uiSettings.EmergencyUnlockRequiresShift)
                 modifiers.Add("Shift");
-            
+
             var shortcut = string.Join("+", modifiers);
             if (shortcut.Length > 0)
                 shortcut += "+";
-            
+
             shortcut += _uiSettings.EmergencyUnlockKey.ToString();
-            
+
             return shortcut + " (3 times)";
         }
 
@@ -1030,7 +1176,7 @@ namespace SimBlock.Presentation.Forms
             {
                 _uiSettings.StartWithWindows = _startWithWindowsCheckBox.Checked;
                 _logger.LogInformation("Start with Windows setting changed to: {StartWithWindows}", _uiSettings.StartWithWindows);
-                
+
                 // Apply the startup setting
                 ApplyStartupSetting(_uiSettings.StartWithWindows);
                 SaveSettings();
@@ -1040,7 +1186,7 @@ namespace SimBlock.Presentation.Forms
                 _logger.LogError(ex, "Error changing start with Windows setting");
                 MessageBox.Show($"Failed to change startup setting.\n\nError: {ex.Message}",
                     "SimBlock Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                
+
                 // Revert checkbox state on error
                 _startWithWindowsCheckBox.Checked = _uiSettings.StartWithWindows;
             }
@@ -1052,7 +1198,7 @@ namespace SimBlock.Presentation.Forms
             {
                 const string registryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
                 const string appName = "SimBlock";
-                
+
                 using var key = Registry.CurrentUser.OpenSubKey(registryKey, true);
                 if (key == null)
                 {
@@ -1068,7 +1214,7 @@ namespace SimBlock.Presentation.Forms
                         // For .NET applications, we need to get the actual executable path
                         executablePath = Environment.ProcessPath ?? executablePath;
                     }
-                    
+
                     key.SetValue(appName, $"\"{executablePath}\"");
                     _logger.LogInformation("Added SimBlock to Windows startup");
                 }
@@ -1092,13 +1238,13 @@ namespace SimBlock.Presentation.Forms
             {
                 // Check if the application is actually set to start with Windows
                 bool isInStartup = IsApplicationInStartup();
-                
+
                 // Update the UISettings to match the actual registry state
                 _uiSettings.StartWithWindows = isInStartup;
-                
+
                 // Update the checkbox to reflect the current state
                 _startWithWindowsCheckBox.Checked = isInStartup;
-                
+
                 _logger.LogInformation("Startup state initialized: {IsInStartup}", isInStartup);
             }
             catch (Exception ex)
@@ -1116,7 +1262,7 @@ namespace SimBlock.Presentation.Forms
             {
                 const string registryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
                 const string appName = "SimBlock";
-                
+
                 using var key = Registry.CurrentUser.OpenSubKey(registryKey, false);
                 if (key == null)
                 {
@@ -1159,21 +1305,21 @@ namespace SimBlock.Presentation.Forms
             {
                 BackColor = _uiSettings.BackgroundColor;
                 ForeColor = _uiSettings.TextColor;
-                
+
                 _appearanceGroupBox.ForeColor = _uiSettings.TextColor;
                 _themeLabel.ForeColor = _uiSettings.TextColor;
-                
+
                 // Apply theme to behavior controls
                 _behaviorGroupBox.ForeColor = _uiSettings.TextColor;
                 _startWithWindowsCheckBox.ForeColor = _uiSettings.TextColor;
-                
+
                 // Apply theme to blocking mode controls
                 _blockingModeGroupBox.ForeColor = _uiSettings.TextColor;
                 _simpleModeRadioButton.ForeColor = _uiSettings.TextColor;
                 _advancedModeRadioButton.ForeColor = _uiSettings.TextColor;
                 _selectModeRadioButton.ForeColor = _uiSettings.TextColor;
                 _advancedConfigPanel.BackColor = _uiSettings.BackgroundColor;
-                
+
                 // Apply theme to advanced keyboard controls
                 _advancedKeyboardGroupBox.ForeColor = _uiSettings.TextColor;
                 _blockModifierKeysCheckBox.ForeColor = _uiSettings.TextColor;
@@ -1182,7 +1328,7 @@ namespace SimBlock.Presentation.Forms
                 _blockLetterKeysCheckBox.ForeColor = _uiSettings.TextColor;
                 _blockArrowKeysCheckBox.ForeColor = _uiSettings.TextColor;
                 _blockSpecialKeysCheckBox.ForeColor = _uiSettings.TextColor;
-                
+
                 // Apply theme to advanced mouse controls
                 _advancedMouseGroupBox.ForeColor = _uiSettings.TextColor;
                 _blockLeftButtonCheckBox.ForeColor = _uiSettings.TextColor;
@@ -1193,8 +1339,8 @@ namespace SimBlock.Presentation.Forms
                 _blockMouseWheelCheckBox.ForeColor = _uiSettings.TextColor;
                 _blockMouseMovementCheckBox.ForeColor = _uiSettings.TextColor;
                 _blockDoubleClickCheckBox.ForeColor = _uiSettings.TextColor;
-                
-                
+
+
                 // Apply theme to all panels
                 ApplyThemeToControls(Controls);
             }
@@ -1257,10 +1403,10 @@ namespace SimBlock.Presentation.Forms
             {
                 // Load settings directly into the UISettings object
                 _settingsManager.LoadSettings();
-                
+
                 // Update UI controls to reflect loaded settings
                 UpdateUIFromSettings();
-                
+
                 _logger.LogInformation("Settings loaded successfully");
             }
             catch (Exception ex)
@@ -1276,12 +1422,12 @@ namespace SimBlock.Presentation.Forms
             _advancedModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
             _selectModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Select;
             _advancedConfigPanel.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
-            
+
             // Update visualization controls visibility based on mode
             if (_visualizationGroupBox != null)
             {
                 _visualizationGroupBox.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Select;
-                
+
                 // If Select mode is active, update the visualization controls
                 if (_uiSettings.KeyboardBlockingMode == BlockingMode.Select)
                 {
@@ -1323,7 +1469,7 @@ namespace SimBlock.Presentation.Forms
 
             // Update startup checkbox
             _startWithWindowsCheckBox.Checked = _uiSettings.StartWithWindows;
-            
+
             // Update emergency unlock settings
             _emergencyUnlockKeyComboBox.SelectedItem = _uiSettings.EmergencyUnlockKey;
             _emergencyUnlockCtrlCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresCtrl;
@@ -1349,7 +1495,7 @@ namespace SimBlock.Presentation.Forms
                         _uiSettings.AdvancedMouseConfig.SelectedRightButton,
                         _uiSettings.AdvancedMouseConfig.SelectedMiddleButton);
                 }
-                
+
                 _settingsManager.SaveSettings();
                 _logger.LogInformation("Settings saved successfully");
             }
@@ -1378,14 +1524,14 @@ namespace SimBlock.Presentation.Forms
         {
             // Clear existing legend items
             legendPanel.Controls.Clear();
-            
+
             int x = 0;
-            
+
             // Add legend items based on current mode
             CreateLegendItem(legendPanel, ref x, _uiSettings.ErrorColor, "Blocked");
             CreateLegendItem(legendPanel, ref x, _uiSettings.SuccessColor, "Allowed");
             CreateLegendItem(legendPanel, ref x, _uiSettings.BackgroundColor, "Inactive");
-            
+
             // Show selected color in Select mode
             if (_selectModeRadioButton?.Checked == true)
             {
@@ -1407,7 +1553,7 @@ namespace SimBlock.Presentation.Forms
                 BorderStyle = BorderStyle.FixedSingle
             };
             parent.Controls.Add(colorBox);
-            
+
             // Create text label
             var textLabel = new Label
             {
@@ -1419,7 +1565,7 @@ namespace SimBlock.Presentation.Forms
                 BackColor = Color.Transparent
             };
             parent.Controls.Add(textLabel);
-            
+
             // Update x position for next item
             x += 80;
         }
@@ -1428,7 +1574,7 @@ namespace SimBlock.Presentation.Forms
         {
             // Save settings when form closes
             SaveSettings();
-            
+
             // Unsubscribe from events
             _themeManager.ThemeChanged -= OnThemeChanged;
             base.OnFormClosing(e);

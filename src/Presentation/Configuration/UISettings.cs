@@ -34,6 +34,11 @@ namespace SimBlock.Presentation.Configuration
         // Startup settings
         public bool StartWithWindows { get; set; } = false;
         
+        // Auto-update settings
+        public bool AutoUpdateEnabled { get; set; } = true;
+        public int AutoUpdateCheckIntervalHours { get; set; } = 4;
+        public bool AutoUpdateNotifyOnly { get; set; } = false; // If true, only notify, don't auto-install
+        
         // Advanced blocking settings
         public BlockingMode KeyboardBlockingMode { get; set; } = BlockingMode.Simple;
         public BlockingMode MouseBlockingMode { get; set; } = BlockingMode.Simple;

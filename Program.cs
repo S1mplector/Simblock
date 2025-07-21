@@ -5,6 +5,7 @@ using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Application.Services;
 using SimBlock.Core.Domain.Interfaces;
 using SimBlock.Infrastructure.Windows;
+using SimBlock.Infrastructure.Services;
 using SimBlock.Presentation.Forms;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Interfaces;
@@ -214,6 +215,12 @@ namespace SimBlock
                     services.AddSingleton<IThemeManager, ThemeManager>();
                     services.AddSingleton<ISettingsManager, SettingsManager>();
                     services.AddSingleton<IBlockingVisualizationManager, BlockingVisualizationManager>();
+
+                    // Register auto-update services
+                    services.AddSingleton<IVersionComparator, VersionComparator>();
+                    services.AddSingleton<IGitHubReleaseService, GitHubReleaseService>();
+                    services.AddSingleton<IAutoUpdateService, AutoUpdateService>();
+                    services.AddSingleton<IAutoUpdateManager, AutoUpdateManager>();
 
                     // Register presentation layer
                     // MainForm is created manually in Main() to avoid disposal issues
