@@ -7,6 +7,7 @@ using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using SimBlock.Core.Application.Interfaces;
 using WinForms = System.Windows.Forms;
 
 namespace SimBlock.Core.Application.Services
@@ -17,10 +18,11 @@ namespace SimBlock.Core.Application.Services
     /// </summary>
     internal static class PortableZipInstaller
     {
+        private static UpdateInfo? _updateInfo;
         private const string AppName = "SimBlock";
         private const string RegistryKeyPath = @"SOFTWARE\SimBlock";
         private const string InstallLocationValue = "InstallLocation";
-        public static async Task<bool> InstallAsync(string zipPath)
+        public static async Task<bool> InstallAsync(string zipPath, UpdateInfo? updateInfo = null)
         {
             try
             {
@@ -46,15 +48,26 @@ namespace SimBlock.Core.Application.Services
                     installDir = dialog.SelectedPath;
                 }
 
-                // Create version-specific subdirectory
-                string versionDir = Path.Combine(installDir, $"v{DateTime.Now:yyyyMMddHHmmss}");
-                Directory.CreateDirectory(versionDir);
+                // Create a friendly version directory name
+                string version = _updateInfo?.Version?.Replace(".0", "").TrimEnd('.') ?? "Update";
+                string baseDirName = $"SimBlock {version}";
+                string versionDir = Path.Combine(installDir, baseDirName);
+                
+                // Ensure directory doesn't exist or add a number suffix
+                int counter = 1;
+                string finalDir = versionDir;
+                while (Directory.Exists(finalDir))
+                {
+                    finalDir = $"{versionDir} ({counter++})";
+                }
+                
+                Directory.CreateDirectory(finalDir);
 
                 // Extract the update
-                await Task.Run(() => ZipFile.ExtractToDirectory(zipPath, versionDir));
+                await Task.Run(() => ZipFile.ExtractToDirectory(zipPath, finalDir));
 
                 // Find the main executable
-                string? exePath = Directory.GetFiles(versionDir, "*.exe", SearchOption.AllDirectories)
+                string? exePath = Directory.GetFiles(finalDir, "*.exe", SearchOption.AllDirectories)
                     .FirstOrDefault(f => Path.GetFileName(f).StartsWith(AppName, StringComparison.OrdinalIgnoreCase));
 
                 if (exePath == null)
@@ -99,7 +112,7 @@ namespace SimBlock.Core.Application.Services
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -newExePath \"{exePath}\" -workingDir \"{Path.GetDirectoryName(exePath) ?? versionDir}\" -processId {Process.GetCurrentProcess().Id}",
+                    Arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -newExePath \"{exePath}\" -workingDir \"{Path.GetDirectoryName(exePath) ?? finalDir}\" -processId {Process.GetCurrentProcess().Id}",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
