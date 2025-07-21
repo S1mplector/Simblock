@@ -1,8 +1,14 @@
-using SimBlock.Core.Application.Interfaces;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SimBlock.Core.Application.Interfaces;
 
 namespace SimBlock.Presentation.Forms
 {
@@ -11,17 +17,17 @@ namespace SimBlock.Presentation.Forms
         private readonly IAutoUpdateService _autoUpdateService;
         private UpdateInfo? _updateInfo;
 
-        private Label _titleLabel;
-        private Label _currentVersionLabel;
-        private Label _newVersionLabel;
-        private Label _releaseDateLabel;
-        private Label _fileSizeLabel;
-        private TextBox _releaseNotesTextBox;
-        private ProgressBar _progressBar;
-        private Label _progressLabel;
-        private Button _updateButton;
-        private Button _cancelButton;
-        private Button _skipButton;
+        private Label _titleLabel = null!;
+        private Label _currentVersionLabel = null!;
+        private Label _newVersionLabel = null!;
+        private Label _releaseDateLabel = null!;
+        private Label _fileSizeLabel = null!;
+        private RichTextBox _releaseNotesTextBox = null!;
+        private ProgressBar _progressBar = null!;
+        private Label _progressLabel = null!;
+        private Button _updateButton = null!;
+        private Button _cancelButton = null!;
+        private Button _skipButton = null!;
 
         public UpdateDialog(IAutoUpdateService autoUpdateService, UpdateInfo updateInfo)
         {
@@ -95,14 +101,31 @@ namespace SimBlock.Presentation.Forms
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold)
             };
 
-            _releaseNotesTextBox = new TextBox
+            _releaseNotesTextBox = new RichTextBox
             {
                 Location = new Point(20, 190),
                 Size = new Size(450, 120),
-                Multiline = true,
                 ReadOnly = true,
-                ScrollBars = ScrollBars.Vertical,
-                BackColor = SystemColors.Control
+                BackColor = SystemColors.Control,
+                BorderStyle = BorderStyle.FixedSingle,
+                DetectUrls = true,
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
+            _releaseNotesTextBox.LinkClicked += (s, e) =>
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = e.LinkText,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not open link: {ex.Message}", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             };
 
             // Progress bar
@@ -184,10 +207,169 @@ namespace SimBlock.Presentation.Forms
             _newVersionLabel.Text = $"New Version: {_updateInfo.Version}";
             _releaseDateLabel.Text = $"Released: {_updateInfo.PublishedAt:MMM dd, yyyy}";
             _fileSizeLabel.Text = $"Download Size: {FormatFileSize(_updateInfo.FileSize)}";
-            _releaseNotesTextBox.Text = _updateInfo.ReleaseNotes;
+            
+            // Apply markdown styling to the release notes
+            ApplyMarkdownStyling(_updateInfo.ReleaseNotes);
         }
 
-        private async void UpdateButton_Click(object sender, EventArgs e)
+        private void ApplyMarkdownStyling(string markdownText)
+        {
+            if (string.IsNullOrEmpty(markdownText))
+            {
+                _releaseNotesTextBox.Text = "No release notes available.";
+                return;
+            }
+
+            // Save current position and selection
+            var savedSelectionStart = _releaseNotesTextBox.SelectionStart;
+            var savedSelectionLength = _releaseNotesTextBox.SelectionLength;
+            var savedScrollPosition = _releaseNotesTextBox.GetPositionFromCharIndex(0);
+
+            // Clear existing text and formatting
+            _releaseNotesTextBox.Clear();
+            _releaseNotesTextBox.SelectionFont = new Font("Segoe UI", 9);
+            _releaseNotesTextBox.SelectionColor = SystemColors.ControlText;
+
+            // Simple markdown parsing
+            var lines = markdownText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+            bool inCodeBlock = false;
+            bool inList = false;
+            int listIndent = 0;
+
+            foreach (var line in lines)
+            {
+                string trimmedLine = line.Trim();
+                
+                // Handle code blocks
+                if (trimmedLine.StartsWith("```"))
+                {
+                    inCodeBlock = !inCodeBlock;
+                    _releaseNotesTextBox.SelectionBackColor = inCodeBlock ? Color.FromArgb(240, 240, 240) : SystemColors.Control;
+                    _releaseNotesTextBox.SelectionFont = new Font("Consolas", 9);
+                    _releaseNotesTextBox.AppendText(Environment.NewLine);
+                    continue;
+                }
+
+                if (inCodeBlock)
+                {
+                    _releaseNotesTextBox.AppendText(line + Environment.NewLine);
+                    continue;
+                }
+
+                // Reset formatting for new line
+                _releaseNotesTextBox.SelectionFont = new Font("Segoe UI", 9);
+                _releaseNotesTextBox.SelectionColor = SystemColors.ControlText;
+                _releaseNotesTextBox.SelectionBullet = false;
+
+                // Handle headers
+                if (trimmedLine.StartsWith("### "))
+                {
+                    _releaseNotesTextBox.SelectionFont = new Font("Segoe UI", 11, FontStyle.Bold);
+                    _releaseNotesTextBox.AppendText(trimmedLine.Substring(4) + Environment.NewLine);
+                    continue;
+                }
+                else if (trimmedLine.StartsWith("## "))
+                {
+                    _releaseNotesTextBox.SelectionFont = new Font("Segoe UI", 12, FontStyle.Bold);
+                    _releaseNotesTextBox.AppendText(trimmedLine.Substring(3) + Environment.NewLine);
+                    continue;
+                }
+                else if (trimmedLine.StartsWith("# "))
+                {
+                    _releaseNotesTextBox.SelectionFont = new Font("Segoe UI", 14, FontStyle.Bold);
+                    _releaseNotesTextBox.AppendText(trimmedLine.Substring(2) + Environment.NewLine);
+                    continue;
+                }
+
+                // Handle lists
+                if (trimmedLine.StartsWith("- ") || trimmedLine.StartsWith("* "))
+                {
+                    if (!inList)
+                    {
+                        inList = true;
+                        _releaseNotesTextBox.SelectionBullet = true;
+                        listIndent = line.IndexOf(trimmedLine[0]);
+                    }
+                    _releaseNotesTextBox.AppendText(trimmedLine.Substring(2) + Environment.NewLine);
+                    continue;
+                }
+                else if (inList && !string.IsNullOrWhiteSpace(line) && line.TrimStart().Length > 0)
+                {
+                    // Handle list item continuation
+                    _releaseNotesTextBox.SelectionHangingIndent = 20;
+                    _releaseNotesTextBox.AppendText(line.TrimStart() + Environment.NewLine);
+                    continue;
+                }
+                else
+                {
+                    inList = false;
+                    _releaseNotesTextBox.SelectionBullet = false;
+                }
+
+                // Handle bold and italic (simple implementation)
+                string processedLine = line;
+                int boldStart, boldEnd;
+                
+                // Process bold text
+                while ((boldStart = processedLine.IndexOf("**")) >= 0 && 
+                       (boldEnd = processedLine.IndexOf("**", boldStart + 2)) > boldStart)
+                {
+                    // Text before bold
+                    _releaseNotesTextBox.AppendText(processedLine.Substring(0, boldStart));
+                    
+                    // Bold text
+                    _releaseNotesTextBox.SelectionFont = new Font(_releaseNotesTextBox.Font, FontStyle.Bold);
+                    _releaseNotesTextBox.AppendText(processedLine.Substring(boldStart + 2, boldEnd - boldStart - 2));
+                    _releaseNotesTextBox.SelectionFont = new Font(_releaseNotesTextBox.Font, FontStyle.Regular);
+                    
+                    // Remaining text
+                    processedLine = processedLine.Substring(boldEnd + 2);
+                }
+                
+                // Process italic text
+                while ((boldStart = processedLine.IndexOf('*')) >= 0 && 
+                       boldStart < processedLine.Length - 1 &&
+                       processedLine[boldStart + 1] != ' ')
+                {
+                    // Find matching closing asterisk
+                    boldEnd = processedLine.IndexOf('*', boldStart + 1);
+                    if (boldEnd < 0) break;
+                    
+                    // Text before italic
+                    _releaseNotesTextBox.AppendText(processedLine.Substring(0, boldStart));
+                    
+                    // Italic text
+                    _releaseNotesTextBox.SelectionFont = new Font(_releaseNotesTextBox.Font, FontStyle.Italic);
+                    _releaseNotesTextBox.AppendText(processedLine.Substring(boldStart + 1, boldEnd - boldStart - 1));
+                    _releaseNotesTextBox.SelectionFont = new Font(_releaseNotesTextBox.Font, FontStyle.Regular);
+                    
+                    // Remaining text
+                    processedLine = processedLine.Substring(boldEnd + 1);
+                }
+                
+                // Add any remaining text
+                _releaseNotesTextBox.AppendText(processedLine + Environment.NewLine);
+            }
+
+            // Restore position and selection
+            _releaseNotesTextBox.SelectionStart = savedSelectionStart;
+            _releaseNotesTextBox.SelectionLength = savedSelectionLength;
+            
+            try
+            {
+                // Try to restore scroll position
+                if (savedScrollPosition != Point.Empty)
+                {
+                    _releaseNotesTextBox.ScrollToCaret();
+                }
+            }
+            catch
+            {
+                // Ignore scroll position restoration errors
+            }
+        }
+
+        private async void UpdateButton_Click(object? sender, EventArgs e)
         {
             if (_updateInfo == null) return;
 
@@ -229,19 +411,19 @@ namespace SimBlock.Presentation.Forms
             }
         }
 
-        private void SkipButton_Click(object sender, EventArgs e)
+        private void SkipButton_Click(object? sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Ignore;
             this.Close();
         }
 
-        private void CancelButton_Click(object sender, EventArgs e)
+        private void CancelButton_Click(object? sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
 
-        private void OnUpdateProgressChanged(object sender, UpdateProgressEventArgs e)
+        private void OnUpdateProgressChanged(object? sender, UpdateProgressEventArgs e)
         {
             if (InvokeRequired)
             {
