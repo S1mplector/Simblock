@@ -45,8 +45,8 @@ namespace SimBlock.Presentation.Forms
 
             // Form properties
             this.Text = "SimBlock Update Available";
-            this.Size = new Size(500, 450);
-            this.StartPosition = FormStartPosition.CenterParent;
+            this.Size = new Size(600, 455);
+            this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;

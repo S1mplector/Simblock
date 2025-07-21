@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.IO.Compression;
 using System.Reflection;
 using System.Threading.Tasks;
 using WinForms = System.Windows.Forms;
@@ -144,7 +145,13 @@ namespace SimBlock.Core.Application.Services
                         updateInfo.FileSize, fileInfo.Length);
                 }
 
-                // Install the update
+                // If we downloaded a portable zip, handle via PortableZipInstaller
+                if (Path.GetExtension(downloadPath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    return await PortableZipInstaller.InstallAsync(downloadPath);
+                }
+
+                // Otherwise, proceed with traditional installer/update script
                 return await InstallUpdateAsync(downloadPath, updateInfo);
             }
             catch (Exception ex)
