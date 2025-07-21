@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SimBlock.Presentation.Configuration;
@@ -23,6 +24,7 @@ namespace SimBlock.Presentation.Forms
         private readonly IKeyboardBlockerService _keyboardBlockerService;
         private readonly IMouseBlockerService _mouseBlockerService;
         private readonly IBlockingVisualizationManager _visualizationManager;
+        private readonly IAutoUpdateService _autoUpdateService;
 
         // UI Controls
         private Button _themeToggleButton = null!;
@@ -89,7 +91,8 @@ namespace SimBlock.Presentation.Forms
             ISettingsManager settingsManager,
             IKeyboardBlockerService keyboardBlockerService,
             IMouseBlockerService mouseBlockerService,
-            IBlockingVisualizationManager visualizationManager)
+            IBlockingVisualizationManager visualizationManager,
+            IAutoUpdateService autoUpdateService)
         {
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
@@ -98,6 +101,7 @@ namespace SimBlock.Presentation.Forms
             _keyboardBlockerService = keyboardBlockerService ?? throw new ArgumentNullException(nameof(keyboardBlockerService));
             _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
             _visualizationManager = visualizationManager ?? throw new ArgumentNullException(nameof(visualizationManager));
+            _autoUpdateService = autoUpdateService ?? throw new ArgumentNullException(nameof(autoUpdateService));
 
             InitializeComponent();
             InitializeEventHandlers();
@@ -878,6 +882,82 @@ namespace SimBlock.Presentation.Forms
             _autoUpdateNotifyOnlyCheckBox.CheckedChanged += OnAutoUpdateNotifyOnlyChanged;
             _autoUpdateIntervalComboBox.SelectedIndexChanged += OnAutoUpdateIntervalChanged;
             _checkForUpdatesButton.Click += OnCheckForUpdatesButtonClick;
+        }
+
+        private void OnAutoUpdateEnabledChanged(object? sender, EventArgs e)
+        {
+            if (_autoUpdateEnabledCheckBox != null && _autoUpdateNotifyOnlyCheckBox != null && _autoUpdateIntervalComboBox != null && _checkForUpdatesButton != null)
+            {
+                bool isEnabled = _autoUpdateEnabledCheckBox.Checked;
+                _autoUpdateNotifyOnlyCheckBox.Enabled = isEnabled;
+                _autoUpdateIntervalComboBox.Enabled = isEnabled;
+                _checkForUpdatesButton.Enabled = isEnabled;
+                
+                // Update the setting
+                _uiSettings.AutoUpdateEnabled = isEnabled;
+                _settingsManager.SaveSettings();
+            }
+        }
+
+        private void OnAutoUpdateNotifyOnlyChanged(object? sender, EventArgs e)
+        {
+            if (_autoUpdateNotifyOnlyCheckBox != null)
+            {
+                _uiSettings.AutoUpdateNotifyOnly = _autoUpdateNotifyOnlyCheckBox.Checked;
+                _settingsManager.SaveSettings();
+            }
+        }
+
+        private void OnAutoUpdateIntervalChanged(object? sender, EventArgs e)
+        {
+            if (_autoUpdateIntervalComboBox != null && _autoUpdateIntervalComboBox.SelectedItem != null)
+            {
+                if (int.TryParse(_autoUpdateIntervalComboBox.SelectedItem.ToString()?.Replace(" days", "").Trim(), out int hours))
+                {
+                    _uiSettings.AutoUpdateCheckIntervalHours = hours;
+                    _settingsManager.SaveSettings();
+                }
+            }
+        }
+
+        private async void OnCheckForUpdatesButtonClick(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (_checkForUpdatesButton != null)
+                {
+                    _checkForUpdatesButton.Enabled = false;
+                    _checkForUpdatesButton.Text = "Checking...";
+                }
+
+                // Use the injected auto-update service
+                var updateInfo = await _autoUpdateService.CheckForUpdatesAsync();
+                if (updateInfo != null)
+                {
+                    // Show update dialog with the update info
+                    using var updateDialog = new UpdateDialog(_autoUpdateService, updateInfo);
+                    updateDialog.ShowDialog(this);
+                }
+                else
+                {
+                    MessageBox.Show("You are using the latest version.", "No Updates Available", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error checking for updates");
+                MessageBox.Show($"Error checking for updates: {ex.Message}", "Update Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (_checkForUpdatesButton != null)
+                {
+                    _checkForUpdatesButton.Enabled = true;
+                    _checkForUpdatesButton.Text = "Check Now";
+                }
+            }
         }
 
         private void OnThemeToggleButtonClick(object? sender, EventArgs e)
