@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Controls;
 using SimBlock.Presentation.Interfaces;
 
 namespace SimBlock.Presentation.Managers
@@ -110,6 +111,14 @@ namespace SimBlock.Presentation.Managers
                 {
                     switch (control)
                     {
+                        case RoundedButton button:
+                            // Apply theme to RoundedButton
+                            button.BackColor = _uiSettings.PrimaryButtonColor;
+                            button.ForeColor = _uiSettings.PrimaryButtonTextColor;
+                            button.HoverColor = ControlPaint.Light(_uiSettings.PrimaryButtonColor, 0.2f);
+                            button.PressedColor = ControlPaint.Dark(_uiSettings.PrimaryButtonColor, 0.2f);
+                            break;
+
                         case Label label:
                             // Don't override specific colored labels (like status labels)
                             if (label.ForeColor == Color.Black || label.ForeColor == Color.White ||

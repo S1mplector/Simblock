@@ -55,6 +55,7 @@ namespace SimBlock.Presentation.Configuration
 
         // Button colors
         public Color PrimaryButtonColor { get; set; } = Color.FromArgb(0, 120, 215);
+        public Color PrimaryButtonTextColor { get; set; } = Color.White;
         public Color DangerButtonColor { get; set; } = Color.FromArgb(215, 0, 0);
         public Color SecondaryButtonColor { get; set; } = Color.Gray;
 
@@ -120,6 +121,7 @@ namespace SimBlock.Presentation.Configuration
             
             // Button colors
             PrimaryButtonColor = Color.FromArgb(0, 120, 215);
+            PrimaryButtonTextColor = Color.White;
             DangerButtonColor = Color.FromArgb(215, 0, 0);
             SecondaryButtonColor = Color.Gray;
         }
@@ -143,6 +145,7 @@ namespace SimBlock.Presentation.Configuration
             
             // Button colors (adjusted for dark theme)
             PrimaryButtonColor = Color.FromArgb(0, 120, 215);
+            PrimaryButtonTextColor = Color.White;
             DangerButtonColor = Color.FromArgb(215, 0, 0);
             SecondaryButtonColor = Color.FromArgb(80, 80, 80);
         }

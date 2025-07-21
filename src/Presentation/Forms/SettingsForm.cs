@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Controls;
 using SimBlock.Presentation.Interfaces;
 using SimBlock.Core.Domain.Enums;
 using SimBlock.Core.Domain.Entities;
@@ -238,17 +239,17 @@ namespace SimBlock.Presentation.Forms
             CreateAutoUpdateControls();
 
             // Close button
-            _closeButton = new Button
+            _closeButton = new RoundedButton
             {
                 Text = "Close",
-                Font = new Font("Segoe UI", 9),
-                Size = new Size(100, 30),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                Size = new Size(120, 36),
                 BackColor = _uiSettings.PrimaryButtonColor,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
+                CornerRadius = 6,
+                Margin = new Padding(5),
                 DialogResult = DialogResult.OK
             };
-            _closeButton.FlatAppearance.BorderSize = 0;
         }
 
         private void CreateAdvancedControls()

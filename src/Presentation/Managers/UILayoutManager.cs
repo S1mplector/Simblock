@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using SimBlock.Presentation.Configuration;
+using SimBlock.Presentation.Controls;
 using SimBlock.Presentation.Interfaces;
 using SimBlock.Presentation.ViewModels;
 
@@ -142,7 +143,7 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
-            controls.KeyboardToggleButton = new Button
+            controls.KeyboardToggleButton = new RoundedButton
             {
                 Text = "Block Keyboard",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -150,9 +151,8 @@ namespace SimBlock.Presentation.Managers
                 Anchor = AnchorStyles.None,
                 BackColor = _uiSettings.PrimaryButtonColor,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                CornerRadius = 8
             };
-            controls.KeyboardToggleButton.FlatAppearance.BorderSize = 0;
 
             controls.KeyboardLastToggleLabel = new Label
             {
@@ -184,7 +184,7 @@ namespace SimBlock.Presentation.Managers
                 ForeColor = _uiSettings.InactiveColor
             };
 
-            controls.MouseToggleButton = new Button
+            controls.MouseToggleButton = new RoundedButton
             {
                 Text = "Block Mouse",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -192,9 +192,8 @@ namespace SimBlock.Presentation.Managers
                 Anchor = AnchorStyles.None,
                 BackColor = _uiSettings.PrimaryButtonColor,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                CornerRadius = 8
             };
-            controls.MouseToggleButton.FlatAppearance.BorderSize = 0;
 
             controls.MouseLastToggleLabel = new Label
             {
@@ -206,29 +205,29 @@ namespace SimBlock.Presentation.Managers
             };
 
             // Create shared controls
-            controls.SettingsButton = new Button
+            controls.SettingsButton = new RoundedButton
             {
-                Text = "⚙️ Settings",
-                Font = new Font("Segoe UI", 9),
-                Size = new Size(100, 30),
+                Text = "Settings",
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                Size = new Size(120, 36),
                 Anchor = AnchorStyles.None,
                 BackColor = _uiSettings.SecondaryButtonColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                ForeColor = _uiSettings.TextColor,
+                CornerRadius = 6,
+                Margin = new Padding(5)
             };
-            controls.SettingsButton.FlatAppearance.BorderSize = 0;
 
-            controls.HideToTrayButton = new Button
+            controls.HideToTrayButton = new RoundedButton
             {
                 Text = "Hide to Tray",
-                Font = new Font("Segoe UI", 10),
-                Size = new Size(120, 30),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                Size = new Size(120, 36),
                 Anchor = AnchorStyles.None,
                 BackColor = _uiSettings.SecondaryButtonColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                ForeColor = _uiSettings.TextColor,
+                CornerRadius = 6,
+                Margin = new Padding(5)
             };
-            controls.HideToTrayButton.FlatAppearance.BorderSize = 0;
 
             controls.InstructionsLabel = new Label
             {
@@ -258,8 +257,10 @@ namespace SimBlock.Presentation.Managers
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 3,
-                Padding = new Padding(_uiSettings.WindowPadding),
-                BackColor = _uiSettings.BackgroundColor
+                Padding = new Padding(_uiSettings.WindowPadding / 2), // Reduced padding to allow more space
+                BackColor = _uiSettings.BackgroundColor,
+                Margin = new Padding(0),
+                CellBorderStyle = TableLayoutPanelCellBorderStyle.None
             };
 
             // Create keyboard tab layout
@@ -294,7 +295,11 @@ namespace SimBlock.Presentation.Managers
                 ColumnCount = 2,
                 RowCount = 1,
                 Dock = DockStyle.Fill,
-                BackColor = _uiSettings.BackgroundColor
+                BackColor = _uiSettings.BackgroundColor,
+                Margin = new Padding(0, 10, 0, 10), // Add vertical margin
+                Padding = new Padding(0),
+                AutoSize = true,
+                Height = 50 // Fixed height to ensure enough space for buttons
             };
             buttonPanel.Controls.Add(controls.SettingsButton, 0, 0);
             buttonPanel.Controls.Add(controls.HideToTrayButton, 1, 0);
@@ -306,10 +311,10 @@ namespace SimBlock.Presentation.Managers
             mainPanel.Controls.Add(buttonPanel, 0, 1);
             mainPanel.Controls.Add(controls.InstructionsLabel, 0, 2);
 
-            // Set row styles
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 80)); // Tab control
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Button panel
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 10)); // Instructions
+            // Set row styles - adjusted to give more space to the button panel
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 75)); // Tab control
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // Fixed height for button panel
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Auto-size for instructions
 
             return mainPanel;
         }
