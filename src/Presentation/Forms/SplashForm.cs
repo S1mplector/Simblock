@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
@@ -167,7 +168,7 @@ namespace SimBlock.Presentation.Forms
             // Version label
             _versionLabel = new Label
             {
-                Text = "Version 1.0.0",
+                Text = $"Version {Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0"}",
                 Font = new Font("Segoe UI", 10F),
                 ForeColor = _uiSettings.InactiveColor,
                 TextAlign = ContentAlignment.TopCenter,

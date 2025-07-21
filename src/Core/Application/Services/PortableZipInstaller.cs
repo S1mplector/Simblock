@@ -48,9 +48,10 @@ namespace SimBlock.Core.Application.Services
                     installDir = dialog.SelectedPath;
                 }
 
-                // Create a friendly version directory name
-                string version = _updateInfo?.Version?.Replace(".0", "").TrimEnd('.') ?? "Update";
-                string baseDirName = $"SimBlock {version}";
+                // Create a friendly version directory name with version and date
+                string version = _updateInfo?.Version?.TrimEnd('.', '0') ?? "Update";
+                string today = DateTime.Now.ToString("yy/MM/dd");
+                string baseDirName = $"SimBlock Update (v{version}) {today}";
                 string versionDir = Path.Combine(installDir, baseDirName);
                 
                 // Ensure directory doesn't exist or add a number suffix
