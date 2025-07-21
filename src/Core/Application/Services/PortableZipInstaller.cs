@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -69,22 +70,43 @@ namespace SimBlock.Core.Application.Services
                 // Save install location to registry for future updates
                 SaveInstallLocation(installDir);
 
-                // Start the new version
+                // Create a PowerShell script to handle the process management
+                string scriptPath = Path.Combine(Path.GetTempPath(), $"SimBlock_Update_{Guid.NewGuid()}.ps1");
+                string scriptContent = @"
+                    param([string]$newExePath, [string]$workingDir, [int]$processId)
+                    
+                    # Wait for the current process to exit (with timeout)
+                    $timeout = 30 # seconds
+                    $startTime = Get-Date
+                    
+                    while ((Get-Process -Id $processId -ErrorAction SilentlyContinue) -ne $null) {
+                        if (((Get-Date) - $startTime).TotalSeconds -gt $timeout) {
+                            # Force kill if timeout reached
+                            Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+                            break
+                        }
+                        Start-Sleep -Milliseconds 100
+                    }
+                    
+                    # Start the new version
+                    Start-Process -FilePath $newExePath -WorkingDirectory $workingDir -ArgumentList '--updated'
+                ";
+
+                // Write the script to a temporary file
+                await File.WriteAllTextAsync(scriptPath, scriptContent);
+
+                // Start the PowerShell script
                 var startInfo = new ProcessStartInfo
                 {
-                    FileName = exePath,
-                    UseShellExecute = true,
-                    WorkingDirectory = Path.GetDirectoryName(exePath) ?? versionDir,
-                    Arguments = "--updated" // Optional: add a flag to indicate this is an update
+                    FileName = "powershell.exe",
+                    Arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -newExePath \"{exePath}\" -workingDir \"{Path.GetDirectoryName(exePath) ?? versionDir}\" -processId {Process.GetCurrentProcess().Id}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
                 };
 
-                // Start the new instance before exiting
+                // Start the PowerShell script and immediately exit
                 Process.Start(startInfo);
-
-                // Give the new process a moment to start
-                await Task.Delay(1000);
-
-                // Force exit the current application
                 Environment.Exit(0);
                 return true;
             }
