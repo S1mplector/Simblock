@@ -115,11 +115,12 @@ namespace SimBlock.Presentation.Forms
         {
             // Configure form properties
             Text = "Settings - SimBlock";
-            Size = new Size(650, 1100); // Further increased height to accommodate visualization controls
+            Size = new Size(700, 800); // More reasonable default size
+            MinimumSize = new Size(650, 600); // Ensure form can't be made too small
             StartPosition = FormStartPosition.CenterParent;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
+            FormBorderStyle = FormBorderStyle.Sizable; // Make form resizable
+            MaximizeBox = true; // Allow maximizing
+            MinimizeBox = true; // Show minimize button
             ShowInTaskbar = false;
             BackColor = _uiSettings.BackgroundColor;
             ForeColor = _uiSettings.TextColor;
@@ -241,7 +242,7 @@ namespace SimBlock.Presentation.Forms
             // Close button
             _closeButton = new RoundedButton
             {
-                Text = "Close",
+                Text = "Save and Exit",
                 Font = new Font("Segoe UI", 10, FontStyle.Regular),
                 Size = new Size(120, 36),
                 BackColor = _uiSettings.PrimaryButtonColor,
@@ -250,6 +251,8 @@ namespace SimBlock.Presentation.Forms
                 Margin = new Padding(5),
                 DialogResult = DialogResult.OK
             };
+
+            // Info label is now created in LayoutControls
         }
 
         private void CreateAdvancedControls()
@@ -596,8 +599,10 @@ namespace SimBlock.Presentation.Forms
                 Text = "Select Mode - Click to Select Keys/Actions",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = _uiSettings.TextColor,
-                Size = new Size(600, 520), // Increased height to accommodate legend at bottom
-                Visible = false // Initially hidden, shown only in Select mode
+                Size = new Size(600, 600), // Increased height further to provide more scrollable space
+                Visible = false, // Initially hidden, shown only in Select mode
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
             };
 
             // Create keyboard visualization control
@@ -739,14 +744,18 @@ namespace SimBlock.Presentation.Forms
 
         private void LayoutControls()
         {
-            // Main layout panel
+            // Main layout panel with scrollable content
             var mainPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
                 RowCount = 6,
-                Padding = new Padding(20),
-                BackColor = _uiSettings.BackgroundColor
+                Padding = new Padding(20, 20, 20, 40), // Increased bottom padding
+                BackColor = _uiSettings.BackgroundColor,
+                AutoScroll = true, // Enable scrolling for the main content
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                CellBorderStyle = TableLayoutPanelCellBorderStyle.None
             };
 
             // Theme controls panel
@@ -807,35 +816,97 @@ namespace SimBlock.Presentation.Forms
             // Auto-update controls layout
             LayoutAutoUpdateControls();
 
-            // Button panel for close button
-            var buttonPanel = new FlowLayoutPanel
+            // Button panel with info label
+            var buttonPanel = new TableLayoutPanel
             {
-                FlowDirection = FlowDirection.RightToLeft,
-                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 2,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Margin = new Padding(0, 20, 0, 10),
+                Dock = DockStyle.Bottom,
                 BackColor = _uiSettings.BackgroundColor
             };
-            buttonPanel.Controls.Add(_closeButton);
 
-            // Add to main panel
-            mainPanel.RowCount = 8; // Increased to accommodate auto-update group
-            mainPanel.Controls.Add(_appearanceGroupBox, 0, 0);
-            mainPanel.Controls.Add(_behaviorGroupBox, 0, 1);
-            mainPanel.Controls.Add(_emergencyUnlockGroupBox, 0, 2);
-            mainPanel.Controls.Add(_blockingModeGroupBox, 0, 3);
-            mainPanel.Controls.Add(_advancedConfigPanel, 0, 4);
-            mainPanel.Controls.Add(_autoUpdateGroupBox, 0, 5);
-            if (_visualizationGroupBox != null)
-                mainPanel.Controls.Add(_visualizationGroupBox, 0, 6);
-            mainPanel.Controls.Add(buttonPanel, 0, 7);
+            // Add info label (spans both columns)
+            var infoLabel = new Label
+            {
+                Text = "Settings take effect immediately.",
+                Font = new Font("Segoe UI", 8, FontStyle.Italic),
+                ForeColor = Color.Gray,
+                AutoSize = true,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Dock = DockStyle.Left,
+                Margin = new Padding(5, 0, 0, 5)
+            };
+            // Reconfigure button panel as single-column vertical stack on the left
+            buttonPanel.Controls.Clear();
+            buttonPanel.ColumnStyles.Clear();
+            buttonPanel.RowStyles.Clear();
+            buttonPanel.ColumnCount = 1;
+            buttonPanel.RowCount = 2;
+            buttonPanel.Dock = DockStyle.Left;
+            buttonPanel.Margin = new Padding(0, 20, 0, 20);
+
+            // Save & Exit button (top)
+            _closeButton.Anchor = AnchorStyles.Left;
+            _closeButton.Margin = new Padding(5, 0, 0, 5);
+            buttonPanel.Controls.Add(_closeButton, 0, 0);
+
+            // Info label (bottom)
+            infoLabel.Dock = DockStyle.Left;
+            infoLabel.Margin = new Padding(5, 0, 0, 0);
+            buttonPanel.Controls.Add(infoLabel, 0, 1);
+
+            // Set row styles for spacing
+            buttonPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            buttonPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+            // Set column styles
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
             // Set row styles
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            buttonPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            buttonPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            // Add controls to main panel with proper row indices
+            int row = 0;
+            mainPanel.Controls.Add(_appearanceGroupBox, 0, row++);
+            mainPanel.Controls.Add(_behaviorGroupBox, 0, row++);
+            mainPanel.Controls.Add(_emergencyUnlockGroupBox, 0, row++);
+            mainPanel.Controls.Add(_blockingModeGroupBox, 0, row++);
+            mainPanel.Controls.Add(_advancedConfigPanel, 0, row++);
+            mainPanel.Controls.Add(_autoUpdateGroupBox, 0, row++);
+
+            if (_visualizationGroupBox != null)
+            {
+                _visualizationGroupBox.Dock = DockStyle.Top;
+                _visualizationGroupBox.AutoSize = true;
+                _visualizationGroupBox.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                mainPanel.Controls.Add(_visualizationGroupBox, 0, row++);
+            }
+
+            // Add button panel last
+            mainPanel.Controls.Add(buttonPanel, 0, row);
+
+            // Set row styles with proper sizing
+            mainPanel.RowStyles.Clear();
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Appearance
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Behavior
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Emergency Unlock
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Blocking Mode
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Advanced Config
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Visualization
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
+            
+            // Ensure the form can be resized to show all content
+            this.Resize += (s, e) => 
+            {
+                mainPanel.VerticalScroll.Value = 0; // Reset scroll position on resize
+                mainPanel.PerformLayout();
+            };
 
             Controls.Add(mainPanel);
         }
