@@ -182,10 +182,10 @@ namespace SimBlock.Presentation.Controls
                 18, 
                 30);
             
-            // Mouse sensor (bottom area)
+            // Mouse sensor (positioned above the bottom)
             _mouseComponents["MouseSensor"] = new Rectangle(
                 mouseX + 20, 
-                startY + MouseHeight - 35, 
+                startY + MouseHeight - 95,  // Moved up by 25 pixels, to be at the center of the "mouse"
                 MouseWidth - 40, 
                 22);
             
@@ -385,51 +385,22 @@ namespace SimBlock.Presentation.Controls
         
         private void DrawSensor(Graphics g, Rectangle rect, Color baseColor)
         {
-            // Sensor background - use baseColor for selection/highlight state
-            using (var sensorBrush = new LinearGradientBrush(
-                rect,
-                Color.FromArgb(
-                    Math.Max(0, baseColor.R - 30),
-                    Math.Max(0, baseColor.G - 30),
-                    Math.Max(0, baseColor.B - 30)),
-                Color.FromArgb(
-                    Math.Max(0, baseColor.R - 50),
-                    Math.Max(0, baseColor.G - 50),
-                    Math.Max(0, baseColor.B - 50)),
-                90f))
-            using (var sensorPen = new Pen(Color.FromArgb(80, 80, 80), 1f))
-            {
-                g.FillRectangle(sensorBrush, rect);
-                g.DrawRectangle(sensorPen, rect);
-            }
-            
-            // Sensor details
+            // Just draw a small vector at the center of the mouse
             int centerX = rect.X + rect.Width / 2;
             int centerY = rect.Y + rect.Height / 2;
             
-            // Sensor lens effect
-            using (var lensBrush = new LinearGradientBrush(
-                new Rectangle(rect.X, rect.Y, rect.Width, rect.Height / 2),
-                Color.FromArgb(120, 0, 100, 255),
-                Color.Transparent,
-                90f))
-            {
-                g.FillEllipse(lensBrush, 
-                    centerX - 10, centerY - 5,
-                    20, 10);
-            }
-            
-            // Sensor light - adjust color based on selection state
+            // Draw a small crosshair for the sensor
             bool isSelected = baseColor == _selectedColor;
-            Color lightColor = isSelected ? 
-                Color.FromArgb(120, 0, 200, 255) : 
-                Color.FromArgb(60, 0, 200, 255);
-                
-            using (var lightBrush = new SolidBrush(lightColor))
+            Color lineColor = isSelected ? 
+                Color.FromArgb(200, 0, 200, 255) : 
+                Color.FromArgb(100, 0, 200, 255);
+            
+            using (var pen = new Pen(lineColor, 1.5f) { EndCap = LineCap.ArrowAnchor })
             {
-                g.FillEllipse(lightBrush,
-                    centerX - 4, centerY - 2,
-                    8, 4);
+                // Draw a small crosshair
+                int size = 8;
+                g.DrawLine(pen, centerX - size, centerY, centerX + size, centerY);
+                g.DrawLine(pen, centerX, centerY - size, centerX, centerY + size);
             }
         }
         
@@ -467,37 +438,44 @@ namespace SimBlock.Presentation.Controls
                     g.DrawPath(borderPen, buttonPath);
                 }
                 
-                // Button highlight
+                // Button highlight - only draw if not selected (selected state is handled by baseColor)
+                if (baseColor != _selectedColor)
+                {
+                    using (var highlightPen = new Pen(Color.FromArgb(40, 255, 255, 255), 1f))
+                    {
+                        g.DrawLine(highlightPen, 
+                            rect.Left + 1, rect.Top + 1,
+                            rect.Left + 1, rect.Bottom - 1);
+                    }
+                }
+            }
+            
+            // Only draw additional highlights/shadows if not selected
+            if (baseColor != _selectedColor)
+            {
+                // Add a subtle shadow on the right side
+                using (var shadowPen = new Pen(Color.FromArgb(30, 0, 0, 0), 1.5f))
+                {
+                    g.DrawLine(shadowPen,
+                        rect.Right - 1, rect.Top + 2,
+                        rect.Right - 1, rect.Bottom - 2);
+                }
+                
+                // Reduce highlight intensity on edges
                 using (var highlightPen = new Pen(Color.FromArgb(40, 255, 255, 255), 1f))
                 {
-                    g.DrawLine(highlightPen, 
-                        rect.Left + 1, rect.Top + 1,
-                        rect.Left + 1, rect.Bottom - 1);
-                }
-            }
-            
-            // Add a subtle shadow on the right side
-            using (var shadowPen = new Pen(Color.FromArgb(30, 0, 0, 0), 1.5f))
-            {
-                g.DrawLine(shadowPen,
-                    rect.Right - 1, rect.Top + 2,
-                    rect.Right - 1, rect.Bottom - 2);
-            }
-            
-            // Reduce highlight intensity on edges
-            using (var highlightPen = new Pen(Color.FromArgb(40, 255, 255, 255), 1f))
-            {
-                if (isUpper)
-                {
-                    g.DrawLine(highlightPen,
-                        rect.Left + 2, rect.Top + 1,
-                        rect.Right - 2, rect.Top + 1);
-                }
-                else
-                {
-                    g.DrawLine(highlightPen,
-                        rect.Left + 2, rect.Bottom - 1,
-                        rect.Right - 2, rect.Bottom - 1);
+                    if (isUpper)
+                    {
+                        g.DrawLine(highlightPen,
+                            rect.Left + 2, rect.Top + 1,
+                            rect.Right - 2, rect.Top + 1);
+                    }
+                    else
+                    {
+                        g.DrawLine(highlightPen,
+                            rect.Left + 2, rect.Bottom - 1,
+                            rect.Right - 2, rect.Bottom - 1);
+                    }
                 }
             }
         }
