@@ -165,7 +165,7 @@ namespace SimBlock.Presentation.Controls
             // Wheel/middle button - position centered between L and R buttons
             _mouseComponents["WheelMiddle"] = new Rectangle(
                 centerX - WheelSize / 2, 
-                startY + (ButtonHeight / 2) - (WheelSize / 2), 
+                startY + (ButtonHeight / 2) - (WheelSize / 2) + 5, // Magic number, to move it down
                 WheelSize, 
                 WheelSize);
             
