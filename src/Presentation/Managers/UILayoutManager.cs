@@ -229,6 +229,18 @@ namespace SimBlock.Presentation.Managers
                 Margin = new Padding(5)
             };
 
+            controls.MacroManagerButton = new RoundedButton
+            {
+                Text = "Macro Manager",
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                Size = new Size(120, 36),
+                Anchor = AnchorStyles.None,
+                BackColor = _uiSettings.PrimaryButtonColor,
+                ForeColor = _uiSettings.TextColor,
+                CornerRadius = 6,
+                Margin = new Padding(5)
+            };
+
             controls.InstructionsLabel = new Label
             {
                 Text = "Space: Toggle • Esc: Hide • F1: Help • F2: Settings • Emergency: Ctrl+Alt+U (3x)",
@@ -292,7 +304,7 @@ namespace SimBlock.Presentation.Managers
             // Create shared button panel
             var buttonPanel = new TableLayoutPanel
             {
-                ColumnCount = 2,
+                ColumnCount = 3,
                 RowCount = 1,
                 Dock = DockStyle.Fill,
                 BackColor = _uiSettings.BackgroundColor,
@@ -302,9 +314,11 @@ namespace SimBlock.Presentation.Managers
                 Height = 50 // Fixed height to ensure enough space for buttons
             };
             buttonPanel.Controls.Add(controls.SettingsButton, 0, 0);
-            buttonPanel.Controls.Add(controls.HideToTrayButton, 1, 0);
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            buttonPanel.Controls.Add(controls.MacroManagerButton, 1, 0);
+            buttonPanel.Controls.Add(controls.HideToTrayButton, 2, 0);
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.34f));
 
             // Add main components to main panel
             mainPanel.Controls.Add(controls.MainTabControl, 0, 0);

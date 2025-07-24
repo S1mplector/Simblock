@@ -222,10 +222,15 @@ namespace SimBlock
                     services.AddSingleton<IAutoUpdateService, AutoUpdateService>();
                     services.AddSingleton<IAutoUpdateManager, AutoUpdateManager>();
 
+                    // Register macro services
+                    services.AddMacroServices();
+
                     // Register presentation layer
                     // MainForm is created manually in Main() to avoid disposal issues
                     services.AddTransient<SimBlock.Presentation.Forms.SettingsForm>();
                     services.AddTransient<SplashForm>();
+                    services.AddTransient<SimBlock.Presentation.Forms.MacroManagerForm>();
+                    services.AddTransient<SimBlock.Presentation.ViewModels.MacroManagerViewModel>();
 
                     // Register splash screen services
                     services.AddSingleton<ISplashScreenManager, SplashScreenManager>();

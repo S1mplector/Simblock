@@ -122,6 +122,7 @@ namespace SimBlock.Presentation.Forms
             _uiControls.MouseToggleButton.Click += OnMouseToggleButtonClick;
             _uiControls.HideToTrayButton.Click += OnHideToTrayButtonClick;
             _uiControls.SettingsButton.Click += OnSettingsButtonClick;
+            _uiControls.MacroManagerButton.Click += OnMacroManagerButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
             _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
             _keyboardBlockerService.ShowWindowRequested += OnShowWindowRequested;
@@ -454,6 +455,24 @@ namespace SimBlock.Presentation.Forms
             {
                 _logger.LogError(ex, "Error opening settings window");
                 MessageBox.Show($"Failed to open settings.\n\nError: {ex.Message}",
+                    "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnMacroManagerButtonClick(object? sender, EventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("Macro Manager button clicked");
+                
+                // Create and show the macro manager form using dependency injection
+                using var macroManagerForm = _serviceProvider.GetRequiredService<SimBlock.Presentation.Forms.MacroManagerForm>();
+                macroManagerForm.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening macro manager window");
+                MessageBox.Show($"Failed to open macro manager.\n\nError: {ex.Message}",
                     "SimBlock Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

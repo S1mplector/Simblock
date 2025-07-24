@@ -36,6 +36,7 @@ namespace SimBlock.Presentation.Interfaces
             // Shared controls
             public Button HideToTrayButton { get; set; } = null!;
             public Button SettingsButton { get; set; } = null!;
+            public Button MacroManagerButton { get; set; } = null!;
             public Label InstructionsLabel { get; set; } = null!;
             public Label PrivacyNoticeLabel { get; set; } = null!;
         }
