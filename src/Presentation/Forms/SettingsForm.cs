@@ -1511,6 +1511,18 @@ namespace SimBlock.Presentation.Forms
                             comboBox.BackColor = _uiSettings.BackgroundColor;
                             comboBox.ForeColor = _uiSettings.TextColor;
                             break;
+                        case RoundedButton rb:
+                            // Respect each button's BackColor (primary/secondary/danger),
+                            // but ensure text and interaction states align with theme.
+                            rb.ForeColor = _uiSettings.PrimaryButtonTextColor;
+                            // Derive hover/pressed colors from current background
+                            var baseColor = rb.BackColor;
+                            // Slight lighten for hover, darken for pressed
+                            rb.HoverColor = ControlPaint.Light(baseColor, 0.15f);
+                            rb.PressedColor = ControlPaint.Dark(baseColor, 0.15f);
+                            // Keep a consistent corner radius across the app
+                            rb.CornerRadius = 6;
+                            break;
                     }
 
                     // Apply theme to child controls
