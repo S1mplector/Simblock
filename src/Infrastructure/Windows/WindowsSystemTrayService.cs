@@ -68,6 +68,16 @@ namespace SimBlock.Infrastructure.Windows
                 Text = "SimBlock - Keyboard Blocker"
             };
 
+            // Ensure a valid icon is set immediately to avoid shell issues
+            try
+            {
+                _notifyIcon.Icon = CreateIcon(isBlocked: false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to set initial tray icon");
+            }
+
             _notifyIcon.MouseClick += OnTrayIconClick;
 
             _logger.LogInformation("System tray icon initialized");
@@ -122,9 +132,28 @@ namespace SimBlock.Infrastructure.Windows
 
         private void OnTrayIconClick(object? sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            try
             {
-                TrayIconClicked?.Invoke(this, EventArgs.Empty);
+                if (e.Button == MouseButtons.Left)
+                {
+                    TrayIconClicked?.Invoke(this, EventArgs.Empty);
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    // Normally WinForms shows ContextMenuStrip automatically when assigned to NotifyIcon.
+                    // Only show manually if for some reason it's not assigned.
+                    if (_notifyIcon?.ContextMenuStrip == null)
+                    {
+                        if (_contextMenu != null && !_contextMenu.IsDisposed)
+                        {
+                            _contextMenu.Show(Cursor.Position);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling tray icon click");
             }
         }
 
@@ -224,7 +253,15 @@ namespace SimBlock.Infrastructure.Windows
         {
             if (!_disposed)
             {
-                _notifyIcon?.Dispose();
+                if (_notifyIcon != null)
+                {
+                    try
+                    {
+                        _notifyIcon.MouseClick -= OnTrayIconClick;
+                    }
+                    catch { }
+                    _notifyIcon.Dispose();
+                }
                 _contextMenu?.Dispose();
                 _disposed = true;
                 _logger.LogInformation("System tray service disposed");

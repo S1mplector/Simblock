@@ -1009,7 +1009,7 @@ namespace SimBlock.Presentation.Forms
                 if (_checkForUpdatesButton != null)
                 {
                     _checkForUpdatesButton.Enabled = true;
-                    _checkForUpdatesButton.Text = "Check Now";
+                    _checkForUpdatesButton.Text = "Check for Updates Now";
                 }
             }
         }
