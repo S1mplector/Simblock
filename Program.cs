@@ -150,9 +150,9 @@ namespace SimBlock
                         // Run main form
                         Application.Run(mainForm);
 
-                        // Shutdown services after form is closed
-                        keyboardBlockerService.ShutdownAsync().Wait();
-                        mouseBlockerService.ShutdownAsync().Wait();
+                        // Shutdown services after form is closed (avoid sync-over-async deadlocks)
+                        keyboardBlockerService.ShutdownAsync().GetAwaiter().GetResult();
+                        mouseBlockerService.ShutdownAsync().GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
                     {

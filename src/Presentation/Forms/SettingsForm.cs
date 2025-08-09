@@ -35,6 +35,9 @@ namespace SimBlock.Presentation.Forms
         private SimBlock.Presentation.Controls.MouseVisualizationControl? _mouseVisualizationControl;
         private GroupBox? _visualizationGroupBox;
         private Panel? _legendPanel;
+        // Stored handlers for proper unsubscription
+        private EventHandler<Keys>? _keyboardKeyClickedHandler;
+        private EventHandler<string>? _mouseComponentClickedHandler;
         private Button _closeButton = null!;
         private Label _themeLabel = null!;
         private GroupBox _appearanceGroupBox = null!;
@@ -629,19 +632,21 @@ namespace SimBlock.Presentation.Forms
             };
 
             // Hook up event handlers to save settings when selections change
-            _keyboardVisualizationControl.KeyClicked += (sender, key) =>
+            _keyboardKeyClickedHandler = (sender, key) =>
             {
                 _logger.LogInformation("Key selection changed in visualization: {Key}", key);
-                SaveSettings(); // Save immediately when selection changes
-                RefreshLegend(_legendPanel); // Refresh legend when selection changes
+                SaveSettings();
+                RefreshLegend(_legendPanel);
             };
+            _keyboardVisualizationControl.KeyClicked += _keyboardKeyClickedHandler;
 
-            _mouseVisualizationControl.ComponentClicked += (sender, component) =>
+            _mouseComponentClickedHandler = (sender, component) =>
             {
                 _logger.LogInformation("Mouse component selection changed: {Component}", component);
-                SaveSettings(); // Save immediately when selection changes
-                RefreshLegend(_legendPanel); // Refresh legend when selection changes
+                SaveSettings();
+                RefreshLegend(_legendPanel);
             };
+            _mouseVisualizationControl.ComponentClicked += _mouseComponentClickedHandler;
 
             // Create initial legend
             RefreshLegend(_legendPanel);
@@ -1699,12 +1704,34 @@ namespace SimBlock.Presentation.Forms
             x += 80;
         }
 
+        private void UnsubscribeFromVisualizationEvents()
+        {
+            try
+            {
+                if (_keyboardVisualizationControl != null && _keyboardKeyClickedHandler != null)
+                {
+                    _keyboardVisualizationControl.KeyClicked -= _keyboardKeyClickedHandler;
+                    _keyboardKeyClickedHandler = null;
+                }
+                if (_mouseVisualizationControl != null && _mouseComponentClickedHandler != null)
+                {
+                    _mouseVisualizationControl.ComponentClicked -= _mouseComponentClickedHandler;
+                    _mouseComponentClickedHandler = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error unsubscribing from visualization events");
+            }
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             // Save settings when form closes
             SaveSettings();
 
             // Unsubscribe from events
+            UnsubscribeFromVisualizationEvents();
             _themeManager.ThemeChanged -= OnThemeChanged;
             base.OnFormClosing(e);
         }
