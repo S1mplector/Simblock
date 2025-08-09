@@ -28,7 +28,7 @@ namespace SimBlock.Presentation.Forms
         private readonly IAutoUpdateService _autoUpdateService;
 
         // UI Controls
-        private Button _themeToggleButton = null!;
+        private RoundedButton _themeToggleButton = null!;
 
         // Visualization controls for Select mode
         private SimBlock.Presentation.Controls.KeyboardVisualizationControl? _keyboardVisualizationControl;
@@ -83,7 +83,7 @@ namespace SimBlock.Presentation.Forms
         private CheckBox _autoUpdateNotifyOnlyCheckBox = null!;
         private Label _autoUpdateIntervalLabel = null!;
         private ComboBox _autoUpdateIntervalComboBox = null!;
-        private Button _checkForUpdatesButton = null!;
+        private RoundedButton _checkForUpdatesButton = null!;
 
         public SettingsForm(
             IThemeManager themeManager,
@@ -150,14 +150,15 @@ namespace SimBlock.Presentation.Forms
             };
 
             // Theme toggle button
-            _themeToggleButton = new Button
+            _themeToggleButton = new RoundedButton
             {
                 Text = GetThemeButtonText(),
                 Font = new Font("Segoe UI", 9),
                 Size = new Size(120, 30),
                 BackColor = _uiSettings.SecondaryButtonColor,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                CornerRadius = 6
             };
             _themeToggleButton.FlatAppearance.BorderSize = 0;
 
@@ -730,14 +731,15 @@ namespace SimBlock.Presentation.Forms
             }
 
             // Check for updates button
-            _checkForUpdatesButton = new Button
+            _checkForUpdatesButton = new RoundedButton
             {
                 Text = "Check for Updates Now",
                 Font = new Font("Segoe UI", 9),
                 Size = new Size(150, 30),
                 BackColor = _uiSettings.SecondaryButtonColor,
                 ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                CornerRadius = 6
             };
             _checkForUpdatesButton.FlatAppearance.BorderSize = 0;
         }
@@ -816,47 +818,22 @@ namespace SimBlock.Presentation.Forms
             // Auto-update controls layout
             LayoutAutoUpdateControls();
 
-            // Button panel with info label
+            // Button panel
             var buttonPanel = new TableLayoutPanel
             {
-                ColumnCount = 2,
-                RowCount = 2,
+                ColumnCount = 1,
+                RowCount = 1,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                Margin = new Padding(0, 20, 0, 10),
-                Dock = DockStyle.Bottom,
+                Margin = new Padding(0, 20, 0, 20),
+                Dock = DockStyle.Left,
                 BackColor = _uiSettings.BackgroundColor
             };
 
-            // Add info label (spans both columns)
-            var infoLabel = new Label
-            {
-                Text = "Settings take effect immediately.",
-                Font = new Font("Segoe UI", 8, FontStyle.Italic),
-                ForeColor = Color.Gray,
-                AutoSize = true,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Dock = DockStyle.Left,
-                Margin = new Padding(5, 0, 0, 5)
-            };
-            // Reconfigure button panel as single-column vertical stack on the left
-            buttonPanel.Controls.Clear();
-            buttonPanel.ColumnStyles.Clear();
-            buttonPanel.RowStyles.Clear();
-            buttonPanel.ColumnCount = 1;
-            buttonPanel.RowCount = 2;
-            buttonPanel.Dock = DockStyle.Left;
-            buttonPanel.Margin = new Padding(0, 20, 0, 20);
-
-            // Save & Exit button (top)
+            // Save & Exit button
             _closeButton.Anchor = AnchorStyles.Left;
             _closeButton.Margin = new Padding(5, 0, 0, 5);
             buttonPanel.Controls.Add(_closeButton, 0, 0);
-
-            // Info label (bottom)
-            infoLabel.Dock = DockStyle.Left;
-            infoLabel.Margin = new Padding(5, 0, 0, 0);
-            buttonPanel.Controls.Add(infoLabel, 0, 1);
 
             // Set row styles for spacing
             buttonPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
