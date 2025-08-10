@@ -229,6 +229,7 @@ namespace SimBlock
                     // MainForm is created manually in Main() to avoid disposal issues
                     services.AddTransient<SimBlock.Presentation.Forms.SettingsForm>();
                     services.AddTransient<SplashForm>();
+                    services.AddSingleton<SimBlock.Presentation.ViewModels.SettingsViewModel>();
 
                     // Register splash screen services
                     services.AddSingleton<ISplashScreenManager, SplashScreenManager>();

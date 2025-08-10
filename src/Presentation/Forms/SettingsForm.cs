@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Controls;
 using SimBlock.Presentation.Interfaces;
+using SimBlock.Presentation.ViewModels;
 using SimBlock.Core.Domain.Enums;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Application.Interfaces;
@@ -28,6 +29,7 @@ namespace SimBlock.Presentation.Forms
         private readonly IAutoUpdateService _autoUpdateService;
         private readonly IStartupRegistrationService _startupRegistrationService;
         private readonly IThemeApplier _themeApplier;
+        private readonly SettingsViewModel _viewModel;
 
         // UI Controls
         private RoundedButton _themeToggleButton = null!;
@@ -100,7 +102,8 @@ namespace SimBlock.Presentation.Forms
             IBlockingVisualizationManager visualizationManager,
             IAutoUpdateService autoUpdateService,
             IStartupRegistrationService startupRegistrationService,
-            IThemeApplier themeApplier)
+            IThemeApplier themeApplier,
+            SettingsViewModel viewModel)
         {
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
@@ -112,6 +115,7 @@ namespace SimBlock.Presentation.Forms
             _autoUpdateService = autoUpdateService ?? throw new ArgumentNullException(nameof(autoUpdateService));
             _startupRegistrationService = startupRegistrationService ?? throw new ArgumentNullException(nameof(startupRegistrationService));
             _themeApplier = themeApplier ?? throw new ArgumentNullException(nameof(themeApplier));
+            _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
 
             InitializeComponent();
             InitializeEventHandlers();
@@ -1477,8 +1481,7 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                // Load settings directly into the UISettings object
-                _settingsManager.LoadSettings();
+                _viewModel.LoadSettings();
 
                 // Update UI controls to reflect loaded settings
                 UpdateUIFromSettings();
@@ -1572,7 +1575,7 @@ namespace SimBlock.Presentation.Forms
                         _uiSettings.AdvancedMouseConfig.SelectedMiddleButton);
                 }
 
-                _settingsManager.SaveSettings();
+                _viewModel.SaveSettings();
                 _logger.LogInformation("Settings saved successfully");
             }
             catch (Exception ex)
