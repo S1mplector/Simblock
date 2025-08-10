@@ -26,6 +26,8 @@ namespace SimBlock.Presentation.Forms
         private readonly IMouseBlockerService _mouseBlockerService;
         private readonly IBlockingVisualizationManager _visualizationManager;
         private readonly IAutoUpdateService _autoUpdateService;
+        private readonly IStartupRegistrationService _startupRegistrationService;
+        private readonly IThemeApplier _themeApplier;
 
         // UI Controls
         private RoundedButton _themeToggleButton = null!;
@@ -96,7 +98,9 @@ namespace SimBlock.Presentation.Forms
             IKeyboardBlockerService keyboardBlockerService,
             IMouseBlockerService mouseBlockerService,
             IBlockingVisualizationManager visualizationManager,
-            IAutoUpdateService autoUpdateService)
+            IAutoUpdateService autoUpdateService,
+            IStartupRegistrationService startupRegistrationService,
+            IThemeApplier themeApplier)
         {
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
@@ -106,6 +110,8 @@ namespace SimBlock.Presentation.Forms
             _mouseBlockerService = mouseBlockerService ?? throw new ArgumentNullException(nameof(mouseBlockerService));
             _visualizationManager = visualizationManager ?? throw new ArgumentNullException(nameof(visualizationManager));
             _autoUpdateService = autoUpdateService ?? throw new ArgumentNullException(nameof(autoUpdateService));
+            _startupRegistrationService = startupRegistrationService ?? throw new ArgumentNullException(nameof(startupRegistrationService));
+            _themeApplier = themeApplier ?? throw new ArgumentNullException(nameof(themeApplier));
 
             InitializeComponent();
             InitializeEventHandlers();
@@ -1330,34 +1336,7 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                const string registryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-                const string appName = "SimBlock";
-
-                using var key = Registry.CurrentUser.OpenSubKey(registryKey, true);
-                if (key == null)
-                {
-                    throw new InvalidOperationException("Unable to access Windows startup registry key");
-                }
-
-                if (startWithWindows)
-                {
-                    // Add to startup
-                    var executablePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                    if (executablePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // For .NET applications, we need to get the actual executable path
-                        executablePath = Environment.ProcessPath ?? executablePath;
-                    }
-
-                    key.SetValue(appName, $"\"{executablePath}\"");
-                    _logger.LogInformation("Added SimBlock to Windows startup");
-                }
-                else
-                {
-                    // Remove from startup
-                    key.DeleteValue(appName, false);
-                    _logger.LogInformation("Removed SimBlock from Windows startup");
-                }
+                _startupRegistrationService.SetStartWithWindows(startWithWindows);
             }
             catch (Exception ex)
             {
@@ -1394,17 +1373,7 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                const string registryKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-                const string appName = "SimBlock";
-
-                using var key = Registry.CurrentUser.OpenSubKey(registryKey, false);
-                if (key == null)
-                {
-                    return false;
-                }
-
-                var value = key.GetValue(appName);
-                return value != null;
+                return _startupRegistrationService.IsApplicationInStartup();
             }
             catch (Exception ex)
             {
@@ -1437,46 +1406,7 @@ namespace SimBlock.Presentation.Forms
         {
             try
             {
-                BackColor = _uiSettings.BackgroundColor;
-                ForeColor = _uiSettings.TextColor;
-
-                _appearanceGroupBox.ForeColor = _uiSettings.TextColor;
-                _themeLabel.ForeColor = _uiSettings.TextColor;
-
-                // Apply theme to behavior controls
-                _behaviorGroupBox.ForeColor = _uiSettings.TextColor;
-                _startWithWindowsCheckBox.ForeColor = _uiSettings.TextColor;
-
-                // Apply theme to blocking mode controls
-                _blockingModeGroupBox.ForeColor = _uiSettings.TextColor;
-                _simpleModeRadioButton.ForeColor = _uiSettings.TextColor;
-                _advancedModeRadioButton.ForeColor = _uiSettings.TextColor;
-                _selectModeRadioButton.ForeColor = _uiSettings.TextColor;
-                _advancedConfigPanel.BackColor = _uiSettings.BackgroundColor;
-
-                // Apply theme to advanced keyboard controls
-                _advancedKeyboardGroupBox.ForeColor = _uiSettings.TextColor;
-                _blockModifierKeysCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockFunctionKeysCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockNumberKeysCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockLetterKeysCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockArrowKeysCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockSpecialKeysCheckBox.ForeColor = _uiSettings.TextColor;
-
-                // Apply theme to advanced mouse controls
-                _advancedMouseGroupBox.ForeColor = _uiSettings.TextColor;
-                _blockLeftButtonCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockRightButtonCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockMiddleButtonCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockX1ButtonCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockX2ButtonCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockMouseWheelCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockMouseMovementCheckBox.ForeColor = _uiSettings.TextColor;
-                _blockDoubleClickCheckBox.ForeColor = _uiSettings.TextColor;
-
-
-                // Apply theme to all panels
-                ApplyThemeToControls(Controls);
+                _themeApplier.Apply(this, _uiSettings);
             }
             catch (Exception ex)
             {
@@ -1540,7 +1470,7 @@ namespace SimBlock.Presentation.Forms
 
         private string GetThemeButtonText()
         {
-            return _uiSettings.CurrentTheme == Theme.Light ? "🌙 Dark" : "☀️ Light";
+            return _themeApplier.GetThemeButtonText(_uiSettings);
         }
 
         private void LoadSettings()

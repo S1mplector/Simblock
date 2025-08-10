@@ -10,6 +10,7 @@ using SimBlock.Presentation.Forms;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Interfaces;
 using SimBlock.Presentation.Managers;
+using SimBlock.Presentation.Theming;
 using SimBlock.Presentation.Services;
 using System.Windows.Forms;
 using System.Threading;
@@ -215,6 +216,8 @@ namespace SimBlock
                     services.AddSingleton<IThemeManager, ThemeManager>();
                     services.AddSingleton<ISettingsManager, SettingsManager>();
                     services.AddSingleton<IBlockingVisualizationManager, BlockingVisualizationManager>();
+                    services.AddSingleton<IStartupRegistrationService, WindowsStartupRegistrationService>();
+                    services.AddSingleton<IThemeApplier, ThemeApplier>();
 
                     // Register auto-update services
                     services.AddSingleton<IVersionComparator, VersionComparator>();
