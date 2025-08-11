@@ -31,35 +31,7 @@ namespace SimBlock.Infrastructure.Windows
         private void InitializeTrayIcon()
         {
             _logger.LogInformation("Initializing system tray icon...");
-
-            // Create context menu
-            _contextMenu = new ContextMenuStrip();
-            
-            var showWindowItem = new ToolStripMenuItem("Show Window");
-            showWindowItem.Click += (s, e) => ShowWindowRequested?.Invoke(this, EventArgs.Empty);
-            
-            var toggleKeyboardItem = new ToolStripMenuItem("Toggle Keyboard Block");
-            toggleKeyboardItem.Click += (s, e) => TrayIconClicked?.Invoke(this, EventArgs.Empty);
-            
-            var toggleMouseItem = new ToolStripMenuItem("Toggle Mouse Block");
-            toggleMouseItem.Click += (s, e) => ToggleMouseBlockRequested?.Invoke(this, EventArgs.Empty);
-            
-            var settingsItem = new ToolStripMenuItem("Open Settings");
-            settingsItem.Click += (s, e) => OpenSettingsRequested?.Invoke(this, EventArgs.Empty);
-            
-            var exitItem = new ToolStripMenuItem("Exit");
-            exitItem.Click += (s, e) => ExitRequested?.Invoke(this, EventArgs.Empty);
-            
-            _contextMenu.Items.AddRange(new ToolStripItem[] {
-                showWindowItem,
-                new ToolStripSeparator(),
-                toggleKeyboardItem,
-                toggleMouseItem,
-                new ToolStripSeparator(),
-                settingsItem,
-                new ToolStripSeparator(),
-                exitItem
-            });
+            EnsureContextMenu();
 
             // Create notify icon
             _notifyIcon = new NotifyIcon
@@ -81,6 +53,51 @@ namespace SimBlock.Infrastructure.Windows
             _notifyIcon.MouseClick += OnTrayIconClick;
 
             _logger.LogInformation("System tray icon initialized");
+        }
+
+        private ContextMenuStrip BuildContextMenu()
+        {
+            var menu = new ContextMenuStrip();
+
+            var showWindowItem = new ToolStripMenuItem("Show Window");
+            showWindowItem.Click += (s, e) => ShowWindowRequested?.Invoke(this, EventArgs.Empty);
+
+            var toggleKeyboardItem = new ToolStripMenuItem("Toggle Keyboard Block");
+            toggleKeyboardItem.Click += (s, e) => TrayIconClicked?.Invoke(this, EventArgs.Empty);
+
+            var toggleMouseItem = new ToolStripMenuItem("Toggle Mouse Block");
+            toggleMouseItem.Click += (s, e) => ToggleMouseBlockRequested?.Invoke(this, EventArgs.Empty);
+
+            var settingsItem = new ToolStripMenuItem("Open Settings");
+            settingsItem.Click += (s, e) => OpenSettingsRequested?.Invoke(this, EventArgs.Empty);
+
+            var exitItem = new ToolStripMenuItem("Exit");
+            exitItem.Click += (s, e) => ExitRequested?.Invoke(this, EventArgs.Empty);
+
+            menu.Items.AddRange(new ToolStripItem[] {
+                showWindowItem,
+                new ToolStripSeparator(),
+                toggleKeyboardItem,
+                toggleMouseItem,
+                new ToolStripSeparator(),
+                settingsItem,
+                new ToolStripSeparator(),
+                exitItem
+            });
+
+            return menu;
+        }
+
+        private void EnsureContextMenu()
+        {
+            if (_contextMenu == null || _contextMenu.IsDisposed)
+            {
+                _contextMenu = BuildContextMenu();
+                if (_notifyIcon != null)
+                {
+                    _notifyIcon.ContextMenuStrip = _contextMenu;
+                }
+            }
         }
 
         public void Show()
@@ -140,14 +157,11 @@ namespace SimBlock.Infrastructure.Windows
                 }
                 else if (e.Button == MouseButtons.Right)
                 {
-                    // Normally WinForms shows ContextMenuStrip automatically when assigned to NotifyIcon.
-                    // Only show manually if for some reason it's not assigned.
-                    if (_notifyIcon?.ContextMenuStrip == null)
+                    // Ensure the context menu exists and is assigned
+                    EnsureContextMenu();
+                    if (_notifyIcon != null && _notifyIcon.ContextMenuStrip == null)
                     {
-                        if (_contextMenu != null && !_contextMenu.IsDisposed)
-                        {
-                            _contextMenu.Show(Cursor.Position);
-                        }
+                        _notifyIcon.ContextMenuStrip = _contextMenu;
                     }
                 }
             }
@@ -258,11 +272,18 @@ namespace SimBlock.Infrastructure.Windows
                     try
                     {
                         _notifyIcon.MouseClick -= OnTrayIconClick;
+                        // Prevent NotifyIcon from touching a disposed ContextMenuStrip
+                        _notifyIcon.Visible = false;
+                        _notifyIcon.ContextMenuStrip = null;
                     }
                     catch { }
                     _notifyIcon.Dispose();
                 }
-                _contextMenu?.Dispose();
+                try
+                {
+                    _contextMenu?.Dispose();
+                }
+                catch { }
                 _disposed = true;
                 _logger.LogInformation("System tray service disposed");
             }

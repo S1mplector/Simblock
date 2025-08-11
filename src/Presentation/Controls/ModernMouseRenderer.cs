@@ -73,6 +73,52 @@ namespace SimBlock.Presentation.Controls
             }
         }
         
+        // Builds a tapered, convex main-button path that blends with the body and center split
+        private static GraphicsPath CreateMainButtonPath(Rectangle rect, bool isLeft)
+        {
+            var path = new GraphicsPath { FillMode = FillMode.Winding };
+            int t = Math.Max(6, rect.Height / 3);           // top taper depth
+            int bulge = Math.Max(6, rect.Width / 8);        // outer side convexity
+            int radius = 6;                                 // small rounding reference
+
+            if (isLeft)
+            {
+                PointF p0 = new(rect.Right, rect.Top + 2);                                  // inner top near split
+                PointF p1 = new(rect.Left + radius, rect.Top + t * 0.2f);                   // outer top
+                PointF c1 = new(rect.Left - bulge * 0.3f, rect.Top + rect.Height * 0.35f);  // outer side controls
+                PointF c2 = new(rect.Left + bulge * 0.2f, rect.Bottom - rect.Height * 0.25f);
+                PointF p2 = new(rect.Left + radius, rect.Bottom - 4);                       // lower outer
+                PointF p3 = new(rect.Right - 4, rect.Bottom - 2);                            // lower inner
+                PointF c3 = new(rect.Right + 2, rect.Top + rect.Height * 0.55f);            // inner return
+
+                path.StartFigure();
+                path.AddLine(p0, p1);
+                path.AddBezier(p1, c1, c2, p2);
+                path.AddLine(p2, p3);
+                path.AddBezier(p3, c3, new PointF(rect.Right - 2, rect.Top + t * 0.6f), p0);
+                path.CloseFigure();
+            }
+            else
+            {
+                PointF p0 = new(rect.Left, rect.Top + 2);
+                PointF p1 = new(rect.Right - radius, rect.Top + t * 0.2f);
+                PointF c1 = new(rect.Right + bulge * 0.3f, rect.Top + rect.Height * 0.35f);
+                PointF c2 = new(rect.Right - bulge * 0.2f, rect.Bottom - rect.Height * 0.25f);
+                PointF p2 = new(rect.Right - radius, rect.Bottom - 4);
+                PointF p3 = new(rect.Left + 4, rect.Bottom - 2);
+                PointF c3 = new(rect.Left - 2, rect.Top + rect.Height * 0.55f);
+
+                path.StartFigure();
+                path.AddLine(p0, p1);
+                path.AddBezier(p1, c1, c2, p2);
+                path.AddLine(p2, p3);
+                path.AddBezier(p3, c3, new PointF(rect.Left + 2, rect.Top + t * 0.6f), p0);
+                path.CloseFigure();
+            }
+
+            return path;
+        }
+        
         public void UpdateState(BlockingMode mode, AdvancedMouseConfiguration? config, bool isBlocked)
         {
             _blockingMode = mode;
@@ -148,19 +194,26 @@ namespace SimBlock.Presentation.Controls
             // Main mouse body outline
             _mouseComponents["MouseBody"] = new Rectangle(mouseX, startY, MouseWidth, MouseHeight);
             
-            // Left mouse button - ergonomic shape
+            // Main buttons sit flush with body; slightly taller and closer to tip
+            int buttonTop = startY + 6;
+            int innerGap = 10; // narrow center channel
+            int buttonHeight = ButtonHeight + 10;
+            int leftWidth = MouseWidth / 2 - innerGap - 6;
+            int rightWidth = MouseWidth / 2 - innerGap - 6;
+
+            // Left mouse button
             _mouseComponents["LeftButton"] = new Rectangle(
-                mouseX + 10, 
-                startY + 10, 
-                MouseWidth / 2 - 15, 
-                ButtonHeight);
+                mouseX + 6,
+                buttonTop,
+                leftWidth,
+                buttonHeight);
             
-            // Right mouse button - ergonomic shape
+            // Right mouse button
             _mouseComponents["RightButton"] = new Rectangle(
-                mouseX + MouseWidth / 2 + 5, 
-                startY + 10, 
-                MouseWidth / 2 - 15, 
-                ButtonHeight);
+                mouseX + MouseWidth / 2 + innerGap,
+                buttonTop,
+                rightWidth,
+                buttonHeight);
             
             // Wheel/middle button - position centered between L and R buttons
             _mouseComponents["WheelMiddle"] = new Rectangle(
@@ -198,24 +251,16 @@ namespace SimBlock.Presentation.Controls
             int mouseX = centerX - MouseWidth / 2;
             var mouseBody = new Rectangle(mouseX, startY, MouseWidth, MouseHeight);
             
-            // Draw mouse body shadow
-            using (var shadowPath = CreateRoundedRectanglePath(
-                mouseX + 3, startY + 3, 
-                MouseWidth, MouseHeight, 
-                BodyRounding))
+            // Build a more realistic mouse silhouette (tapered top, wider bottom)
+            using (var bodyPath = CreateMouseSilhouettePath(mouseX, startY, MouseWidth, MouseHeight))
             {
+                // Shadow with slight offset
+                using (var shadowPath = CreateMouseSilhouettePath(mouseX + 3, startY + 3, MouseWidth, MouseHeight))
                 using (var shadowBrush = new SolidBrush(Color.FromArgb(30, 0, 0, 0)))
                 {
                     g.FillPath(shadowBrush, shadowPath);
                 }
-            }
-            
-            // Draw main mouse body with gradient
-            using (var bodyPath = CreateRoundedRectanglePath(
-                mouseX, startY, 
-                MouseWidth, MouseHeight, 
-                BodyRounding))
-            {
+
                 // Body gradient
                 using (var bodyBrush = new LinearGradientBrush(
                     new Point(mouseX, startY),
@@ -225,11 +270,32 @@ namespace SimBlock.Presentation.Controls
                 {
                     g.FillPath(bodyBrush, bodyPath);
                 }
-                
+
+                // Subtle top gloss highlight
+                var highlightRect = new Rectangle(mouseX + 10, startY + 8, MouseWidth - 20, MouseHeight / 3);
+                var oldClip = g.Clip; // save
+                g.SetClip(bodyPath);
+                using (var gloss = new LinearGradientBrush(
+                    new Point(highlightRect.Left, highlightRect.Top),
+                    new Point(highlightRect.Left, highlightRect.Bottom),
+                    Color.FromArgb(70, Color.White),
+                    Color.FromArgb(0, Color.White)))
+                {
+                    g.FillRectangle(gloss, highlightRect);
+                }
+                g.Clip = oldClip; // restore
+
                 // Body border
                 using (var borderPen = new Pen(_isDarkTheme ? Color.FromArgb(80, 80, 80) : Color.FromArgb(160, 160, 160), 1.5f))
                 {
                     g.DrawPath(borderPen, bodyPath);
+                }
+
+                // Center seam line to suggest two shell halves
+                int cx = mouseX + MouseWidth / 2;
+                using (var seamPen = new Pen(Color.FromArgb(60, 0, 0, 0), 1f))
+                {
+                    g.DrawLine(seamPen, new Point(cx, startY + (int)(MouseHeight * 0.10f)), new Point(cx, startY + (int)(MouseHeight * 0.95f)));
                 }
             }
         }
@@ -300,13 +366,27 @@ namespace SimBlock.Presentation.Controls
                     }
                     else if (component == "X1Button" || component == "X2Button")
                     {
-                        // Draw side buttons with 3D effect
-                        DrawSideButton(g, rect, componentColor, component == "X1Button");
+                        // Clip to body so side buttons sit flush with silhouette
+                        Rectangle bodyRect2 = _mouseComponents.ContainsKey("MouseBody") ? _mouseComponents["MouseBody"] : Rectangle.Empty;
+                        using (var bodyPath2 = CreateMouseSilhouettePath(bodyRect2.X, bodyRect2.Y, bodyRect2.Width, bodyRect2.Height))
+                        {
+                            var prev = g.Clip;
+                            g.SetClip(bodyPath2);
+                            DrawSideButton(g, rect, componentColor, component == "X1Button");
+                            g.Clip = prev;
+                        }
                     }
                     else if (component == "LeftButton" || component == "RightButton")
                     {
-                        // Draw main buttons with 3D effect
-                        DrawMainButton(g, rect, componentColor, component == "LeftButton");
+                        // Clip to body so main buttons sit flush with silhouette
+                        Rectangle bodyRect2 = _mouseComponents.ContainsKey("MouseBody") ? _mouseComponents["MouseBody"] : Rectangle.Empty;
+                        using (var bodyPath2 = CreateMouseSilhouettePath(bodyRect2.X, bodyRect2.Y, bodyRect2.Width, bodyRect2.Height))
+                        {
+                            var prev = g.Clip;
+                            g.SetClip(bodyPath2);
+                            DrawMainButton(g, rect, componentColor, component == "LeftButton");
+                            g.Clip = prev;
+                        }
                     }
                     else if (component == "DoubleClick")
                     {
@@ -410,7 +490,6 @@ namespace SimBlock.Presentation.Controls
             using (var buttonPath = new GraphicsPath())
             {
                 int radius = 4;
-                int curve = 5;
                 
                 // Create a button shape that's rounded on the left side
                 buttonPath.AddLine(rect.Left, rect.Top + radius, rect.Left, rect.Bottom - radius);
@@ -482,10 +561,8 @@ namespace SimBlock.Presentation.Controls
         
         private void DrawMainButton(Graphics g, Rectangle rect, Color baseColor, bool isLeftButton)
         {
-            // Button shape with rounded corners
-            int radius = ButtonRounding;
-            
-            using (var buttonPath = CreateRoundedRectanglePath(rect, radius))
+            // Button shape approximating Orochi v2: tapered at the top, flush to body, slight convex sides
+            using (var buttonPath = CreateMainButtonPath(rect, isLeftButton))
             {
                 // Button gradient
                 using (var buttonBrush = new LinearGradientBrush(
@@ -509,27 +586,16 @@ namespace SimBlock.Presentation.Controls
                 // Button highlight
                 using (var highlightPath = new GraphicsPath())
                 {
-                    int highlightHeight = rect.Height / 2;
-                    
+                    int radius = ButtonRounding;
                     if (isLeftButton)
                     {
-                        // Left button highlight on the right edge
-                        highlightPath.AddLine(rect.Right - 2, rect.Top + radius, 
-                                           rect.Right - 2, rect.Bottom - 1);
-                        highlightPath.AddLine(rect.Right - 2, rect.Bottom - 1, 
-                                           rect.Left + radius, rect.Bottom - 1);
-                        highlightPath.AddArc(rect.Left, rect.Bottom - radius * 2, 
-                                          radius * 2, radius * 2, 90, 45);
+                        highlightPath.AddArc(rect.Left, rect.Top + radius, radius * 2, radius * 2, 220, 70);
+                        highlightPath.AddLine(rect.Left + radius, rect.Bottom - 2, rect.Right - 4, rect.Bottom - 2);
                     }
                     else
                     {
-                        // Right button highlight on the left edge
-                        highlightPath.AddLine(rect.Left + 2, rect.Top + radius, 
-                                           rect.Left + 2, rect.Bottom - 1);
-                        highlightPath.AddLine(rect.Left + 2, rect.Bottom - 1, 
-                                           rect.Right - radius, rect.Bottom - 1);
-                        highlightPath.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, 
-                                          radius * 2, radius * 2, 45, 45);
+                        highlightPath.AddArc(rect.Right - radius * 2, rect.Top + radius, radius * 2, radius * 2, -40, 70);
+                        highlightPath.AddLine(rect.Left + 4, rect.Bottom - 2, rect.Right - radius, rect.Bottom - 2);
                     }
                     
                     using (var highlightPen = new Pen(Color.FromArgb(30, 255, 255, 255), 1f))
@@ -540,12 +606,13 @@ namespace SimBlock.Presentation.Controls
             }
             
             // Add a subtle shadow below the button
+            int edgeRadius = ButtonRounding;
             using (var shadowPen = new Pen(Color.FromArgb(30, 0, 0, 0), 1.5f))
             {
                 g.DrawLine(shadowPen,
-                    rect.Left + (isLeftButton ? radius : 2), 
+                    rect.Left + (isLeftButton ? edgeRadius : 2), 
                     rect.Bottom - 1,
-                    rect.Right - (isLeftButton ? 2 : radius), 
+                    rect.Right - (isLeftButton ? 2 : edgeRadius), 
                     rect.Bottom - 1);
             }
         }
@@ -597,8 +664,9 @@ namespace SimBlock.Presentation.Controls
                 }
                 else if (component == "X1Button" || component == "X2Button")
                 {
-                    // Position text in the middle of the side button
-                    textX = rect.X + (rect.Width - textSize.Width) / 2;
+                    // Nudge label left to keep it fully inside the visible (clipped) area
+                    const int pad = 4;
+                    textX = rect.X + pad;
                     textY = rect.Y + (rect.Height - textSize.Height) / 2;
                 }
                 
@@ -646,6 +714,34 @@ namespace SimBlock.Presentation.Controls
             // Close the path
             path.CloseFigure();
             
+            return path;
+        }
+
+        // Creates a tapered mouse silhouette using smooth curves rather than a simple rounded rectangle
+        private static GraphicsPath CreateMouseSilhouettePath(int x, int y, int width, int height)
+        {
+            float cx = x + width / 2f;
+
+            // Key contour points (right side, bottom, left side)
+            var pts = new List<PointF>
+            {
+                new PointF(cx, y),                                 // top center
+                new PointF(x + width * 0.85f, y + height * 0.12f), // right shoulder
+                new PointF(x + width * 0.98f, y + height * 0.40f), // right upper side
+                new PointF(x + width * 0.80f, y + height * 0.78f), // right lower side
+                new PointF(x + width * 0.65f, y + height * 0.98f), // bottom right
+                new PointF(cx, y + height),                         // bottom center
+                new PointF(x + width * 0.35f, y + height * 0.98f), // bottom left
+                new PointF(x + width * 0.20f, y + height * 0.78f), // left lower side
+                new PointF(x + width * 0.02f, y + height * 0.40f), // left upper side
+                new PointF(x + width * 0.15f, y + height * 0.12f), // left shoulder
+                new PointF(cx, y)                                  // back to top center
+            };
+
+            var path = new GraphicsPath { FillMode = FillMode.Winding };
+            path.StartFigure();
+            path.AddCurve(pts.ToArray(), 0.5f);
+            path.CloseFigure();
             return path;
         }
         

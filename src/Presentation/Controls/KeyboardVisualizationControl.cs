@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Enums;
@@ -27,6 +28,8 @@ namespace SimBlock.Presentation.Controls
         private const int KeyHeight = 25;
         private const int KeySpacing = 2;
         private const int RowHeight = KeyHeight + KeySpacing;
+        private const int CornerRadius = 6;
+        private const int ShadowOffset = 2;
         
         // Color scheme
         private Color _blockedColor = Color.Red;
@@ -34,6 +37,7 @@ namespace SimBlock.Presentation.Controls
         private Color _neutralColor = Color.LightGray;
         private Color _selectedColor;
         private Color _textColor = Color.Black;
+        private readonly Color _shadowColor = Color.FromArgb(60, 0, 0, 0);
         
         // Drag selection state
         private bool _isDragging = false;
@@ -42,6 +46,9 @@ namespace SimBlock.Presentation.Controls
         private Rectangle _selectionRectangle;
         private const int DragThreshold = 5; // Minimum pixels to move before starting drag
 
+        // Hover state
+        private Keys _hoveredKey = Keys.None;
+        
         // Events
         public event EventHandler<Keys>? KeyClicked;
 
@@ -73,6 +80,42 @@ namespace SimBlock.Presentation.Controls
             // Add tooltip for better user experience
             var tooltip = new ToolTip();
             tooltip.SetToolTip(this, "Keyboard blocking visualization - Click or drag to select keys");
+        }
+
+        private static GraphicsPath CreateRoundedRect(Rectangle rect, int radius)
+        {
+            int d = radius * 2;
+            var path = new GraphicsPath();
+            if (radius <= 0)
+            {
+                path.AddRectangle(rect);
+                path.CloseFigure();
+                return path;
+            }
+            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        private static Color Lighten(Color color, float amount)
+        {
+            // amount: 0..1
+            int r = color.R + (int)((255 - color.R) * amount);
+            int g = color.G + (int)((255 - color.G) * amount);
+            int b = color.B + (int)((255 - color.B) * amount);
+            return Color.FromArgb(color.A, Math.Min(255, r), Math.Min(255, g), Math.Min(255, b));
+        }
+
+        private static Color Darken(Color color, float amount)
+        {
+            // amount: 0..1
+            int r = (int)(color.R * (1 - amount));
+            int g = (int)(color.G * (1 - amount));
+            int b = (int)(color.B * (1 - amount));
+            return Color.FromArgb(color.A, Math.Max(0, r), Math.Max(0, g), Math.Max(0, b));
         }
 
         private void InitializeKeyLayout()
@@ -296,17 +339,13 @@ namespace SimBlock.Presentation.Controls
             _keyLabels[Keys.RWin] = "Win";
             x += KeyWidth + 10 + KeySpacing;
             
-            // Menu key
-            _keyLayout[Keys.Apps] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
-            _keyLabels[Keys.Apps] = "Menu";
-            x += KeyWidth + 10 + KeySpacing;
-            
             // Right Ctrl
             _keyLayout[Keys.RControlKey] = new Rectangle(x, y, KeyWidth + 10, KeyHeight);
             _keyLabels[Keys.RControlKey] = "Ctrl";
             
             // Arrow keys (positioned to the right of the main keyboard)
-            int arrowX = startX + KeyWidth * 16; // Position to the right, moved left
+            // Ensure ample spacing from Right Ctrl by basing on its right edge
+            int arrowX = _keyLayout[Keys.RControlKey].Right + KeySpacing * 6; 
             int arrowY = y - RowHeight; // One row above the bottom row
             
             // Up arrow (centered above left/down/right)
@@ -323,7 +362,6 @@ namespace SimBlock.Presentation.Controls
             _keyLayout[Keys.Right] = new Rectangle(arrowX + (KeyWidth + KeySpacing) * 2, arrowY + RowHeight, KeyWidth, KeyHeight);
             _keyLabels[Keys.Right] = "→";
         }
-
 
         private void InitializeColors()
         {
@@ -370,27 +408,51 @@ namespace SimBlock.Presentation.Controls
                 
                 // Determine key color based on blocking state
                 Color keyColor = GetKeyColor(key);
-                
-                // Draw key background
-                using (var brush = new SolidBrush(keyColor))
+
+                // Rounded rect path for key
+                using (var keyPath = CreateRoundedRect(rect, CornerRadius))
                 {
-                    g.FillRectangle(brush, rect);
+                    // Shadow
+                    var shadowRect = new Rectangle(rect.X + ShadowOffset, rect.Y + ShadowOffset, rect.Width, rect.Height);
+                    using (var shadowPath = CreateRoundedRect(shadowRect, CornerRadius))
+                    using (var shadowBrush = new SolidBrush(_shadowColor))
+                    {
+                        g.FillPath(shadowBrush, shadowPath);
+                    }
+
+                    // Gradient fill
+                    Color top = Lighten(keyColor, 0.18f);
+                    Color bottom = Darken(keyColor, 0.12f);
+                    using (var lg = new LinearGradientBrush(rect, top, bottom, LinearGradientMode.Vertical))
+                    {
+                        g.FillPath(lg, keyPath);
+                    }
+
+                    // Hover highlight overlay
+                    if (key == _hoveredKey && !_isDragging)
+                    {
+                        using (var hoverBrush = new SolidBrush(Color.FromArgb(40, 0, 120, 215)))
+                        {
+                            g.FillPath(hoverBrush, keyPath);
+                        }
+                    }
+
+                    // Border
+                    var borderColor = key == _hoveredKey ? Color.FromArgb(180, 0, 120, 215) : Darken(keyColor, 0.35f);
+                    float borderWidth = key == _hoveredKey ? 1.6f : 1.0f;
+                    using (var pen = new Pen(borderColor, borderWidth))
+                    {
+                        g.DrawPath(pen, keyPath);
+                    }
                 }
-                
-                // Draw key border
-                using (var pen = new Pen(_textColor, 1))
-                {
-                    g.DrawRectangle(pen, rect);
-                }
-                
+
                 // Draw key label
-                using (var font = new Font("Arial", 6, FontStyle.Bold))
+                using (var font = new Font(SystemFonts.MessageBoxFont.FontFamily, 7f, FontStyle.Bold))
                 using (var brush = new SolidBrush(_textColor))
                 {
                     var textSize = g.MeasureString(label, font);
                     var textX = rect.X + (rect.Width - textSize.Width) / 2;
                     var textY = rect.Y + (rect.Height - textSize.Height) / 2;
-                    
                     g.DrawString(label, font, brush, textX, textY);
                 }
             }
@@ -442,46 +504,6 @@ namespace SimBlock.Presentation.Controls
             return _neutralColor;
         }
 
-        private void DrawLegend(Graphics g)
-        {
-            int legendY = Height - 18; // Positioned to avoid intersection with keyboard while leaving space for text
-            int legendX = 10;
-            
-            // Draw legend items
-            DrawLegendItem(g, legendX, legendY, _blockedColor, "Blocked");
-            DrawLegendItem(g, legendX + 80, legendY, _allowedColor, "Allowed");
-            DrawLegendItem(g, legendX + 160, legendY, _neutralColor, "Inactive");
-            
-            // Show selected color in Select mode
-            if (_blockingMode == BlockingMode.Select)
-            {
-                DrawLegendItem(g, legendX + 240, legendY, _selectedColor, "Selected");
-            }
-            
-            // Remove redundant mode indicator - it's displayed elsewhere and not needed here
-        }
-
-        private void DrawLegendItem(Graphics g, int x, int y, Color color, string text)
-        {
-            // Draw color square
-            using (var brush = new SolidBrush(color))
-            {
-                g.FillRectangle(brush, x, y, 12, 12);
-            }
-            
-            using (var pen = new Pen(_textColor, 1))
-            {
-                g.DrawRectangle(pen, x, y, 12, 12);
-            }
-            
-            // Draw label
-            using (var font = new Font("Arial", 8))
-            using (var brush = new SolidBrush(_textColor))
-            {
-                g.DrawString(text, font, brush, x + 15, y - 2);
-            }
-        }
-
         /// <summary>
         /// Gets a summary of the current blocking state
         /// </summary>
@@ -489,24 +511,22 @@ namespace SimBlock.Presentation.Controls
         {
             if (!_isBlocked)
                 return "No keys are currently blocked";
-            
+
             if (_blockingMode == BlockingMode.Simple)
                 return "All keyboard input is blocked";
-            
+
             if (_advancedConfig != null)
             {
                 int blockedCount = 0;
                 int totalCount = _keyLayout.Count;
-                
                 foreach (var key in _keyLayout.Keys)
                 {
                     if (_advancedConfig.IsKeyBlocked(key))
                         blockedCount++;
                 }
-                
                 return $"{blockedCount} out of {totalCount} keys are blocked";
             }
-            
+
             return "Blocking state unknown";
         }
 
@@ -515,41 +535,23 @@ namespace SimBlock.Presentation.Controls
         /// </summary>
         private void OnMouseClick(object? sender, MouseEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Mode={_blockingMode}, Location={e.Location}, Config={_advancedConfig != null}");
-            
             // Only handle clicks in Select mode
             if (_blockingMode != BlockingMode.Select || _advancedConfig == null)
-            {
-                System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Early return - Mode={_blockingMode}, Config={_advancedConfig != null}");
                 return;
-            }
 
             // Find which key was clicked
             foreach (var kvp in _keyLayout)
             {
                 var key = kvp.Key;
                 var rect = kvp.Value;
-                
                 if (rect.Contains(e.Location))
                 {
-                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Found key {key} at {rect}");
-                    
-                    // Toggle selection for this key
                     _advancedConfig.ToggleKeySelection(key);
-                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Toggled selection for {key}");
-                    
-                    // Raise the KeyClicked event
                     KeyClicked?.Invoke(this, key);
-                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Raised KeyClicked event for {key}");
-                    
-                    // Refresh the display
                     Invalidate();
-                    System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: Invalidated display");
                     break;
                 }
             }
-            
-            System.Diagnostics.Debug.WriteLine($"KeyboardVisualizationControl.OnMouseClick: No key found at location {e.Location}");
         }
 
         /// <summary>
@@ -567,10 +569,27 @@ namespace SimBlock.Presentation.Controls
         }
 
         /// <summary>
-        /// Handles mouse move events for drag selection
+        /// Handles mouse move events for drag selection and hover highlight
         /// </summary>
         private void OnMouseMove(object? sender, MouseEventArgs e)
         {
+            // Hover handling regardless of drag state
+            Keys newHover = Keys.None;
+            foreach (var kvp in _keyLayout)
+            {
+                if (kvp.Value.Contains(e.Location))
+                {
+                    newHover = kvp.Key;
+                    break;
+                }
+            }
+
+            if (newHover != _hoveredKey)
+            {
+                _hoveredKey = newHover;
+                Invalidate();
+            }
+
             if (!_mouseDown)
                 return;
 
@@ -628,6 +647,7 @@ namespace SimBlock.Presentation.Controls
             _mouseDown = false;
             _isDragging = false;
             _selectionRectangle = Rectangle.Empty;
+            Invalidate();
         }
     }
 }
