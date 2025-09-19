@@ -122,6 +122,7 @@ namespace SimBlock.Presentation.Forms
             _uiControls.MouseToggleButton.Click += OnMouseToggleButtonClick;
             _uiControls.HideToTrayButton.Click += OnHideToTrayButtonClick;
             _uiControls.SettingsButton.Click += OnSettingsButtonClick;
+            _uiControls.MacroManagerButton.Click += OnMacroManagerButtonClick;
             _keyboardBlockerService.StateChanged += OnKeyboardStateChanged;
             _keyboardBlockerService.EmergencyUnlockAttempt += OnEmergencyUnlockAttempt;
             _keyboardBlockerService.ShowWindowRequested += OnShowWindowRequested;
@@ -150,6 +151,20 @@ namespace SimBlock.Presentation.Forms
             // Wire up system tray events
             _systemTrayService.ToggleMouseBlockRequested += (s, e) => OnMouseToggleButtonClick(s, e);
             _systemTrayService.OpenSettingsRequested += (s, e) => OnSettingsButtonClick(s, e);
+        }
+
+        private void OnMacroManagerButtonClick(object? sender, EventArgs e)
+        {
+            try
+            {
+                using var manager = _serviceProvider.GetRequiredService<MacroManagerForm>();
+                manager.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening Macro Manager");
+                MessageBox.Show($"Failed to open Macro Manager.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void InitializeTimer()

@@ -204,6 +204,7 @@ namespace SimBlock
                     // Register application services
                     services.AddSingleton<IKeyboardBlockerService, KeyboardBlockerService>();
                     services.AddSingleton<IMouseBlockerService, MouseBlockerService>();
+                    services.AddSingleton<IMacroService, MacroService>();
 
                     // Register infrastructure services
                     services.AddSingleton<SimBlock.Presentation.Interfaces.IResourceMonitor, ResourceMonitor>();
@@ -229,6 +230,7 @@ namespace SimBlock
                     // MainForm is created manually in Main() to avoid disposal issues
                     services.AddTransient<SimBlock.Presentation.Forms.SettingsForm>();
                     services.AddTransient<SplashForm>();
+                    services.AddTransient<MacroManagerForm>();
                     services.AddSingleton<SimBlock.Presentation.ViewModels.SettingsViewModel>();
 
                     // Register splash screen services

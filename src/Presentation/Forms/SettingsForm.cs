@@ -1,5 +1,6 @@
-using System;
+    using System;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -27,9 +28,11 @@ namespace SimBlock.Presentation.Forms
         private readonly IMouseBlockerService _mouseBlockerService;
         private readonly IBlockingVisualizationManager _visualizationManager;
         private readonly IAutoUpdateService _autoUpdateService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IStartupRegistrationService _startupRegistrationService;
         private readonly IThemeApplier _themeApplier;
         private readonly SettingsViewModel _viewModel;
+        private readonly IMacroService _macroService;
 
         // UI Controls
         private RoundedButton _themeToggleButton = null!;
@@ -92,6 +95,17 @@ namespace SimBlock.Presentation.Forms
         private ComboBox _autoUpdateIntervalComboBox = null!;
         private RoundedButton _checkForUpdatesButton = null!;
 
+        // Macro controls
+        private GroupBox _macroGroupBox = null!;
+        private TextBox _macroNameTextBox = null!;
+        private ListBox _macroListBox = null!;
+        private RoundedButton _macroStartButton = null!;
+        private RoundedButton _macroStopButton = null!;
+        private RoundedButton _macroPlayButton = null!;
+        private RoundedButton _macroSaveButton = null!;
+        private RoundedButton _macroLoadButton = null!;
+        private RoundedButton _macroOpenManagerButton = null!;
+
         public SettingsForm(
             IThemeManager themeManager,
             UISettings uiSettings,
@@ -103,7 +117,9 @@ namespace SimBlock.Presentation.Forms
             IAutoUpdateService autoUpdateService,
             IStartupRegistrationService startupRegistrationService,
             IThemeApplier themeApplier,
-            SettingsViewModel viewModel)
+            SettingsViewModel viewModel,
+            IMacroService macroService,
+            IServiceProvider serviceProvider)
         {
             _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
@@ -116,12 +132,15 @@ namespace SimBlock.Presentation.Forms
             _startupRegistrationService = startupRegistrationService ?? throw new ArgumentNullException(nameof(startupRegistrationService));
             _themeApplier = themeApplier ?? throw new ArgumentNullException(nameof(themeApplier));
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            _macroService = macroService ?? throw new ArgumentNullException(nameof(macroService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             InitializeComponent();
             InitializeEventHandlers();
             InitializeStartupState();
             LoadSettings();
             ApplyCurrentTheme();
+            _ = RefreshMacroListAsync();
         }
 
         private void InitializeComponent()
@@ -252,6 +271,68 @@ namespace SimBlock.Presentation.Forms
             CreateAdvancedControls();
             CreateVisualizationControls();
             CreateAutoUpdateControls();
+
+            // Macro controls group
+            _macroGroupBox = new GroupBox
+            {
+                Text = "Macros",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = _uiSettings.TextColor
+            };
+
+            _macroNameTextBox = new TextBox
+            {
+                PlaceholderText = "Macro name",
+                Width = 180,
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+
+            _macroListBox = new ListBox
+            {
+                Width = 200,
+                Height = 100,
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+
+            _macroStartButton = new RoundedButton { Text = "Start", Size = new Size(70, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+            _macroStopButton  = new RoundedButton { Text = "Stop",  Size = new Size(70, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+            _macroPlayButton  = new RoundedButton { Text = "Play",  Size = new Size(70, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+            _macroSaveButton  = new RoundedButton { Text = "Save",  Size = new Size(70, 28), BackColor = _uiSettings.PrimaryButtonColor,   ForeColor = Color.White, CornerRadius = 6 };
+            _macroLoadButton  = new RoundedButton { Text = "Load",  Size = new Size(70, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+            _macroOpenManagerButton = new RoundedButton { Text = "Open Manager", Size = new Size(120, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+
+            // Layout within group box
+            var macroPanel = new TableLayoutPanel
+            {
+                ColumnCount = 3,
+                RowCount = 3,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor,
+                AutoSize = true
+            };
+            macroPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            macroPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            macroPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            macroPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            macroPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            macroPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            macroPanel.Controls.Add(new Label { Text = "Name:", AutoSize = true, ForeColor = _uiSettings.TextColor, Font = new Font("Segoe UI", 9) }, 0, 0);
+            macroPanel.Controls.Add(_macroNameTextBox, 1, 0);
+            var buttonPanel1 = new FlowLayoutPanel { AutoSize = true, BackColor = _uiSettings.BackgroundColor };
+            buttonPanel1.Controls.AddRange(new Control[] { _macroStartButton, _macroStopButton, _macroPlayButton });
+            macroPanel.Controls.Add(buttonPanel1, 0, 1);
+            macroPanel.SetColumnSpan(buttonPanel1, 3);
+
+            var buttonPanel2 = new FlowLayoutPanel { AutoSize = true, BackColor = _uiSettings.BackgroundColor };
+            buttonPanel2.Controls.AddRange(new Control[] { _macroSaveButton, _macroLoadButton, _macroOpenManagerButton });
+            macroPanel.Controls.Add(buttonPanel2, 0, 2);
+            macroPanel.Controls.Add(_macroListBox, 2, 0);
+            macroPanel.SetRowSpan(_macroListBox, 3);
+
+            _macroGroupBox.Controls.Add(macroPanel);
 
             // Close button
             _closeButton = new RoundedButton
@@ -766,7 +847,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
+                RowCount = 7,
                 Padding = new Padding(20, 20, 20, 40), // Increased bottom padding
                 BackColor = _uiSettings.BackgroundColor,
                 AutoScroll = true, // Enable scrolling for the main content
@@ -870,15 +951,8 @@ namespace SimBlock.Presentation.Forms
             mainPanel.Controls.Add(_emergencyUnlockGroupBox, 0, row++);
             mainPanel.Controls.Add(_blockingModeGroupBox, 0, row++);
             mainPanel.Controls.Add(_advancedConfigPanel, 0, row++);
-            mainPanel.Controls.Add(_autoUpdateGroupBox, 0, row++);
-
-            if (_visualizationGroupBox != null)
-            {
-                _visualizationGroupBox.Dock = DockStyle.Top;
-                _visualizationGroupBox.AutoSize = true;
-                _visualizationGroupBox.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-                mainPanel.Controls.Add(_visualizationGroupBox, 0, row++);
-            }
+            mainPanel.Controls.Add(_visualizationGroupBox, 0, row++);
+            mainPanel.Controls.Add(_macroGroupBox, 0, row++);
 
             // Add button panel last
             mainPanel.Controls.Add(buttonPanel, 0, row);
@@ -891,6 +965,7 @@ namespace SimBlock.Presentation.Forms
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Blocking Mode
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Advanced Config
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Visualization
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Macros
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
             
             // Ensure the form can be resized to show all content
@@ -946,6 +1021,28 @@ namespace SimBlock.Presentation.Forms
             _autoUpdateNotifyOnlyCheckBox.CheckedChanged += OnAutoUpdateNotifyOnlyChanged;
             _autoUpdateIntervalComboBox.SelectedIndexChanged += OnAutoUpdateIntervalChanged;
             _checkForUpdatesButton.Click += OnCheckForUpdatesButtonClick;
+
+            // Macro handlers
+            _macroStartButton.Click += OnMacroStartClicked;
+            _macroStopButton.Click += OnMacroStopClicked;
+            _macroPlayButton.Click += OnMacroPlayClicked;
+            _macroSaveButton.Click += OnMacroSaveClicked;
+            _macroLoadButton.Click += OnMacroLoadClicked;
+            _macroOpenManagerButton.Click += OnMacroOpenManagerClicked;
+        }
+
+        private void OnMacroOpenManagerClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                using var manager = _serviceProvider.GetRequiredService<MacroManagerForm>();
+                manager.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening Macro Manager");
+                MessageBox.Show($"Failed to open Macro Manager.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void OnAutoUpdateEnabledChanged(object? sender, EventArgs e)
@@ -1036,6 +1133,114 @@ namespace SimBlock.Presentation.Forms
                 _logger.LogError(ex, "Error toggling theme from settings");
                 MessageBox.Show($"Failed to toggle theme.\n\nError: {ex.Message}",
                     "SimBlock Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void OnMacroStartClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var name = string.IsNullOrWhiteSpace(_macroNameTextBox.Text) ? $"Macro_{DateTime.Now:HHmmss}" : _macroNameTextBox.Text.Trim();
+                _macroService.StartRecording(name);
+                _logger.LogInformation("Started recording macro: {Name}", name);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting macro recording");
+                MessageBox.Show($"Failed to start recording.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnMacroStopClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var macro = _macroService.StopRecording();
+                _macroNameTextBox.Text = macro.Name;
+                _logger.LogInformation("Stopped recording macro: {Name} with {Count} events", macro.Name, macro.Events.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error stopping macro recording");
+                MessageBox.Show($"Failed to stop recording.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void OnMacroSaveClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (_macroService.CurrentRecording != null && _macroService.IsRecording == false)
+                {
+                    await _macroService.SaveAsync(_macroService.CurrentRecording);
+                }
+                else if (!string.IsNullOrWhiteSpace(_macroNameTextBox.Text))
+                {
+                    // Try loading from a previous StopRecording cached variable is not available; load current by name after stop
+                    var macro = await _macroService.LoadAsync(_macroNameTextBox.Text.Trim());
+                    if (macro != null)
+                        await _macroService.SaveAsync(macro);
+                }
+                await RefreshMacroListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving macro");
+                MessageBox.Show($"Failed to save macro.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void OnMacroLoadClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var name = _macroListBox.SelectedItem?.ToString() ?? _macroNameTextBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(name)) return;
+                var macro = await _macroService.LoadAsync(name);
+                if (macro != null)
+                {
+                    _macroNameTextBox.Text = macro.Name;
+                    _logger.LogInformation("Loaded macro: {Name} with {Count} events", macro.Name, macro.Events.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading macro");
+                MessageBox.Show($"Failed to load macro.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void OnMacroPlayClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var name = _macroListBox.SelectedItem?.ToString() ?? _macroNameTextBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(name)) return;
+                var macro = await _macroService.LoadAsync(name);
+                if (macro != null)
+                {
+                    await _macroService.PlayAsync(macro);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error playing macro");
+                MessageBox.Show($"Failed to play macro.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task RefreshMacroListAsync()
+        {
+            try
+            {
+                var names = await _macroService.ListAsync();
+                _macroListBox.Items.Clear();
+                foreach (var n in names)
+                    _macroListBox.Items.Add(n);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error refreshing macro list");
             }
         }
 

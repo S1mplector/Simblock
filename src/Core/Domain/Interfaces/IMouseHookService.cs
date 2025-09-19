@@ -10,6 +10,9 @@ namespace SimBlock.Core.Domain.Interfaces
         event EventHandler<MouseBlockState>? BlockStateChanged;
         event EventHandler<int>? EmergencyUnlockAttempt;
         
+        // Raised for every low-level mouse hook event
+        event EventHandler<MouseHookEventArgs>? MouseEvent;
+        
         bool IsHookInstalled { get; }
         MouseBlockState CurrentState { get; }
         

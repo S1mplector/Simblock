@@ -25,6 +25,7 @@ namespace SimBlock.Infrastructure.Windows
 
         public event EventHandler<MouseBlockState>? BlockStateChanged;
         public event EventHandler<int>? EmergencyUnlockAttempt;
+        public event EventHandler<MouseHookEventArgs>? MouseEvent;
 
         public bool IsHookInstalled => _hookId != IntPtr.Zero;
         public MouseBlockState CurrentState => _state;
@@ -192,6 +193,39 @@ namespace SimBlock.Infrastructure.Windows
                 // Log mouse activity for debugging
                 _logger.LogDebug("Mouse event: Message={Message}, X={X}, Y={Y}, MouseData={MouseData}",
                     GetMouseMessageName(message), mouseStruct.x, mouseStruct.y, mouseStruct.mouseData);
+
+                // Raise per-mouse event for listeners (e.g., macro recording)
+                try
+                {
+                    int wheelDelta = 0;
+                    if (message == NativeMethods.WM_MOUSEWHEEL || message == NativeMethods.WM_MOUSEHWHEEL)
+                    {
+                        // HIWORD of mouseData is wheel delta (signed)
+                        wheelDelta = unchecked((short)((mouseStruct.mouseData >> 16) & 0xFFFF));
+                    }
+
+                    bool left = message == NativeMethods.WM_LBUTTONDOWN || message == NativeMethods.WM_LBUTTONUP;
+                    bool right = message == NativeMethods.WM_RBUTTONDOWN || message == NativeMethods.WM_RBUTTONUP;
+                    bool middle = message == NativeMethods.WM_MBUTTONDOWN || message == NativeMethods.WM_MBUTTONUP;
+
+                    var args = new MouseHookEventArgs
+                    {
+                        Message = message,
+                        X = mouseStruct.x,
+                        Y = mouseStruct.y,
+                        MouseData = mouseStruct.mouseData,
+                        LeftButton = left,
+                        RightButton = right,
+                        MiddleButton = middle,
+                        WheelDelta = wheelDelta,
+                        Timestamp = DateTime.UtcNow
+                    };
+                    MouseEvent?.Invoke(this, args);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error raising MouseEvent");
+                }
                 
                 // Check if we should block the mouse input using the new advanced blocking logic
                 if (_state.IsMouseActionBlocked(message, mouseStruct.mouseData))

@@ -10,6 +10,9 @@ namespace SimBlock.Core.Domain.Interfaces
         event EventHandler<KeyboardBlockState>? BlockStateChanged;
         event EventHandler<int>? EmergencyUnlockAttempt;
         
+        // Raised for every low-level keyboard hook event
+        event EventHandler<KeyboardHookEventArgs>? KeyEvent;
+        
         bool IsHookInstalled { get; }
         KeyboardBlockState CurrentState { get; }
         

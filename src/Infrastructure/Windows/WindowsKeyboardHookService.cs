@@ -33,6 +33,7 @@ namespace SimBlock.Infrastructure.Windows
 
         public event EventHandler<KeyboardBlockState>? BlockStateChanged;
         public event EventHandler<int>? EmergencyUnlockAttempt;
+        public event EventHandler<KeyboardHookEventArgs>? KeyEvent;
 
         public bool IsHookInstalled => _hookId != IntPtr.Zero;
         public KeyboardBlockState CurrentState => _state;
@@ -187,6 +188,30 @@ namespace SimBlock.Infrastructure.Windows
                 
                 // Track modifier key states
                 TrackModifierKeys(kbStruct.vkCode, message);
+
+                // Raise per-key event for listeners (e.g., macro recording)
+                try
+                {
+                    var isKeyDown = message == NativeMethods.WM_KEYDOWN || message == NativeMethods.WM_SYSKEYDOWN;
+                    var isKeyUp = message == NativeMethods.WM_KEYUP || message == NativeMethods.WM_SYSKEYUP;
+                    var args = new KeyboardHookEventArgs
+                    {
+                        Key = (Keys)kbStruct.vkCode,
+                        VkCode = kbStruct.vkCode,
+                        Message = message,
+                        IsKeyDown = isKeyDown,
+                        IsKeyUp = isKeyUp,
+                        Ctrl = _ctrlPressed,
+                        Alt = _altPressed,
+                        Shift = _shiftPressed,
+                        Timestamp = DateTime.UtcNow
+                    };
+                    KeyEvent?.Invoke(this, args);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error raising KeyEvent");
+                }
                 
                 // Always check for emergency unlock combination (works for both keyboard and mouse blocking)
                 // Only trigger on key down events (WM_KEYDOWN = 0x0100)

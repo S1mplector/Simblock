@@ -76,46 +76,18 @@ namespace SimBlock.Presentation.Controls
         // Builds a tapered, convex main-button path that blends with the body and center split
         private static GraphicsPath CreateMainButtonPath(Rectangle rect, bool isLeft)
         {
+            // Return a classic rounded-rectangle button path for a simpler look
+            int radius = ButtonRounding;
             var path = new GraphicsPath { FillMode = FillMode.Winding };
-            int t = Math.Max(6, rect.Height / 3);           // top taper depth
-            int bulge = Math.Max(6, rect.Width / 8);        // outer side convexity
-            int radius = 6;                                 // small rounding reference
-
-            if (isLeft)
-            {
-                PointF p0 = new(rect.Right, rect.Top + 2);                                  // inner top near split
-                PointF p1 = new(rect.Left + radius, rect.Top + t * 0.2f);                   // outer top
-                PointF c1 = new(rect.Left - bulge * 0.3f, rect.Top + rect.Height * 0.35f);  // outer side controls
-                PointF c2 = new(rect.Left + bulge * 0.2f, rect.Bottom - rect.Height * 0.25f);
-                PointF p2 = new(rect.Left + radius, rect.Bottom - 4);                       // lower outer
-                PointF p3 = new(rect.Right - 4, rect.Bottom - 2);                            // lower inner
-                PointF c3 = new(rect.Right + 2, rect.Top + rect.Height * 0.55f);            // inner return
-
-                path.StartFigure();
-                path.AddLine(p0, p1);
-                path.AddBezier(p1, c1, c2, p2);
-                path.AddLine(p2, p3);
-                path.AddBezier(p3, c3, new PointF(rect.Right - 2, rect.Top + t * 0.6f), p0);
-                path.CloseFigure();
-            }
-            else
-            {
-                PointF p0 = new(rect.Left, rect.Top + 2);
-                PointF p1 = new(rect.Right - radius, rect.Top + t * 0.2f);
-                PointF c1 = new(rect.Right + bulge * 0.3f, rect.Top + rect.Height * 0.35f);
-                PointF c2 = new(rect.Right - bulge * 0.2f, rect.Bottom - rect.Height * 0.25f);
-                PointF p2 = new(rect.Right - radius, rect.Bottom - 4);
-                PointF p3 = new(rect.Left + 4, rect.Bottom - 2);
-                PointF c3 = new(rect.Left - 2, rect.Top + rect.Height * 0.55f);
-
-                path.StartFigure();
-                path.AddLine(p0, p1);
-                path.AddBezier(p1, c1, c2, p2);
-                path.AddLine(p2, p3);
-                path.AddBezier(p3, c3, new PointF(rect.Left + 2, rect.Top + t * 0.6f), p0);
-                path.CloseFigure();
-            }
-
+            // Top-left arc
+            path.AddArc(rect.Left, rect.Top, radius * 2, radius * 2, 180, 90);
+            // Top-right arc
+            path.AddArc(rect.Right - radius * 2, rect.Top, radius * 2, radius * 2, 270, 90);
+            // Bottom-right arc
+            path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+            // Bottom-left arc
+            path.AddArc(rect.Left, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
+            path.CloseFigure();
             return path;
         }
         
@@ -366,27 +338,13 @@ namespace SimBlock.Presentation.Controls
                     }
                     else if (component == "X1Button" || component == "X2Button")
                     {
-                        // Clip to body so side buttons sit flush with silhouette
-                        Rectangle bodyRect2 = _mouseComponents.ContainsKey("MouseBody") ? _mouseComponents["MouseBody"] : Rectangle.Empty;
-                        using (var bodyPath2 = CreateMouseSilhouettePath(bodyRect2.X, bodyRect2.Y, bodyRect2.Width, bodyRect2.Height))
-                        {
-                            var prev = g.Clip;
-                            g.SetClip(bodyPath2);
-                            DrawSideButton(g, rect, componentColor, component == "X1Button");
-                            g.Clip = prev;
-                        }
+                        // Draw side buttons directly without clipping to avoid artifacts
+                        DrawSideButton(g, rect, componentColor, component == "X1Button");
                     }
                     else if (component == "LeftButton" || component == "RightButton")
                     {
-                        // Clip to body so main buttons sit flush with silhouette
-                        Rectangle bodyRect2 = _mouseComponents.ContainsKey("MouseBody") ? _mouseComponents["MouseBody"] : Rectangle.Empty;
-                        using (var bodyPath2 = CreateMouseSilhouettePath(bodyRect2.X, bodyRect2.Y, bodyRect2.Width, bodyRect2.Height))
-                        {
-                            var prev = g.Clip;
-                            g.SetClip(bodyPath2);
-                            DrawMainButton(g, rect, componentColor, component == "LeftButton");
-                            g.Clip = prev;
-                        }
+                        // Draw main buttons directly without clipping to avoid visual corner artifacts
+                        DrawMainButton(g, rect, componentColor, component == "LeftButton");
                     }
                     else if (component == "DoubleClick")
                     {
@@ -486,134 +444,90 @@ namespace SimBlock.Presentation.Controls
         
         private void DrawSideButton(Graphics g, Rectangle rect, Color baseColor, bool isUpper)
         {
-            // Button shape with rounded edges on one side
-            using (var buttonPath = new GraphicsPath())
+            // Simple rounded-rectangle side button with subtle gradient and top gloss
+            int radius = 4;
+            using (var buttonPath = CreateRoundedRectanglePath(rect, radius))
             {
-                int radius = 4;
-                
-                // Create a button shape that's rounded on the left side
-                buttonPath.AddLine(rect.Left, rect.Top + radius, rect.Left, rect.Bottom - radius);
-                buttonPath.AddArc(rect.Left, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-                buttonPath.AddLine(rect.Left + radius, rect.Bottom, rect.Right - 1, rect.Bottom);
-                buttonPath.AddLine(rect.Right - 1, rect.Bottom, rect.Right - 1, rect.Top);
-                buttonPath.AddLine(rect.Right - 1, rect.Top, rect.Left, rect.Top + radius);
-                
-                // Button gradient
+                // Base gradient
                 using (var buttonBrush = new LinearGradientBrush(
                     new Point(rect.Left, rect.Top),
-                    new Point(rect.Right, rect.Bottom),
+                    new Point(rect.Left, rect.Bottom),
                     Color.FromArgb(
-                        Math.Min(255, baseColor.R + 40),
-                        Math.Min(255, baseColor.G + 40),
-                        Math.Min(255, baseColor.B + 40)),
-                    baseColor))
+                        Math.Min(255, baseColor.R + 25),
+                        Math.Min(255, baseColor.G + 25),
+                        Math.Min(255, baseColor.B + 25)),
+                    Color.FromArgb(
+                        Math.Max(0, baseColor.R - 10),
+                        Math.Max(0, baseColor.G - 10),
+                        Math.Max(0, baseColor.B - 10))))
                 {
                     g.FillPath(buttonBrush, buttonPath);
                 }
-                
-                // Button border
-                using (var borderPen = new Pen(Color.FromArgb(60, 60, 60), 1f))
+
+                // Border
+                using (var borderPen = new Pen(Color.FromArgb(70, 70, 70), 1f))
                 {
                     g.DrawPath(borderPen, buttonPath);
                 }
-                
-                // Button highlight - only draw if not selected (selected state is handled by baseColor)
-                if (baseColor != _selectedColor)
+
+                // Top gloss clipped to button
+                var oldClip = g.Clip;
+                g.SetClip(buttonPath);
+                var glossHeight = Math.Max(5, rect.Height / 2);
+                var glossRect = new Rectangle(rect.Left + 1, rect.Top + 1, rect.Width - 2, glossHeight);
+                using (var gloss = new LinearGradientBrush(
+                    glossRect,
+                    Color.FromArgb(60, 255, 255, 255),
+                    Color.FromArgb(0, 255, 255, 255),
+                    90f))
                 {
-                    using (var highlightPen = new Pen(Color.FromArgb(40, 255, 255, 255), 1f))
-                    {
-                        g.DrawLine(highlightPen, 
-                            rect.Left + 1, rect.Top + 1,
-                            rect.Left + 1, rect.Bottom - 1);
-                    }
+                    g.FillRectangle(gloss, glossRect);
                 }
-            }
-            
-            // Only draw additional highlights/shadows if not selected
-            if (baseColor != _selectedColor)
-            {
-                // Add a subtle shadow on the right side
-                using (var shadowPen = new Pen(Color.FromArgb(30, 0, 0, 0), 1.5f))
-                {
-                    g.DrawLine(shadowPen,
-                        rect.Right - 1, rect.Top + 2,
-                        rect.Right - 1, rect.Bottom - 2);
-                }
-                
-                // Reduce highlight intensity on edges
-                using (var highlightPen = new Pen(Color.FromArgb(40, 255, 255, 255), 1f))
-                {
-                    if (isUpper)
-                    {
-                        g.DrawLine(highlightPen,
-                            rect.Left + 2, rect.Top + 1,
-                            rect.Right - 2, rect.Top + 1);
-                    }
-                    else
-                    {
-                        g.DrawLine(highlightPen,
-                            rect.Left + 2, rect.Bottom - 1,
-                            rect.Right - 2, rect.Bottom - 1);
-                    }
-                }
+                g.Clip = oldClip;
             }
         }
         
         private void DrawMainButton(Graphics g, Rectangle rect, Color baseColor, bool isLeftButton)
         {
-            // Button shape approximating Orochi v2: tapered at the top, flush to body, slight convex sides
+            // Simple rounded-rectangle button with subtle vertical gradient and top gloss
             using (var buttonPath = CreateMainButtonPath(rect, isLeftButton))
             {
-                // Button gradient
+                // Base gradient
                 using (var buttonBrush = new LinearGradientBrush(
                     new Point(rect.Left, rect.Top),
                     new Point(rect.Left, rect.Bottom),
                     Color.FromArgb(
-                        Math.Min(255, baseColor.R + 30),
-                        Math.Min(255, baseColor.G + 30),
-                        Math.Min(255, baseColor.B + 30)),
-                    baseColor))
+                        Math.Min(255, baseColor.R + 25),
+                        Math.Min(255, baseColor.G + 25),
+                        Math.Min(255, baseColor.B + 25)),
+                    Color.FromArgb(
+                        Math.Max(0, baseColor.R - 10),
+                        Math.Max(0, baseColor.G - 10),
+                        Math.Max(0, baseColor.B - 10))))
                 {
                     g.FillPath(buttonBrush, buttonPath);
                 }
-                
-                // Button border
-                using (var borderPen = new Pen(Color.FromArgb(60, 60, 60), 1f))
+
+                // Border
+                using (var borderPen = new Pen(Color.FromArgb(70, 70, 70), 1f))
                 {
                     g.DrawPath(borderPen, buttonPath);
                 }
-                
-                // Button highlight
-                using (var highlightPath = new GraphicsPath())
+
+                // Top gloss clipped to the button shape to avoid artifacts
+                var oldClip = g.Clip;
+                g.SetClip(buttonPath);
+                var glossHeight = Math.Max(6, rect.Height / 2);
+                var glossRect = new Rectangle(rect.Left + 1, rect.Top + 1, rect.Width - 2, glossHeight);
+                using (var gloss = new LinearGradientBrush(
+                    glossRect,
+                    Color.FromArgb(60, 255, 255, 255),
+                    Color.FromArgb(0, 255, 255, 255),
+                    90f))
                 {
-                    int radius = ButtonRounding;
-                    if (isLeftButton)
-                    {
-                        highlightPath.AddArc(rect.Left, rect.Top + radius, radius * 2, radius * 2, 220, 70);
-                        highlightPath.AddLine(rect.Left + radius, rect.Bottom - 2, rect.Right - 4, rect.Bottom - 2);
-                    }
-                    else
-                    {
-                        highlightPath.AddArc(rect.Right - radius * 2, rect.Top + radius, radius * 2, radius * 2, -40, 70);
-                        highlightPath.AddLine(rect.Left + 4, rect.Bottom - 2, rect.Right - radius, rect.Bottom - 2);
-                    }
-                    
-                    using (var highlightPen = new Pen(Color.FromArgb(30, 255, 255, 255), 1f))
-                    {
-                        g.DrawPath(highlightPen, highlightPath);
-                    }
+                    g.FillRectangle(gloss, glossRect);
                 }
-            }
-            
-            // Add a subtle shadow below the button
-            int edgeRadius = ButtonRounding;
-            using (var shadowPen = new Pen(Color.FromArgb(30, 0, 0, 0), 1.5f))
-            {
-                g.DrawLine(shadowPen,
-                    rect.Left + (isLeftButton ? edgeRadius : 2), 
-                    rect.Bottom - 1,
-                    rect.Right - (isLeftButton ? 2 : edgeRadius), 
-                    rect.Bottom - 1);
+                g.Clip = oldClip;
             }
         }
         
@@ -717,30 +631,20 @@ namespace SimBlock.Presentation.Controls
             return path;
         }
 
-        // Creates a tapered mouse silhouette using smooth curves rather than a simple rounded rectangle
+        // Creates a classic rounded-rectangle mouse silhouette (simple rectangular style)
         private static GraphicsPath CreateMouseSilhouettePath(int x, int y, int width, int height)
         {
-            float cx = x + width / 2f;
-
-            // Key contour points (right side, bottom, left side)
-            var pts = new List<PointF>
-            {
-                new PointF(cx, y),                                 // top center
-                new PointF(x + width * 0.85f, y + height * 0.12f), // right shoulder
-                new PointF(x + width * 0.98f, y + height * 0.40f), // right upper side
-                new PointF(x + width * 0.80f, y + height * 0.78f), // right lower side
-                new PointF(x + width * 0.65f, y + height * 0.98f), // bottom right
-                new PointF(cx, y + height),                         // bottom center
-                new PointF(x + width * 0.35f, y + height * 0.98f), // bottom left
-                new PointF(x + width * 0.20f, y + height * 0.78f), // left lower side
-                new PointF(x + width * 0.02f, y + height * 0.40f), // left upper side
-                new PointF(x + width * 0.15f, y + height * 0.12f), // left shoulder
-                new PointF(cx, y)                                  // back to top center
-            };
-
+            int radius = BodyRounding;
+            var rect = new Rectangle(x, y, width, height);
             var path = new GraphicsPath { FillMode = FillMode.Winding };
-            path.StartFigure();
-            path.AddCurve(pts.ToArray(), 0.5f);
+            // Top-left arc
+            path.AddArc(rect.Left, rect.Top, radius * 2, radius * 2, 180, 90);
+            // Top-right arc
+            path.AddArc(rect.Right - radius * 2, rect.Top, radius * 2, radius * 2, 270, 90);
+            // Bottom-right arc
+            path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+            // Bottom-left arc
+            path.AddArc(rect.Left, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
             path.CloseFigure();
             return path;
         }
