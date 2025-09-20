@@ -240,6 +240,9 @@ namespace SimBlock.Presentation.Managers
                 CornerRadius = 6,
                 Margin = new Padding(5)
             };
+            // Temporarily hide Macro Manager button from the main interface without removing code
+            controls.MacroManagerButton.Visible = false;
+            controls.MacroManagerButton.TabStop = false;
 
             controls.InstructionsLabel = new Label
             {

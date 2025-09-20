@@ -334,6 +334,10 @@ namespace SimBlock.Presentation.Forms
 
             _macroGroupBox.Controls.Add(macroPanel);
 
+            // Hide Macros section in settings without removing any functionality
+            _macroGroupBox.Visible = false;
+            _macroGroupBox.TabStop = false;
+
             // Close button
             _closeButton = new RoundedButton
             {
