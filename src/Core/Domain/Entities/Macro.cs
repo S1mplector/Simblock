@@ -46,4 +46,14 @@ namespace SimBlock.Core.Domain.Entities
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
         public List<MacroEvent> Events { get; } = new List<MacroEvent>();
     }
+
+    // Lightweight metadata for listing macros without loading full event data
+    public sealed class MacroInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public DateTime CreatedAtUtc { get; set; }
+        public DateTime LastModifiedUtc { get; set; }
+        public int EventCount { get; set; }
+        public long? DurationMs { get; set; }
+    }
 }

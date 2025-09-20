@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SimBlock.Core.Application.Interfaces;
@@ -21,9 +22,11 @@ namespace SimBlock.Core.Application.Services
 
         private DateTime _recordingStartUtc;
         private bool _disposed;
+        private volatile bool _isPlaying;
 
         public bool IsRecording { get; private set; }
         public Macro? CurrentRecording { get; private set; }
+        public bool IsPlaying => _isPlaying;
 
         public MacroService(
             ILogger<MacroService> logger,
@@ -103,88 +106,109 @@ namespace SimBlock.Core.Application.Services
 
         public async Task PlayAsync(Macro macro)
         {
+            await PlayAsync(macro, CancellationToken.None, 1.0, 1);
+        }
+
+        public async Task PlayAsync(Macro macro, CancellationToken cancellationToken, double speed = 1.0, int loops = 1)
+        {
             if (macro == null || macro.Events.Count == 0)
             {
                 _logger.LogWarning("PlayAsync: No events to play");
                 return;
             }
 
-            _logger.LogInformation("Playback started for macro '{Name}' with {Count} events", macro.Name, macro.Events.Count);
+            if (_isPlaying)
+            {
+                _logger.LogWarning("Playback requested while another playback is running");
+                return;
+            }
+
+            if (speed <= 0) speed = 1.0;
+            if (loops < 1) loops = 1;
+
+            _isPlaying = true;
+            _logger.LogInformation("Playback started for macro '{Name}' with {Count} events (speed={Speed}x, loops={Loops})", macro.Name, macro.Events.Count, speed, loops);
             try
             {
                 // Ensure events are ordered by timestamp
                 var ordered = macro.Events.OrderBy(e => e.TimestampMs).ToList();
 
-                long prevTs = ordered[0].TimestampMs;
-                int lastX = ordered[0].X ?? 0;
-                int lastY = ordered[0].Y ?? 0;
-
-                foreach (var ev in ordered)
+                for (int loop = 0; loop < loops && !cancellationToken.IsCancellationRequested; loop++)
                 {
-                    var delayMs = (int)Math.Max(0, ev.TimestampMs - prevTs);
-                    if (delayMs > 0)
-                        await Task.Delay(delayMs);
+                    long prevTs = ordered[0].TimestampMs;
+                    int lastX = ordered[0].X ?? 0;
+                    int lastY = ordered[0].Y ?? 0;
 
-                    switch (ev.Device)
+                    foreach (var ev in ordered)
                     {
-                        case MacroEventDevice.Keyboard:
-                            if (ev.VirtualKeyCode.HasValue)
-                            {
-                                // Best-effort modifiers support: press before keydown, release after
-                                if (ev.Type == MacroEventType.KeyDown)
-                                {
-                                    TrySendModifier(Keys.ControlKey, ev.Ctrl, true);
-                                    TrySendModifier(Keys.Menu, ev.Alt, true); // Alt
-                                    TrySendModifier(Keys.ShiftKey, ev.Shift, true);
-                                    SendKey((ushort)ev.VirtualKeyCode.Value, true);
-                                }
-                                else if (ev.Type == MacroEventType.KeyUp)
-                                {
-                                    SendKey((ushort)ev.VirtualKeyCode.Value, false);
-                                    TrySendModifier(Keys.ShiftKey, ev.Shift, false);
-                                    TrySendModifier(Keys.Menu, ev.Alt, false);
-                                    TrySendModifier(Keys.ControlKey, ev.Ctrl, false);
-                                }
-                            }
-                            break;
+                        if (cancellationToken.IsCancellationRequested) break;
 
-                        case MacroEventDevice.Mouse:
-                            switch (ev.Type)
-                            {
-                                case MacroEventType.MouseMove:
+                        var rawDelay = Math.Max(0, ev.TimestampMs - prevTs);
+                        var delayMs = (int)Math.Max(0, rawDelay / speed);
+                        if (delayMs > 0)
+                            await Task.Delay(delayMs, cancellationToken).ContinueWith(_ => { });
+
+                        switch (ev.Device)
+                        {
+                            case MacroEventDevice.Keyboard:
+                                if (ev.VirtualKeyCode.HasValue)
                                 {
-                                    if (ev.X.HasValue && ev.Y.HasValue)
+                                    // Best-effort modifiers support: press before keydown, release after
+                                    if (ev.Type == MacroEventType.KeyDown)
                                     {
-                                        int dx = ev.X.Value - lastX;
-                                        int dy = ev.Y.Value - lastY;
-                                        SendMouseMove(dx, dy);
-                                        lastX = ev.X.Value;
-                                        lastY = ev.Y.Value;
+                                        TrySendModifier(Keys.ControlKey, ev.Ctrl, true);
+                                        TrySendModifier(Keys.Menu, ev.Alt, true); // Alt
+                                        TrySendModifier(Keys.ShiftKey, ev.Shift, true);
+                                        SendKey((ushort)ev.VirtualKeyCode.Value, true);
                                     }
-                                    break;
-                                }
-                                case MacroEventType.MouseDown:
-                                case MacroEventType.MouseUp:
-                                {
-                                    if (ev.Button.HasValue)
+                                    else if (ev.Type == MacroEventType.KeyUp)
                                     {
-                                        bool down = ev.Type == MacroEventType.MouseDown;
-                                        SendMouseButton(ev.Button.Value, down);
+                                        SendKey((ushort)ev.VirtualKeyCode.Value, false);
+                                        TrySendModifier(Keys.ShiftKey, ev.Shift, false);
+                                        TrySendModifier(Keys.Menu, ev.Alt, false);
+                                        TrySendModifier(Keys.ControlKey, ev.Ctrl, false);
                                     }
-                                    break;
                                 }
-                                case MacroEventType.MouseWheel:
+                                break;
+
+                            case MacroEventDevice.Mouse:
+                                switch (ev.Type)
                                 {
-                                    int delta = ev.WheelDelta ?? 0;
-                                    if (delta != 0)
-                                        SendMouseWheel(delta);
-                                    break;
+                                    case MacroEventType.MouseMove:
+                                    {
+                                        if (ev.X.HasValue && ev.Y.HasValue)
+                                        {
+                                            int dx = ev.X.Value - lastX;
+                                            int dy = ev.Y.Value - lastY;
+                                            SendMouseMove(dx, dy);
+                                            lastX = ev.X.Value;
+                                            lastY = ev.Y.Value;
+                                        }
+                                        break;
+                                    }
+                                    case MacroEventType.MouseDown:
+                                    case MacroEventType.MouseUp:
+                                    {
+                                        if (ev.Button.HasValue)
+                                        {
+                                            bool down = ev.Type == MacroEventType.MouseDown;
+                                            SendMouseButton(ev.Button.Value, down);
+                                        }
+                                        break;
+                                    }
+                                    case MacroEventType.MouseWheel:
+                                    {
+                                        int delta = ev.WheelDelta ?? 0;
+                                        if (delta != 0)
+                                            SendMouseWheel(delta);
+                                        break;
+                                    }
                                 }
-                            }
-                            break;
+                                break;
+                        }
+
+                        prevTs = ev.TimestampMs;
                     }
-
-                    prevTs = ev.TimestampMs;
                 }
 
                 _logger.LogInformation("Playback finished for macro '{Name}'", macro.Name);
@@ -192,6 +216,162 @@ namespace SimBlock.Core.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Playback error for macro '{Name}'", macro.Name);
+            }
+            finally
+            {
+                _isPlaying = false;
+            }
+        }
+
+        public async Task<IReadOnlyList<MacroInfo>> ListInfoAsync()
+        {
+            var list = new List<MacroInfo>();
+            if (!Directory.Exists(_storageDir)) return list;
+
+            foreach (var file in Directory.GetFiles(_storageDir, "*.json"))
+            {
+                try
+                {
+                    var name = Path.GetFileNameWithoutExtension(file)!;
+                    var info = new FileInfo(file);
+                    int eventCount = 0;
+                    long? duration = null;
+
+                    // Try to read basic stats
+                    var json = await File.ReadAllTextAsync(file);
+                    var macro = JsonSerializer.Deserialize<Macro>(json);
+                    if (macro != null && macro.Events.Count > 0)
+                    {
+                        eventCount = macro.Events.Count;
+                        var ordered = macro.Events.OrderBy(e => e.TimestampMs).ToList();
+                        duration = Math.Max(0, ordered.Last().TimestampMs - ordered.First().TimestampMs);
+                    }
+
+                    list.Add(new MacroInfo
+                    {
+                        Name = name,
+                        CreatedAtUtc = macro?.CreatedAtUtc ?? info.CreationTimeUtc,
+                        LastModifiedUtc = info.LastWriteTimeUtc,
+                        EventCount = eventCount,
+                        DurationMs = duration
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error reading macro info for {File}", file);
+                }
+            }
+
+            return list;
+        }
+
+        public Task<bool> ExistsAsync(string name)
+        {
+            var file = Path.Combine(_storageDir, Sanitize(name) + ".json");
+            return Task.FromResult(File.Exists(file));
+        }
+
+        public bool ValidateName(string name, out string? errorMessage)
+        {
+            errorMessage = null;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                errorMessage = "Name cannot be empty.";
+                return false;
+            }
+            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                errorMessage = "Name contains invalid characters.";
+                return false;
+            }
+            if (name.Length > 128)
+            {
+                errorMessage = "Name is too long.";
+                return false;
+            }
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(string name)
+        {
+            try
+            {
+                var file = Path.Combine(_storageDir, Sanitize(name) + ".json");
+                if (!File.Exists(file)) return false;
+                File.Delete(file);
+                await Task.CompletedTask;
+                _logger.LogInformation("Deleted macro '{Name}'", name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete macro '{Name}'", name);
+                return false;
+            }
+        }
+
+        public async Task<bool> RenameAsync(string oldName, string newName)
+        {
+            try
+            {
+                var src = Path.Combine(_storageDir, Sanitize(oldName) + ".json");
+                if (!File.Exists(src)) return false;
+                if (!ValidateName(newName, out _)) return false;
+                var dst = Path.Combine(_storageDir, Sanitize(newName) + ".json");
+                if (!src.Equals(dst, StringComparison.OrdinalIgnoreCase) && File.Exists(dst)) return false;
+                File.Move(src, dst, overwrite: true);
+                await Task.CompletedTask;
+                _logger.LogInformation("Renamed macro '{Old}' to '{New}'", oldName, newName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to rename macro '{Old}' to '{New}'", oldName, newName);
+                return false;
+            }
+        }
+
+        public async Task<bool> ImportAsync(string filePath, bool overwrite = false)
+        {
+            try
+            {
+                if (!File.Exists(filePath)) return false;
+                var json = await File.ReadAllTextAsync(filePath);
+                var macro = JsonSerializer.Deserialize<Macro>(json);
+                if (macro == null || string.IsNullOrWhiteSpace(macro.Name)) return false;
+                var target = Path.Combine(_storageDir, Sanitize(macro.Name) + ".json");
+                if (!overwrite && File.Exists(target)) return false;
+                Directory.CreateDirectory(_storageDir);
+                await File.WriteAllTextAsync(target, JsonSerializer.Serialize(macro, new JsonSerializerOptions { WriteIndented = true }));
+                _logger.LogInformation("Imported macro '{Name}' from {File}", macro.Name, filePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to import macro from {File}", filePath);
+                return false;
+            }
+        }
+
+        public async Task<bool> ExportAsync(string name, string destinationPath, bool overwrite = false)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(destinationPath)) return false;
+                var src = Path.Combine(_storageDir, Sanitize(name) + ".json");
+                if (!File.Exists(src)) return false;
+                var dir = Path.GetDirectoryName(destinationPath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                if (File.Exists(destinationPath) && !overwrite) return false;
+                File.Copy(src, destinationPath, overwrite: true);
+                await Task.CompletedTask;
+                _logger.LogInformation("Exported macro '{Name}' to {Dest}", name, destinationPath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to export macro '{Name}' to {Dest}", name, destinationPath);
+                return false;
             }
         }
 
