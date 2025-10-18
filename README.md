@@ -15,6 +15,7 @@ and mouse input globally with a single toggle button, designed to safely clean y
 -  **Emergency Unlock** - **Ctrl + Alt + U** to revert the block state in case of issues
 -  **System Tray Integration** - Minimize to tray and toggle from tray icon
 -  **Windows Native** - Uses Win32 API for reliable keyboard and mouse hooking
+-  **Keyboard Layouts** - Switch between US and Turkish Q layouts in Settings
 
 ## Screenshots
 
@@ -90,6 +91,11 @@ src/
 4. Click "Block Keyboard" or "Block Mouse" toggle buttons to prevent all peripheral input
 5. Click the toggle button again or use the emergency combination to unlock input.
 6. Minimize to system tray for easy access, click on the icon to toggle state
+
+### Keyboard Layouts
+
+- **Switch layout**: Open `Settings` → `Appearance` → `Keyboard layout` and choose `US` or `TurkishQ`.
+- The keyboard visualization in Select mode will update labels accordingly (e.g., `Ğ Ü Ş İ Ö Ç` on Turkish Q).
 
 ## Global Hook Installation
 

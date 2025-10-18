@@ -36,6 +36,8 @@ namespace SimBlock.Presentation.Forms
 
         // UI Controls
         private RoundedButton _themeToggleButton = null!;
+        private Label _keyboardLayoutLabel = null!;
+        private ComboBox _keyboardLayoutComboBox = null!;
 
         // Visualization controls for Select mode
         private SimBlock.Presentation.Controls.KeyboardVisualizationControl? _keyboardVisualizationControl;
@@ -193,6 +195,28 @@ namespace SimBlock.Presentation.Forms
                 CornerRadius = 6
             };
             _themeToggleButton.FlatAppearance.BorderSize = 0;
+
+            // Keyboard layout label
+            _keyboardLayoutLabel = new Label
+            {
+                Text = "Keyboard layout:",
+                Font = new Font("Segoe UI", 9),
+                ForeColor = _uiSettings.TextColor,
+                AutoSize = true
+            };
+
+            // Keyboard layout combo box
+            _keyboardLayoutComboBox = new ComboBox
+            {
+                Font = new Font("Segoe UI", 9),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Size = new Size(140, 25),
+                BackColor = _uiSettings.BackgroundColor,
+                ForeColor = _uiSettings.TextColor
+            };
+            _keyboardLayoutComboBox.Items.Add(KeyboardLayout.US);
+            _keyboardLayoutComboBox.Items.Add(KeyboardLayout.TurkishQ);
+            _keyboardLayoutComboBox.SelectedItem = _uiSettings.CurrentKeyboardLayout;
 
             // Behavior group box
             _behaviorGroupBox = new GroupBox
@@ -863,7 +887,7 @@ namespace SimBlock.Presentation.Forms
             // Theme controls panel
             var themePanel = new TableLayoutPanel
             {
-                ColumnCount = 2,
+                ColumnCount = 4,
                 RowCount = 1,
                 Dock = DockStyle.Fill,
                 BackColor = _uiSettings.BackgroundColor
@@ -871,6 +895,10 @@ namespace SimBlock.Presentation.Forms
 
             themePanel.Controls.Add(_themeLabel, 0, 0);
             themePanel.Controls.Add(_themeToggleButton, 1, 0);
+            themePanel.Controls.Add(_keyboardLayoutLabel, 2, 0);
+            themePanel.Controls.Add(_keyboardLayoutComboBox, 3, 0);
+            themePanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            themePanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             themePanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             themePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
@@ -987,6 +1015,7 @@ namespace SimBlock.Presentation.Forms
             _themeToggleButton.Click += OnThemeToggleButtonClick;
             _closeButton.Click += OnCloseButtonClick;
             _themeManager.ThemeChanged += OnThemeChanged;
+            _keyboardLayoutComboBox.SelectedIndexChanged += OnKeyboardLayoutChanged;
 
             // Behavior settings event handlers
             _startWithWindowsCheckBox.CheckedChanged += OnStartWithWindowsChanged;
@@ -1711,6 +1740,15 @@ namespace SimBlock.Presentation.Forms
             _selectModeRadioButton.Checked = _uiSettings.KeyboardBlockingMode == BlockingMode.Select;
             _advancedConfigPanel.Visible = _uiSettings.KeyboardBlockingMode == BlockingMode.Advanced;
 
+            // Sync keyboard layout selector
+            if (_keyboardLayoutComboBox != null)
+            {
+                _keyboardLayoutComboBox.SelectedItem = _uiSettings.CurrentKeyboardLayout;
+            }
+
+            // Apply layout to visualization control if present
+            _keyboardVisualizationControl?.SetKeyboardLayout(_uiSettings.CurrentKeyboardLayout);
+
             // Update visualization controls visibility based on mode
             if (_visualizationGroupBox != null)
             {
@@ -1764,6 +1802,19 @@ namespace SimBlock.Presentation.Forms
             _emergencyUnlockAltCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresAlt;
             _emergencyUnlockShiftCheckBox.Checked = _uiSettings.EmergencyUnlockRequiresShift;
             _emergencyUnlockPreviewLabel.Text = GetEmergencyUnlockPreviewText();
+        }
+
+        private void OnKeyboardLayoutChanged(object? sender, EventArgs e)
+        {
+            if (_keyboardLayoutComboBox?.SelectedItem is KeyboardLayout layout)
+            {
+                _uiSettings.CurrentKeyboardLayout = layout;
+                // Update visualization labels if present
+                _keyboardVisualizationControl?.SetKeyboardLayout(layout);
+                _settingsManager.SaveSettings();
+                // Refresh the main interface visualization immediately
+                _visualizationManager.RefreshVisualizationsFromUISettings();
+            }
         }
 
         private void SaveSettings()
@@ -1887,6 +1938,9 @@ namespace SimBlock.Presentation.Forms
             // Unsubscribe from events
             UnsubscribeFromVisualizationEvents();
             _themeManager.ThemeChanged -= OnThemeChanged;
+
+            // Ensure the main interface visualization reflects current layout/theme
+            _visualizationManager.RefreshVisualizationsFromUISettings();
             base.OnFormClosing(e);
         }
     }

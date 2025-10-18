@@ -44,6 +44,9 @@ namespace SimBlock
                 var splashScreenManager = host.Services.GetRequiredService<ISplashScreenManager>();
                 var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
+                // Ensure settings are loaded early so UI picks up persisted layout/theme
+                var _ = host.Services.GetRequiredService<ISettingsManager>();
+
                 logger.LogInformation("Starting SimBlock application...");
 
                 // Get required services for initialization

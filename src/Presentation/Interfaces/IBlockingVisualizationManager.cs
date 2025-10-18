@@ -55,6 +55,11 @@ namespace SimBlock.Presentation.Interfaces
         Panel CreateVisualizationPanel();
 
         /// <summary>
+        /// Refreshes visualization controls from current UI settings (e.g., theme or layout changes)
+        /// </summary>
+        void RefreshVisualizationsFromUISettings();
+
+        /// <summary>
         /// Event fired when visualization needs to be updated
         /// </summary>
         event EventHandler<VisualizationUpdateEventArgs>? VisualizationUpdateRequested;

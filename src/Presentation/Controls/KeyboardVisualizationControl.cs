@@ -59,6 +59,7 @@ namespace SimBlock.Presentation.Controls
             InitializeComponent();
             InitializeKeyLayout();
             InitializeColors();
+            SetKeyboardLayout(_uiSettings.CurrentKeyboardLayout);
         }
 
         private void InitializeComponent()
@@ -371,6 +372,46 @@ namespace SimBlock.Presentation.Controls
             _neutralColor = _uiSettings.BackgroundColor;
             _selectedColor = _uiSettings.SelectedColor; // Selected state color
             _textColor = _uiSettings.TextColor;
+        }
+
+        /// <summary>
+        /// Updates key labels based on the selected keyboard layout
+        /// </summary>
+        public void SetKeyboardLayout(KeyboardLayout layout)
+        {
+            // Reset to default US legend for alpha and common keys (already set in InitializeKeyLayout)
+            // Override only keys that differ for the selected layout
+            if (layout == KeyboardLayout.TurkishQ)
+            {
+                if (_keyLabels.ContainsKey(Keys.Oemtilde)) _keyLabels[Keys.Oemtilde] = "\""; // Turkish Q: ' key
+                if (_keyLabels.ContainsKey(Keys.OemOpenBrackets)) _keyLabels[Keys.OemOpenBrackets] = "Ğ";
+                if (_keyLabels.ContainsKey(Keys.OemCloseBrackets)) _keyLabels[Keys.OemCloseBrackets] = "Ü";
+                if (_keyLabels.ContainsKey(Keys.OemMinus)) _keyLabels[Keys.OemMinus] = "?"; // key right of 0
+                if (_keyLabels.ContainsKey(Keys.Oemplus)) _keyLabels[Keys.Oemplus] = "-"; // key left of Backspace
+                if (_keyLabels.ContainsKey(Keys.OemSemicolon)) _keyLabels[Keys.OemSemicolon] = "Ş";
+                if (_keyLabels.ContainsKey(Keys.OemQuotes)) _keyLabels[Keys.OemQuotes] = "İ";
+                if (_keyLabels.ContainsKey(Keys.Oemcomma)) _keyLabels[Keys.Oemcomma] = "Ö";
+                if (_keyLabels.ContainsKey(Keys.OemPeriod)) _keyLabels[Keys.OemPeriod] = "Ç";
+                if (_keyLabels.ContainsKey(Keys.OemQuestion)) _keyLabels[Keys.OemQuestion] = ":";
+                // Leave other OEM keys as-is to avoid confusion when not essential for blocking
+            }
+            else
+            {
+                // US layout defaults
+                if (_keyLabels.ContainsKey(Keys.Oemtilde)) _keyLabels[Keys.Oemtilde] = "~";
+                if (_keyLabels.ContainsKey(Keys.OemOpenBrackets)) _keyLabels[Keys.OemOpenBrackets] = "[";
+                if (_keyLabels.ContainsKey(Keys.OemCloseBrackets)) _keyLabels[Keys.OemCloseBrackets] = "]";
+                if (_keyLabels.ContainsKey(Keys.OemMinus)) _keyLabels[Keys.OemMinus] = "-";
+                if (_keyLabels.ContainsKey(Keys.Oemplus)) _keyLabels[Keys.Oemplus] = "=";
+                if (_keyLabels.ContainsKey(Keys.OemBackslash)) _keyLabels[Keys.OemBackslash] = "\\";
+                if (_keyLabels.ContainsKey(Keys.OemSemicolon)) _keyLabels[Keys.OemSemicolon] = ";";
+                if (_keyLabels.ContainsKey(Keys.OemQuotes)) _keyLabels[Keys.OemQuotes] = "'";
+                if (_keyLabels.ContainsKey(Keys.Oemcomma)) _keyLabels[Keys.Oemcomma] = ",";
+                if (_keyLabels.ContainsKey(Keys.OemPeriod)) _keyLabels[Keys.OemPeriod] = ".";
+                if (_keyLabels.ContainsKey(Keys.OemQuestion)) _keyLabels[Keys.OemQuestion] = "/";
+            }
+
+            Invalidate();
         }
 
         /// <summary>

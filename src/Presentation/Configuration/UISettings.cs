@@ -15,6 +15,15 @@ namespace SimBlock.Presentation.Configuration
     }
 
     /// <summary>
+    /// Keyboard layout selection
+    /// </summary>
+    public enum KeyboardLayout
+    {
+        US,
+        TurkishQ
+    }
+
+    /// <summary>
     /// Configuration settings for UI appearance and behavior
     /// </summary>
     public class UISettings
@@ -24,6 +33,9 @@ namespace SimBlock.Presentation.Configuration
 
         // Theme settings
         public Theme CurrentTheme { get; set; } = Theme.Light;
+
+        // Keyboard layout
+        public KeyboardLayout CurrentKeyboardLayout { get; set; } = KeyboardLayout.US;
 
         // Emergency unlock shortcut settings (configurable)
         public Keys EmergencyUnlockKey { get; set; } = Keys.U;

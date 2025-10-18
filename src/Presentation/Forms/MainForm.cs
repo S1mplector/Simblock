@@ -464,6 +464,8 @@ namespace SimBlock.Presentation.Forms
                 // Create and show the settings form using dependency injection
                 using var settingsForm = _serviceProvider.GetRequiredService<SettingsForm>();
                 settingsForm.ShowDialog(this);
+                // Ensure any updated layout/theme is applied to the main visualization
+                _visualizationManager.RefreshVisualizationsFromUISettings();
             }
             catch (Exception ex)
             {

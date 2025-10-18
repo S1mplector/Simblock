@@ -249,6 +249,7 @@ namespace SimBlock.Presentation.Managers
             try
             {
                 // Force refresh of both controls to pick up any UI setting changes
+                _keyboardVisualization.SetKeyboardLayout(_uiSettings.CurrentKeyboardLayout);
                 _keyboardVisualization.UpdateVisualization(_keyboardMode, _keyboardConfig, _keyboardBlocked);
                 _mouseVisualization.UpdateVisualization(_mouseMode, _mouseConfig, _mouseBlocked);
                 

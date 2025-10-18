@@ -61,6 +61,7 @@ namespace SimBlock.Presentation.Managers
                     
                     // Theme settings
                     CurrentTheme = _uiSettings.CurrentTheme,
+                    CurrentKeyboardLayout = _uiSettings.CurrentKeyboardLayout,
                     
                     // Emergency unlock shortcut settings
                     EmergencyUnlockKey = _uiSettings.EmergencyUnlockKey,
@@ -267,6 +268,7 @@ namespace SimBlock.Presentation.Managers
             
             // Theme settings
             _uiSettings.ApplyTheme(settingsData.CurrentTheme);
+            _uiSettings.CurrentKeyboardLayout = settingsData.CurrentKeyboardLayout;
             
             // Emergency unlock shortcut settings (now configurable)
             _uiSettings.EmergencyUnlockKey = settingsData.EmergencyUnlockKey;
@@ -341,7 +343,8 @@ namespace SimBlock.Presentation.Managers
 
             // Theme settings
             public Theme CurrentTheme { get; set; } = Theme.Light;
-
+            public KeyboardLayout CurrentKeyboardLayout { get; set; } = KeyboardLayout.US;
+            
             // Emergency unlock shortcut settings
             public Keys EmergencyUnlockKey { get; set; } = Keys.U;
             public bool EmergencyUnlockRequiresCtrl { get; set; } = true;
