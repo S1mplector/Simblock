@@ -304,24 +304,42 @@ namespace SimBlock.Presentation.Managers
             controls.MainTabControl.TabPages.Add(controls.KeyboardTab);
             controls.MainTabControl.TabPages.Add(controls.MouseTab);
 
-            // Create shared button panel
+            // Create a compact, right-aligned area for Settings and Hide to Tray buttons
+            // Container with spacer column (100%) and an autosized column hosting a flow panel
             var buttonPanel = new TableLayoutPanel
             {
-                ColumnCount = 3,
+                ColumnCount = 2,
                 RowCount = 1,
                 Dock = DockStyle.Fill,
                 BackColor = _uiSettings.BackgroundColor,
-                Margin = new Padding(0, 10, 0, 10), // Add vertical margin
+                Margin = new Padding(0, 6, 0, 6),
                 Padding = new Padding(0),
                 AutoSize = true,
-                Height = 50 // Fixed height to ensure enough space for buttons
+                Height = 46
             };
-            buttonPanel.Controls.Add(controls.SettingsButton, 0, 0);
-            buttonPanel.Controls.Add(controls.HideToTrayButton, 1, 0);
-            buttonPanel.Controls.Add(controls.MacroManagerButton, 2, 0);
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+            var rightButtonsFlow = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                BackColor = _uiSettings.BackgroundColor,
+                Margin = new Padding(0),
+                Padding = new Padding(0)
+            };
+            // Slight spacing between buttons for better touch targets
+            controls.SettingsButton.Margin = new Padding(0, 0, 8, 0);
+            controls.HideToTrayButton.Margin = new Padding(0);
+
+            rightButtonsFlow.Controls.Add(controls.SettingsButton);
+            rightButtonsFlow.Controls.Add(controls.HideToTrayButton);
+
+            // Place flow panel in the right autosized column (col 1)
+            buttonPanel.Controls.Add(new Panel { Dock = DockStyle.Fill }, 0, 0); // spacer
+            buttonPanel.Controls.Add(rightButtonsFlow, 1, 0);
 
             // Add main components to main panel
             mainPanel.Controls.Add(controls.MainTabControl, 0, 0);
@@ -330,7 +348,7 @@ namespace SimBlock.Presentation.Managers
 
             // Set row styles - adjusted to give more space to the button panel
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 75)); // Tab control
-            mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // Fixed height for button panel
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 52)); // Compact height for button panel
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Auto-size for instructions
 
             return mainPanel;
