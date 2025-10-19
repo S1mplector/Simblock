@@ -108,6 +108,9 @@ namespace SimBlock.Presentation.Forms
         private RoundedButton _macroLoadButton = null!;
         private RoundedButton _macroOpenManagerButton = null!;
 
+        // Main layout panel
+        private TableLayoutPanel mainPanel = null!;
+
         public SettingsForm(
             IThemeManager themeManager,
             UISettings uiSettings,
@@ -143,14 +146,21 @@ namespace SimBlock.Presentation.Forms
             LoadSettings();
             ApplyCurrentTheme();
             _ = RefreshMacroListAsync();
+
+            // Refresh layout after initialization
+            RefreshFormLayout();
         }
 
         private void InitializeComponent()
         {
             // Configure form properties
             Text = "Settings - SimBlock";
-            Size = new Size(700, 800); // More reasonable default size
-            MinimumSize = new Size(650, 600); // Ensure form can't be made too small
+            // Fixed size equivalent to Simple mode content
+            Size = new Size(700, 600);
+            MinimumSize = new Size(650, 500);
+            MaximumSize = new Size(0, 0); // No maximum size limit
+            AutoSize = false;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.Sizable; // Make form resizable
             MaximizeBox = true; // Allow maximizing
@@ -868,6 +878,22 @@ namespace SimBlock.Presentation.Forms
             _checkForUpdatesButton.FlatAppearance.BorderSize = 0;
         }
 
+        private void RefreshFormLayout()
+        {
+            // Force layout recalculation
+            PerformLayout();
+            mainPanel?.PerformLayout();
+
+            // Trigger auto-size recalculation
+            if (AutoSize)
+            {
+                var preferredSize = GetPreferredSize(Size.Empty);
+                if (preferredSize.Height != Height || preferredSize.Width != Width)
+                {
+                    Size = preferredSize;
+                }
+            }
+        }
         private void LayoutControls()
         {
             // Main layout panel with scrollable content
@@ -881,7 +907,8 @@ namespace SimBlock.Presentation.Forms
                 AutoScroll = true, // Enable scrolling for the main content
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                CellBorderStyle = TableLayoutPanelCellBorderStyle.None
+                CellBorderStyle = TableLayoutPanelCellBorderStyle.None,
+                MinimumSize = new Size(0, 0) // Allow it to shrink
             };
 
             // Theme controls panel
@@ -1008,6 +1035,12 @@ namespace SimBlock.Presentation.Forms
             };
 
             Controls.Add(mainPanel);
+
+            // Store reference for later use
+            this.mainPanel = mainPanel;
+
+            // Refresh layout to ensure proper sizing
+            RefreshFormLayout();
         }
 
         private void InitializeEventHandlers()
@@ -1343,6 +1376,35 @@ namespace SimBlock.Presentation.Forms
                     }
 
                     // Update visualization manager
+                    _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Simple);
+                    _visualizationManager.SetMouseBlockingMode(BlockingMode.Simple);
+                }
+                else if (radioButton == _advancedModeRadioButton)
+                {
+                    _uiSettings.KeyboardBlockingMode = BlockingMode.Advanced;
+                    _uiSettings.MouseBlockingMode = BlockingMode.Advanced;
+                    _advancedConfigPanel.Visible = true;
+                    if (_visualizationGroupBox != null)
+                        _visualizationGroupBox.Visible = false;
+                    _logger.LogInformation("Blocking mode changed to Advanced");
+
+                    // Refresh legend to hide "Selected" indicator
+                    if (_legendPanel != null)
+                    {
+                        RefreshLegend(_legendPanel);
+                    }
+
+                    // Apply advanced mode to active blocker services
+                    if (_uiSettings.AdvancedKeyboardConfig != null)
+                    {
+                        await _keyboardBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedKeyboardConfig);
+                    }
+                    if (_uiSettings.AdvancedMouseConfig != null)
+                    {
+                        await _mouseBlockerService.SetAdvancedModeAsync(_uiSettings.AdvancedMouseConfig);
+                    }
+
+                    // Update visualization manager
                     _visualizationManager.SetKeyboardBlockingMode(BlockingMode.Advanced, _uiSettings.AdvancedKeyboardConfig);
                     _visualizationManager.SetMouseBlockingMode(BlockingMode.Advanced, _uiSettings.AdvancedMouseConfig);
                 }
@@ -1429,6 +1491,9 @@ namespace SimBlock.Presentation.Forms
                     _logger.LogInformation("Select mode configuration complete");
                 }
                 SaveSettings();
+
+                // Refresh form layout after mode changes
+                RefreshFormLayout();
             }
             catch (Exception ex)
             {
@@ -1637,6 +1702,9 @@ namespace SimBlock.Presentation.Forms
                 _logger.LogInformation("Theme changed in settings window: {Theme}", theme);
                 ApplyCurrentTheme();
                 _themeToggleButton.Text = GetThemeButtonText();
+
+                // Refresh layout after theme change
+                RefreshFormLayout();
             }
             catch (Exception ex)
             {

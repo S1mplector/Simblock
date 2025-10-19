@@ -304,11 +304,11 @@ namespace SimBlock.Presentation.Managers
             controls.MainTabControl.TabPages.Add(controls.KeyboardTab);
             controls.MainTabControl.TabPages.Add(controls.MouseTab);
 
-            // Create a compact, right-aligned area for Settings and Hide to Tray buttons
-            // Container with spacer column (100%) and an autosized column hosting a flow panel
+            // Create a centered area for Settings and Hide to Tray buttons
+            // Container with three columns: left spacer (50%), center autosized buttons, right spacer (50%)
             var buttonPanel = new TableLayoutPanel
             {
-                ColumnCount = 2,
+                ColumnCount = 3,
                 RowCount = 1,
                 Dock = DockStyle.Fill,
                 BackColor = _uiSettings.BackgroundColor,
@@ -317,10 +317,11 @@ namespace SimBlock.Presentation.Managers
                 AutoSize = true,
                 Height = 46
             };
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f)); // Left spacer
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); // Center buttons
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f)); // Right spacer
 
-            var rightButtonsFlow = new FlowLayoutPanel
+            var centerButtonsFlow = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
@@ -334,12 +335,13 @@ namespace SimBlock.Presentation.Managers
             controls.SettingsButton.Margin = new Padding(0, 0, 8, 0);
             controls.HideToTrayButton.Margin = new Padding(0);
 
-            rightButtonsFlow.Controls.Add(controls.SettingsButton);
-            rightButtonsFlow.Controls.Add(controls.HideToTrayButton);
+            centerButtonsFlow.Controls.Add(controls.SettingsButton);
+            centerButtonsFlow.Controls.Add(controls.HideToTrayButton);
 
-            // Place flow panel in the right autosized column (col 1)
-            buttonPanel.Controls.Add(new Panel { Dock = DockStyle.Fill }, 0, 0); // spacer
-            buttonPanel.Controls.Add(rightButtonsFlow, 1, 0);
+            // Place flow panel in the center column (col 1)
+            buttonPanel.Controls.Add(new Panel { Dock = DockStyle.Fill }, 0, 0); // left spacer
+            buttonPanel.Controls.Add(centerButtonsFlow, 1, 0); // center buttons
+            buttonPanel.Controls.Add(new Panel { Dock = DockStyle.Fill }, 2, 0); // right spacer
 
             // Add main components to main panel
             mainPanel.Controls.Add(controls.MainTabControl, 0, 0);
