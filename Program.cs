@@ -46,6 +46,8 @@ namespace SimBlock
 
                 // Ensure settings are loaded early so UI picks up persisted layout/theme
                 var _ = host.Services.GetRequiredService<ISettingsManager>();
+                // Ensure macro mapping service is instantiated so it subscribes to hooks
+                var __ = host.Services.GetRequiredService<IMacroMappingService>();
 
                 logger.LogInformation("Starting SimBlock application...");
 
@@ -208,6 +210,7 @@ namespace SimBlock
                     services.AddSingleton<IKeyboardBlockerService, KeyboardBlockerService>();
                     services.AddSingleton<IMouseBlockerService, MouseBlockerService>();
                     services.AddSingleton<IMacroService, MacroService>();
+                    services.AddSingleton<IMacroMappingService, MacroMappingService>();
 
                     // Register infrastructure services
                     services.AddSingleton<SimBlock.Presentation.Interfaces.IResourceMonitor, ResourceMonitor>();
@@ -234,6 +237,8 @@ namespace SimBlock
                     services.AddTransient<SimBlock.Presentation.Forms.SettingsForm>();
                     services.AddTransient<SplashForm>();
                     services.AddTransient<MacroManagerForm>();
+                    services.AddTransient<MacroMappingForm>();
+                    services.AddTransient<MacroEditorForm>();
                     services.AddSingleton<SimBlock.Presentation.ViewModels.SettingsViewModel>();
 
                     // Register splash screen services

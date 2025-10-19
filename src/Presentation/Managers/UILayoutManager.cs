@@ -240,9 +240,8 @@ namespace SimBlock.Presentation.Managers
                 CornerRadius = 6,
                 Margin = new Padding(5)
             };
-            // Temporarily hide Macro Manager button from the main interface without removing code
-            controls.MacroManagerButton.Visible = false;
-            controls.MacroManagerButton.TabStop = false;
+            controls.MacroManagerButton.Visible = true;
+            controls.MacroManagerButton.TabStop = true;
 
             controls.InstructionsLabel = new Label
             {
@@ -336,6 +335,7 @@ namespace SimBlock.Presentation.Managers
             controls.HideToTrayButton.Margin = new Padding(0);
 
             centerButtonsFlow.Controls.Add(controls.SettingsButton);
+            centerButtonsFlow.Controls.Add(controls.MacroManagerButton);
             centerButtonsFlow.Controls.Add(controls.HideToTrayButton);
 
             // Place flow panel in the center column (col 1)

@@ -1,6 +1,8 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
+using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Core.Domain.Enums;
 using SimBlock.Presentation.Configuration;
@@ -16,6 +18,7 @@ namespace SimBlock.Presentation.Managers
     {
         private readonly UISettings _uiSettings;
         private readonly ILogger<BlockingVisualizationManager> _logger;
+        private readonly IMacroMappingService _mappingService;
         private readonly KeyboardVisualizationControl _keyboardVisualization;
         private readonly MouseVisualizationControl _mouseVisualization;
         
@@ -29,16 +32,21 @@ namespace SimBlock.Presentation.Managers
 
         public event EventHandler<VisualizationUpdateEventArgs>? VisualizationUpdateRequested;
 
-        public BlockingVisualizationManager(UISettings uiSettings, ILogger<BlockingVisualizationManager> logger)
+        public BlockingVisualizationManager(UISettings uiSettings, ILogger<BlockingVisualizationManager> logger, IMacroMappingService mappingService)
         {
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
             
             // Initialize visualization controls
             _keyboardVisualization = new KeyboardVisualizationControl(_uiSettings);
             _mouseVisualization = new MouseVisualizationControl(_uiSettings);
             
             _logger.LogInformation("BlockingVisualizationManager initialized successfully");
+
+            // Initialize macro assignment overlays
+            _ = UpdateMacroAssignmentsAsync();
+            _mappingService.BindingsChanged += async (s, e) => await UpdateMacroAssignmentsAsync();
         }
 
         /// <summary>
@@ -252,6 +260,8 @@ namespace SimBlock.Presentation.Managers
                 _keyboardVisualization.SetKeyboardLayout(_uiSettings.CurrentKeyboardLayout);
                 _keyboardVisualization.UpdateVisualization(_keyboardMode, _keyboardConfig, _keyboardBlocked);
                 _mouseVisualization.UpdateVisualization(_mouseMode, _mouseConfig, _mouseBlocked);
+                // Re-apply macro overlays after theme/layout refresh
+                _ = UpdateMacroAssignmentsAsync();
                 
                 _logger.LogDebug("Refreshed visualizations from UI settings");
             }
@@ -292,6 +302,50 @@ namespace SimBlock.Presentation.Managers
             {
                 _logger.LogError(ex, "Error creating visualization panel");
                 return new Panel(); // Return empty panel as fallback
+            }
+        }
+
+        private async Task UpdateMacroAssignmentsAsync()
+        {
+            try
+            {
+                var bindings = await _mappingService.ListBindingsAsync();
+                // Keyboard keys to mark as macro-assigned
+                var keys = new HashSet<Keys>();
+                // Mouse components to mark as macro-assigned
+                var components = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var b in bindings)
+                {
+                    if (!b.Enabled || b.Trigger == null) continue;
+                    if (b.Trigger.Device == MacroTriggerDevice.Keyboard && b.Trigger.VirtualKeyCode.HasValue)
+                    {
+                        keys.Add((Keys)b.Trigger.VirtualKeyCode.Value);
+                        if (b.Trigger.Ctrl) keys.Add(Keys.LControlKey);
+                        if (b.Trigger.Alt) keys.Add(Keys.LMenu);
+                        if (b.Trigger.Shift) keys.Add(Keys.LShiftKey);
+                    }
+                    else if (b.Trigger.Device == MacroTriggerDevice.Mouse && b.Trigger.Button.HasValue)
+                    {
+                        components.Add(b.Trigger.Button.Value switch
+                        {
+                            0 => "LeftButton",
+                            1 => "RightButton",
+                            2 => "WheelMiddle",
+                            _ => string.Empty
+                        });
+                    }
+                }
+
+                components.Remove(string.Empty);
+
+                // Apply overlays with purple color
+                _keyboardVisualization.SetMacroAssignments(keys, Color.MediumPurple);
+                _mouseVisualization.SetMacroAssignments(components, Color.MediumPurple);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error updating macro assignment overlays");
             }
         }
 

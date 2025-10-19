@@ -49,6 +49,11 @@ namespace SimBlock.Presentation.Controls
         {
             InitializeMouseLayout();
         }
+
+        public bool TryGetComponentRect(string componentKey, out Rectangle rect)
+        {
+            return _mouseComponents.TryGetValue(componentKey, out rect);
+        }
         
         public void Initialize(UISettings uiSettings)
         {

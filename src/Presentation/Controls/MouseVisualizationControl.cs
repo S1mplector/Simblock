@@ -22,6 +22,10 @@ namespace SimBlock.Presentation.Controls
         // Modern mouse renderer
         private readonly ModernMouseRenderer _mouseRenderer;
         
+        // Macro assignment overlay
+        private HashSet<string> _macroAssignedComponents = new HashSet<string>();
+        private Color _macroAssignmentColor = Color.MediumPurple;
+        
         // Drag selection state
         private bool _isDragging = false;
         private bool _mouseDown = false;
@@ -39,6 +43,22 @@ namespace SimBlock.Presentation.Controls
             
             InitializeComponent();
             _mouseRenderer.Initialize(uiSettings);
+        }
+
+        public void SetMacroAssignments(IEnumerable<string> components, Color color)
+        {
+            _macroAssignedComponents = new HashSet<string>(components);
+            _macroAssignmentColor = color;
+            Invalidate();
+        }
+
+        private Rectangle GetComponentRect(string component)
+        {
+            if (_mouseRenderer.TryGetComponentRect(component, out var rect))
+            {
+                return rect;
+            }
+            return Rectangle.Empty;
         }
 
         private void InitializeComponent()
@@ -94,6 +114,24 @@ namespace SimBlock.Presentation.Controls
             {
                 // Let the renderer draw the mouse
                 _mouseRenderer.Draw(g, Width, Height);
+                
+                // Draw macro assignment overlays
+                if (_macroAssignedComponents.Count > 0)
+                {
+                    using (var overlayBrush = new SolidBrush(Color.FromArgb(100, _macroAssignmentColor)))
+                    using (var overlayPen = new Pen(Color.FromArgb(140, _macroAssignmentColor), 1f))
+                    {
+                        foreach (var comp in _macroAssignedComponents)
+                        {
+                            var rect = GetComponentRect(comp);
+                            if (!rect.IsEmpty)
+                            {
+                                g.FillRectangle(overlayBrush, rect);
+                                g.DrawRectangle(overlayPen, rect);
+                            }
+                        }
+                    }
+                }
                 
                 // Draw drag selection rectangle if dragging
                 if (_isDragging && !_selectionRectangle.IsEmpty)

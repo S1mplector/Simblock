@@ -5,10 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using SimBlock.Core.Application.Interfaces;
 using SimBlock.Core.Domain.Entities;
 using SimBlock.Presentation.Configuration;
 using SimBlock.Presentation.Controls;
+using SimBlock.Core.Domain.Interfaces;
 
 namespace SimBlock.Presentation.Forms
 {
@@ -17,6 +19,10 @@ namespace SimBlock.Presentation.Forms
         private readonly IMacroService _macroService;
         private readonly UISettings _uiSettings;
         private readonly ILogger<MacroManagerForm> _logger;
+        private readonly IMacroMappingService _mappingService;
+        private readonly IKeyboardHookService _keyboardHookService;
+        private readonly IMouseHookService _mouseHookService;
+        private readonly IServiceProvider _serviceProvider;
 
         private TextBox _nameTextBox = null!;
         private ListBox _macroList = null!;
@@ -33,15 +39,28 @@ namespace SimBlock.Presentation.Forms
         private NumericUpDown _loopsUpDown = null!;
         private ComboBox _speedCombo = null!;
         private Label _statusLabel = null!;
+        private RoundedButton _openMappingButton = null!;
+        private RoundedButton _openEditorButton = null!;
 
         private Macro? _lastRecordedMacro;
         private CancellationTokenSource? _playCts;
 
-        public MacroManagerForm(IMacroService macroService, UISettings uiSettings, ILogger<MacroManagerForm> logger)
+        public MacroManagerForm(
+            IMacroService macroService,
+            UISettings uiSettings,
+            ILogger<MacroManagerForm> logger,
+            IMacroMappingService mappingService,
+            IKeyboardHookService keyboardHookService,
+            IMouseHookService mouseHookService,
+            IServiceProvider serviceProvider)
         {
             _macroService = macroService ?? throw new ArgumentNullException(nameof(macroService));
             _uiSettings = uiSettings ?? throw new ArgumentNullException(nameof(uiSettings));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
+            _keyboardHookService = keyboardHookService ?? throw new ArgumentNullException(nameof(keyboardHookService));
+            _mouseHookService = mouseHookService ?? throw new ArgumentNullException(nameof(mouseHookService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             InitializeComponent();
         }
@@ -88,6 +107,8 @@ namespace SimBlock.Presentation.Forms
             _renameButton = new RoundedButton { Text = "Rename", Size = new Size(90,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _importButton = new RoundedButton { Text = "Import", Size = new Size(90,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _exportButton = new RoundedButton { Text = "Export", Size = new Size(90,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+            _openMappingButton = new RoundedButton { Text = "Mappings...", Size = new Size(110,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
+            _openEditorButton = new RoundedButton { Text = "Edit Events...", Size = new Size(110,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
 
             var speedLabel = new Label { Text = "Speed:", AutoSize = true, ForeColor = _uiSettings.TextColor };
             _speedCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 70, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
@@ -133,6 +154,8 @@ namespace SimBlock.Presentation.Forms
             rightButtons.Controls.Add(_deleteButton);
             rightButtons.Controls.Add(_importButton);
             rightButtons.Controls.Add(_exportButton);
+            rightButtons.Controls.Add(_openMappingButton);
+            rightButtons.Controls.Add(_openEditorButton);
 
             middle.Controls.Add(_macroList, 0, 0);
             middle.Controls.Add(rightButtons, 1, 0);
@@ -172,6 +195,17 @@ namespace SimBlock.Presentation.Forms
                     _statusLabel.Text = $"Recorded '{macro.Name}' with {macro.Events.Count} events.";
                     _lastRecordedMacro = macro;
                     _logger.LogInformation("MacroManager: recording stopped: {Name} with {Count} events", macro.Name, macro.Events.Count);
+                    // Immediately show recorded events in the Macro Editor
+                    try
+                    {
+                        using var editorForm = _serviceProvider.GetRequiredService<MacroEditorForm>();
+                        editorForm.SetMacro(macro);
+                        editorForm.ShowDialog(this);
+                    }
+                    catch (Exception ex2)
+                    {
+                        _logger.LogError(ex2, "MacroManager: failed to open Macro Editor after recording");
+                    }
                     UpdateEnabledState();
                 }
                 catch (Exception ex)
@@ -321,6 +355,34 @@ namespace SimBlock.Presentation.Forms
                     {
                         _statusLabel.Text = $"Exported to '{sfd.FileName}'.";
                     }
+                }
+            };
+
+            _openMappingButton.Click += (s, e) =>
+            {
+                try
+                {
+                    using var mappingForm = _serviceProvider.GetRequiredService<MacroMappingForm>();
+                    mappingForm.ShowDialog(this);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "MacroManager: open mappings error");
+                    MessageBox.Show($"Failed to open Macro Mappings.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            };
+
+            _openEditorButton.Click += (s, e) =>
+            {
+                try
+                {
+                    using var editorForm = _serviceProvider.GetRequiredService<MacroEditorForm>();
+                    editorForm.ShowDialog(this);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "MacroManager: open editor error");
+                    MessageBox.Show($"Failed to open Macro Editor.\n\nError: {ex.Message}", "Macro Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
 

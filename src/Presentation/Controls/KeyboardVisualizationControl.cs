@@ -39,6 +39,10 @@ namespace SimBlock.Presentation.Controls
         private Color _textColor = Color.Black;
         private readonly Color _shadowColor = Color.FromArgb(60, 0, 0, 0);
         
+        // Macro assignment overlay
+        private HashSet<Keys> _macroAssignedKeys = new();
+        private Color _macroAssignmentColor = Color.MediumPurple;
+        
         // Drag selection state
         private bool _isDragging = false;
         private bool _mouseDown = false;
@@ -60,6 +64,13 @@ namespace SimBlock.Presentation.Controls
             InitializeKeyLayout();
             InitializeColors();
             SetKeyboardLayout(_uiSettings.CurrentKeyboardLayout);
+        }
+
+        public void SetMacroAssignments(IEnumerable<Keys> keys, Color color)
+        {
+            _macroAssignedKeys = new HashSet<Keys>(keys);
+            _macroAssignmentColor = color;
+            Invalidate();
         }
 
         private void InitializeComponent()
@@ -467,6 +478,15 @@ namespace SimBlock.Presentation.Controls
                     using (var lg = new LinearGradientBrush(rect, top, bottom, LinearGradientMode.Vertical))
                     {
                         g.FillPath(lg, keyPath);
+                    }
+
+                    // Macro assignment overlay (semi-transparent purple)
+                    if (_macroAssignedKeys.Contains(key))
+                    {
+                        using (var macroBrush = new SolidBrush(Color.FromArgb(120, _macroAssignmentColor)))
+                        {
+                            g.FillPath(macroBrush, keyPath);
+                        }
                     }
 
                     // Hover highlight overlay

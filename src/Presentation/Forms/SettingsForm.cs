@@ -901,7 +901,7 @@ namespace SimBlock.Presentation.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 7,
+                RowCount = 9,
                 Padding = new Padding(20, 20, 20, 40), // Increased bottom padding
                 BackColor = _uiSettings.BackgroundColor,
                 AutoScroll = true, // Enable scrolling for the main content
@@ -1011,6 +1011,7 @@ namespace SimBlock.Presentation.Forms
             mainPanel.Controls.Add(_blockingModeGroupBox, 0, row++);
             mainPanel.Controls.Add(_advancedConfigPanel, 0, row++);
             mainPanel.Controls.Add(_visualizationGroupBox, 0, row++);
+            mainPanel.Controls.Add(_autoUpdateGroupBox, 0, row++);
             mainPanel.Controls.Add(_macroGroupBox, 0, row++);
 
             // Add button panel last
@@ -1024,6 +1025,7 @@ namespace SimBlock.Presentation.Forms
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Blocking Mode
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Advanced Config
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Visualization
+            mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Macros
             mainPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons
             
@@ -1038,6 +1040,9 @@ namespace SimBlock.Presentation.Forms
 
             // Store reference for later use
             this.mainPanel = mainPanel;
+
+            SetRowVisibility(this.mainPanel, _advancedConfigPanel, _advancedConfigPanel.Visible);
+            SetRowVisibility(this.mainPanel, _visualizationGroupBox, _visualizationGroupBox.Visible);
 
             // Refresh layout to ensure proper sizing
             RefreshFormLayout();
@@ -1334,6 +1339,8 @@ namespace SimBlock.Presentation.Forms
                     _advancedConfigPanel.Visible = false;
                     if (_visualizationGroupBox != null)
                         _visualizationGroupBox.Visible = false;
+                    SetRowVisibility(this.mainPanel, _advancedConfigPanel, false);
+                    SetRowVisibility(this.mainPanel, _visualizationGroupBox, false);
                     _logger.LogInformation("Blocking mode changed to Simple");
 
                     // Refresh legend to hide "Selected" indicator
@@ -1357,6 +1364,8 @@ namespace SimBlock.Presentation.Forms
                     _advancedConfigPanel.Visible = true;
                     if (_visualizationGroupBox != null)
                         _visualizationGroupBox.Visible = false;
+                    SetRowVisibility(this.mainPanel, _advancedConfigPanel, true);
+                    SetRowVisibility(this.mainPanel, _visualizationGroupBox, false);
                     _logger.LogInformation("Blocking mode changed to Advanced");
 
                     // Refresh legend to hide "Selected" indicator
@@ -1413,6 +1422,7 @@ namespace SimBlock.Presentation.Forms
                     _uiSettings.KeyboardBlockingMode = BlockingMode.Select;
                     _uiSettings.MouseBlockingMode = BlockingMode.Select;
                     _advancedConfigPanel.Visible = false;
+                    SetRowVisibility(this.mainPanel, _advancedConfigPanel, false);
                     _logger.LogInformation("Blocking mode changed to Select");
 
                     // Initialize Advanced configurations if null for Select mode
@@ -1454,6 +1464,7 @@ namespace SimBlock.Presentation.Forms
                     if (_visualizationGroupBox != null)
                     {
                         _visualizationGroupBox.Visible = true;
+                        SetRowVisibility(this.mainPanel, _visualizationGroupBox, true);
 
                         // Update visualization controls with Select mode
                         if (_keyboardVisualizationControl != null)
@@ -1500,6 +1511,19 @@ namespace SimBlock.Presentation.Forms
                 Console.WriteLine($"SettingsForm.OnBlockingModeChanged: ERROR - {ex.Message}");
                 _logger.LogError(ex, "Error changing blocking mode");
             }
+        }
+
+        private void SetRowVisibility(TableLayoutPanel panel, Control control, bool visible)
+        {
+            if (panel == null || control == null) return;
+            var pos = panel.GetPositionFromControl(control);
+            if (pos.Row >= 0 && pos.Row < panel.RowStyles.Count)
+            {
+                panel.RowStyles[pos.Row].SizeType = visible ? SizeType.AutoSize : SizeType.Absolute;
+                if (!visible) panel.RowStyles[pos.Row].Height = 0;
+            }
+            control.Visible = visible;
+            panel.PerformLayout();
         }
 
         private async void OnAdvancedKeyboardConfigChanged(object? sender, EventArgs e)
