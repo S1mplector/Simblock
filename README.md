@@ -45,7 +45,7 @@ If you've blocked your mouse or need to quickly unlock:
 
 ## Architecture
 
-The application follows Clean Architecture principles:
+SimBlock is built using hexagonal software architecture:
 
 ```
 src/
