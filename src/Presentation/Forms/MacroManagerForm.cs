@@ -38,6 +38,7 @@ namespace SimBlock.Presentation.Forms
         private RoundedButton _cancelPlayButton = null!;
         private NumericUpDown _loopsUpDown = null!;
         private ComboBox _speedCombo = null!;
+        private ComboBox _recordDevicesCombo = null!;
         private Label _statusLabel = null!;
         private RoundedButton _openMappingButton = null!;
         private RoundedButton _openEditorButton = null!;
@@ -89,7 +90,7 @@ namespace SimBlock.Presentation.Forms
             var top = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                ColumnCount = 12,
+                ColumnCount = 14,
                 RowCount = 1,
                 AutoSize = true,
                 BackColor = _uiSettings.BackgroundColor
@@ -118,6 +119,11 @@ namespace SimBlock.Presentation.Forms
             var loopsLabel = new Label { Text = "Loops:", AutoSize = true, ForeColor = _uiSettings.TextColor };
             _loopsUpDown = new NumericUpDown { Minimum = 1, Maximum = 100, Value = 1, Width = 60, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
 
+            var devicesLabel = new Label { Text = "Devices:", AutoSize = true, ForeColor = _uiSettings.TextColor };
+            _recordDevicesCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
+            _recordDevicesCombo.Items.AddRange(new object[] { "Both", "Keyboard", "Mouse" });
+            _recordDevicesCombo.SelectedIndex = 0;
+
             top.Controls.Add(nameLabel, 0, 0);
             top.Controls.Add(_nameTextBox, 1, 0);
             top.Controls.Add(_recordButton, 2, 0);
@@ -130,6 +136,8 @@ namespace SimBlock.Presentation.Forms
             top.Controls.Add(_loopsUpDown, 9, 0);
             top.Controls.Add(_saveButton, 10, 0);
             top.Controls.Add(_renameButton, 11, 0);
+            top.Controls.Add(devicesLabel, 12, 0);
+            top.Controls.Add(_recordDevicesCombo, 13, 0);
 
             // Middle row: list + refresh
             var middle = new TableLayoutPanel
@@ -179,7 +187,8 @@ namespace SimBlock.Presentation.Forms
             _recordButton.Click += async (s, e) =>
             {
                 var name = string.IsNullOrWhiteSpace(_nameTextBox.Text) ? $"Macro_{DateTime.Now:HHmmss}" : _nameTextBox.Text.Trim();
-                _macroService.StartRecording(name);
+                var devices = GetSelectedDevices();
+                _macroService.StartRecording(name, devices);
                 _statusLabel.Text = $"Recording '{name}'...";
                 _logger.LogInformation("MacroManager: recording started: {Name}", name);
                 _lastRecordedMacro = null;
@@ -418,6 +427,17 @@ namespace SimBlock.Presentation.Forms
             };
         }
 
+        private MacroRecordingDevices GetSelectedDevices()
+        {
+            var s = _recordDevicesCombo.SelectedItem?.ToString();
+            return s switch
+            {
+                "Keyboard" => MacroRecordingDevices.Keyboard,
+                "Mouse" => MacroRecordingDevices.Mouse,
+                _ => MacroRecordingDevices.Both
+            };
+        }
+
         private void UpdateEnabledState()
         {
             var recording = _macroService.IsRecording;
@@ -433,6 +453,7 @@ namespace SimBlock.Presentation.Forms
             _exportButton.Enabled = !recording && !playing && (_macroList.SelectedItem != null || !string.IsNullOrWhiteSpace(_nameTextBox.Text));
             _speedCombo.Enabled = !recording && !playing;
             _loopsUpDown.Enabled = !recording && !playing;
+            _recordDevicesCombo.Enabled = !recording && !playing;
         }
     }
 }

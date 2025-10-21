@@ -23,6 +23,7 @@ namespace SimBlock.Core.Application.Services
         private DateTime _recordingStartUtc;
         private bool _disposed;
         private volatile bool _isPlaying;
+        private MacroRecordingDevices _recordDevices;
 
         public bool IsRecording { get; private set; }
         public Macro? CurrentRecording { get; private set; }
@@ -47,7 +48,7 @@ namespace SimBlock.Core.Application.Services
             _mouseHookService.MouseEvent += OnMouseEvent;
         }
 
-        public void StartRecording(string name)
+        public void StartRecording(string name, MacroRecordingDevices devices = MacroRecordingDevices.Both)
         {
             if (IsRecording)
             {
@@ -57,6 +58,7 @@ namespace SimBlock.Core.Application.Services
 
             CurrentRecording = new Macro { Name = name };
             _recordingStartUtc = DateTime.UtcNow;
+            _recordDevices = devices;
             IsRecording = true;
             _logger.LogInformation("Macro recording started: {Name}", name);
         }
@@ -476,6 +478,7 @@ namespace SimBlock.Core.Application.Services
         private void OnKeyEvent(object? sender, KeyboardHookEventArgs e)
         {
             if (!IsRecording || CurrentRecording == null) return;
+            if ((_recordDevices & MacroRecordingDevices.Keyboard) == 0) return;
             try
             {
                 var ts = (long)(e.Timestamp - _recordingStartUtc).TotalMilliseconds;
@@ -499,6 +502,7 @@ namespace SimBlock.Core.Application.Services
         private void OnMouseEvent(object? sender, MouseHookEventArgs e)
         {
             if (!IsRecording || CurrentRecording == null) return;
+            if ((_recordDevices & MacroRecordingDevices.Mouse) == 0) return;
             try
             {
                 var ts = (long)(e.Timestamp - _recordingStartUtc).TotalMilliseconds;

@@ -11,7 +11,7 @@ namespace SimBlock.Core.Application.Interfaces
         bool IsPlaying { get; }
         Macro? CurrentRecording { get; }
 
-        void StartRecording(string name);
+        void StartRecording(string name, MacroRecordingDevices devices = MacroRecordingDevices.Both);
         Macro StopRecording();
 
         Task SaveAsync(Macro macro);

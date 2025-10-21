@@ -3,6 +3,15 @@ using System.Collections.Generic;
 
 namespace SimBlock.Core.Domain.Entities
 {
+    [Flags]
+    public enum MacroRecordingDevices
+    {
+        None = 0,
+        Keyboard = 1,
+        Mouse = 2,
+        Both = Keyboard | Mouse
+    }
+
     public enum MacroEventDevice
     {
         Keyboard,
