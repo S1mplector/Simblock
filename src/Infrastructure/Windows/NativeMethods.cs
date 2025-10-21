@@ -70,6 +70,14 @@ namespace SimBlock.Infrastructure.Windows
         public const int VK_LSHIFT = 0xA0;    // Left Shift
         public const int VK_RSHIFT = 0xA1;    // Right Shift
 
+        public const uint LLKHF_EXTENDED = 0x01;
+        public const uint LLKHF_INJECTED = 0x10;
+        public const uint LLKHF_ALTDOWN = 0x20;
+        public const uint LLKHF_UP = 0x80;
+
+        public const uint LLMHF_INJECTED = 0x00000001;
+        public const uint LLMHF_LOWER_IL_INJECTED = 0x00000002;
+
         // Keyboard layout related constants
         public const int KLF_ACTIVATE = 0x00000001;
         public const int LOCALE_SLANGUAGE = 0x00000002;

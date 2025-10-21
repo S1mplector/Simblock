@@ -176,7 +176,8 @@ namespace SimBlock.Infrastructure.Windows
             {
                 var kbStruct = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
                 int message = wParam.ToInt32();
-                
+                bool isInjected = (kbStruct.flags & NativeMethods.LLKHF_INJECTED) != 0;
+
                 // Log all key events when debugging emergency unlock
                 if ((Keys)kbStruct.vkCode == Keys.U ||
                     (Keys)kbStruct.vkCode == Keys.ControlKey ||
@@ -186,7 +187,11 @@ namespace SimBlock.Infrastructure.Windows
                         (Keys)kbStruct.vkCode, kbStruct.vkCode, message, _state.IsBlocked, _state.Mode);
                 }
                 
-                // Track modifier key states
+                if (isInjected)
+                {
+                    return NativeMethods.CallNextHookEx(_hookId, nCode, wParam, lParam);
+                }
+
                 TrackModifierKeys(kbStruct.vkCode, message);
 
                 // Raise per-key event for listeners (e.g., macro recording)

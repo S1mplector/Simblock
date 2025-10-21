@@ -130,8 +130,25 @@ namespace SimBlock.Core.Application.Services
 
             _isPlaying = true;
             _logger.LogInformation("Playback started for macro '{Name}' with {Count} events (speed={Speed}x, loops={Loops})", macro.Name, macro.Events.Count, speed, loops);
+            bool keyboardWasBlocked = false;
+            bool mouseWasBlocked = false;
             try
             {
+                // Suspend blocking while playing, remember prior states
+                try
+                {
+                    keyboardWasBlocked = _keyboardHookService.CurrentState?.IsBlocked ?? false;
+                    mouseWasBlocked = _mouseHookService.CurrentState?.IsBlocked ?? false;
+                    if (keyboardWasBlocked)
+                        await _keyboardHookService.SetBlockingAsync(false, "Macro playback");
+                    if (mouseWasBlocked)
+                        await _mouseHookService.SetBlockingAsync(false, "Macro playback");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to temporarily disable blocking before playback");
+                }
+
                 // Ensure events are ordered by timestamp
                 var ordered = macro.Events.OrderBy(e => e.TimestampMs).ToList();
 
@@ -221,6 +238,18 @@ namespace SimBlock.Core.Application.Services
             }
             finally
             {
+                try
+                {
+                    if (keyboardWasBlocked)
+                        await _keyboardHookService.SetBlockingAsync(true, "Restore after macro");
+                }
+                catch { }
+                try
+                {
+                    if (mouseWasBlocked)
+                        await _mouseHookService.SetBlockingAsync(true, "Restore after macro");
+                }
+                catch { }
                 _isPlaying = false;
             }
         }

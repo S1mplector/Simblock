@@ -189,10 +189,17 @@ namespace SimBlock.Infrastructure.Windows
             {
                 var mouseStruct = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
                 int message = wParam.ToInt32();
+                bool isInjected = (mouseStruct.flags & NativeMethods.LLMHF_INJECTED) != 0 ||
+                                   (mouseStruct.flags & NativeMethods.LLMHF_LOWER_IL_INJECTED) != 0;
                 
                 // Log mouse activity for debugging
                 _logger.LogDebug("Mouse event: Message={Message}, X={X}, Y={Y}, MouseData={MouseData}",
                     GetMouseMessageName(message), mouseStruct.x, mouseStruct.y, mouseStruct.mouseData);
+
+                if (isInjected)
+                {
+                    return NativeMethods.CallNextHookEx(_hookId, nCode, wParam, lParam);
+                }
 
                 // Raise per-mouse event for listeners (e.g., macro recording)
                 try

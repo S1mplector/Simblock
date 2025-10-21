@@ -53,7 +53,7 @@ namespace SimBlock.Core.Domain.Entities
     {
         public string Name { get; set; } = "Untitled";
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
-        public List<MacroEvent> Events { get; } = new List<MacroEvent>();
+        public List<MacroEvent> Events { get; set; } = new List<MacroEvent>();
     }
 
     // Lightweight metadata for listing macros without loading full event data
