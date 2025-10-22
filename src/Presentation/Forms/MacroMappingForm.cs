@@ -36,6 +36,8 @@ namespace SimBlock.Presentation.Forms
         private ListView _bindingsList = null!;
         private CheckBox _enableMappingsCheck = null!;
         private Label _statusLabel = null!;
+        private ToolTip _tips = null!;
+        private ContextMenuStrip _bindingsMenu = null!;
 
         private MacroTrigger? _currentTrigger;
         private bool _listening;
@@ -67,6 +69,7 @@ namespace SimBlock.Presentation.Forms
             MinimumSize = new Size(660, 420);
             BackColor = _uiSettings.BackgroundColor;
             ForeColor = _uiSettings.TextColor;
+            KeyPreview = true;
 
             var main = new TableLayoutPanel
             {
@@ -95,6 +98,10 @@ namespace SimBlock.Presentation.Forms
             _recordTriggerButton = new RoundedButton { Text = "Record Trigger", Size = new Size(120, 28), BackColor = _uiSettings.PrimaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _triggerPreview = new Label { Text = "No trigger", AutoSize = true, ForeColor = _uiSettings.InactiveColor };
             _addBindingButton = new RoundedButton { Text = "Add/Update", Size = new Size(110, 28), BackColor = _uiSettings.SuccessColor, ForeColor = Color.White, CornerRadius = 6 };
+
+            _tips = new ToolTip { ShowAlways = true };
+            _tips.SetToolTip(_recordTriggerButton, "Start/stop listening for a trigger");
+            _tips.SetToolTip(_addBindingButton, "Add or update mapping for the selected macro and recorded trigger");
 
             top.Controls.Add(new Label { Text = "Macro:", AutoSize = true, ForeColor = _uiSettings.TextColor }, 0, 0);
             top.Controls.Add(_macroCombo, 1, 0);
@@ -137,6 +144,13 @@ namespace SimBlock.Presentation.Forms
             _bindingsList.Columns.Add("Macro", 180);
             _bindingsList.Columns.Add("Trigger", 300);
 
+            _bindingsMenu = new ContextMenuStrip();
+            _bindingsMenu.Items.Add("Enable/Disable", null, async (s, e) => await ToggleSelectedAsync());
+            _bindingsMenu.Items.Add("Remove", null, async (s, e) => await RemoveSelectedAsync());
+            _bindingsMenu.Items.Add(new ToolStripSeparator());
+            _bindingsMenu.Items.Add("Clear All", null, async (s, e) => await ClearAllAsync());
+            _bindingsList.ContextMenuStrip = _bindingsMenu;
+
             var rightButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, AutoSize = true, BackColor = _uiSettings.BackgroundColor };
             _removeBindingButton = new RoundedButton { Text = "Remove", Size = new Size(90, 28), BackColor = _uiSettings.DangerButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _toggleBindingButton = new RoundedButton { Text = "Enable/Disable", Size = new Size(120, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
@@ -168,6 +182,12 @@ namespace SimBlock.Presentation.Forms
             };
 
             FormClosing += (s, e) => StopListening();
+            _bindingsList.DoubleClick += async (s, e) => await ToggleSelectedAsync();
+            _bindingsList.KeyDown += async (s, e) =>
+            {
+                if (e.KeyCode == Keys.Delete) { await RemoveSelectedAsync(); e.Handled = true; }
+                else if (e.KeyCode == Keys.Enter) { await ToggleSelectedAsync(); e.Handled = true; }
+            };
         }
 
         private void WireEvents()

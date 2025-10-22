@@ -49,4 +49,11 @@
     <EmbeddedResource Include="src\Presentation\Resources\Images\mouse.png" />
   </ItemGroup>
 
+  <!-- Exclude test sources from main app compile -->
+  <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
+    <None Remove="tests\**\*.*" />
+    <EmbeddedResource Remove="tests\**\*.*" />
+  </ItemGroup>
+
 </Project>

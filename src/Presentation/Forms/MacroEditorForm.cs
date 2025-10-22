@@ -27,6 +27,8 @@ namespace SimBlock.Presentation.Forms
         private RoundedButton _playButton = null!;
         private ListView _eventsList = null!;
         private Label _statusLabel = null!;
+        private ToolTip _tips = null!;
+        private ContextMenuStrip _eventsMenu = null!;
 
         private Macro? _currentMacro;
 
@@ -47,6 +49,7 @@ namespace SimBlock.Presentation.Forms
             MinimumSize = new Size(740, 460);
             BackColor = _uiSettings.BackgroundColor;
             ForeColor = _uiSettings.TextColor;
+            KeyPreview = true;
 
             var main = new TableLayoutPanel
             {
@@ -67,6 +70,15 @@ namespace SimBlock.Presentation.Forms
             _removeSelectedButton = new RoundedButton { Text = "Remove Selected", Size = new Size(140, 28), BackColor = _uiSettings.DangerButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _clearButton = new RoundedButton { Text = "Clear", Size = new Size(90, 28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _playButton = new RoundedButton { Text = "Play", Size = new Size(90, 28), BackColor = _uiSettings.SuccessColor, ForeColor = Color.White, CornerRadius = 6 };
+
+            _tips = new ToolTip { ShowAlways = true };
+            _tips.SetToolTip(_refreshButton, "Refresh macro list (F5)");
+            _tips.SetToolTip(_loadButton, "Load selected macro");
+            _tips.SetToolTip(_saveButton, "Save (Ctrl+S)");
+            _tips.SetToolTip(_saveAsButton, "Save As (Ctrl+Shift+S)");
+            _tips.SetToolTip(_removeSelectedButton, "Remove selected events (Del)");
+            _tips.SetToolTip(_clearButton, "Clear all events");
+            _tips.SetToolTip(_playButton, "Play (Enter)");
 
             top.Controls.Add(new Label { Text = "Macro:", AutoSize = true, ForeColor = _uiSettings.TextColor });
             top.Controls.Add(_macroCombo);
@@ -114,6 +126,24 @@ namespace SimBlock.Presentation.Forms
             _removeSelectedButton.Click += (s, e) => RemoveSelectedEvents();
             _clearButton.Click += (s, e) => ClearEvents();
             _playButton.Click += async (s, e) => await PlayAsync();
+
+            _eventsMenu = new ContextMenuStrip();
+            _eventsMenu.Items.Add("Remove Selected", null, (s, e) => RemoveSelectedEvents());
+            _eventsMenu.Items.Add("Clear All", null, (s, e) => ClearEvents());
+            _eventsList.ContextMenuStrip = _eventsMenu;
+            _eventsList.DoubleClick += (s, e) => RemoveSelectedEvents();
+            _eventsList.KeyDown += async (s, e) =>
+            {
+                if (e.KeyCode == Keys.Delete) { RemoveSelectedEvents(); e.Handled = true; }
+                else if (e.KeyCode == Keys.Enter) { await PlayAsync(); e.Handled = true; }
+            };
+
+            KeyDown += async (s, e) =>
+            {
+                if (e.Control && e.KeyCode == Keys.S && !e.Shift) { await SaveAsync(); e.Handled = true; }
+                else if (e.Control && e.Shift && e.KeyCode == Keys.S) { await SaveAsAsync(); e.Handled = true; }
+                else if (e.KeyCode == Keys.F5) { await LoadMacroNamesAsync(); e.Handled = true; }
+            };
         }
 
         public void SetMacro(Macro macro)

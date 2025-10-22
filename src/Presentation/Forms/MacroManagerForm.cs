@@ -42,6 +42,10 @@ namespace SimBlock.Presentation.Forms
         private Label _statusLabel = null!;
         private RoundedButton _openMappingButton = null!;
         private RoundedButton _openEditorButton = null!;
+        private ToolTip _tips = null!;
+        private ContextMenuStrip _listMenu = null!;
+        private TextBox _searchTextBox = null!;
+        private System.Collections.Generic.List<string> _allMacroNames = new System.Collections.Generic.List<string>();
 
         private Macro? _lastRecordedMacro;
         private CancellationTokenSource? _playCts;
@@ -74,6 +78,7 @@ namespace SimBlock.Presentation.Forms
             MinimumSize = new Size(560, 380);
             BackColor = _uiSettings.BackgroundColor;
             ForeColor = _uiSettings.TextColor;
+            KeyPreview = true;
 
             var main = new TableLayoutPanel
             {
@@ -90,7 +95,7 @@ namespace SimBlock.Presentation.Forms
             var top = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                ColumnCount = 14,
+                ColumnCount = 16,
                 RowCount = 1,
                 AutoSize = true,
                 BackColor = _uiSettings.BackgroundColor
@@ -111,16 +116,32 @@ namespace SimBlock.Presentation.Forms
             _openMappingButton = new RoundedButton { Text = "Mappings...", Size = new Size(110,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
             _openEditorButton = new RoundedButton { Text = "Edit Events...", Size = new Size(110,28), BackColor = _uiSettings.SecondaryButtonColor, ForeColor = Color.White, CornerRadius = 6 };
 
+            _tips = new ToolTip { ShowAlways = true };
+            _tips.SetToolTip(_recordButton, "Start recording (Ctrl+R)");
+            _tips.SetToolTip(_stopButton, "Stop recording (Ctrl+Shift+R)");
+            _tips.SetToolTip(_playButton, "Play selected macro (Enter)");
+            _tips.SetToolTip(_cancelPlayButton, "Cancel playback (Esc)");
+            _tips.SetToolTip(_saveButton, "Save current macro (Ctrl+S)");
+            _tips.SetToolTip(_deleteButton, "Delete selected macro (Del)");
+            _tips.SetToolTip(_renameButton, "Rename selected macro (F2)");
+            _tips.SetToolTip(_importButton, "Import macro from file");
+            _tips.SetToolTip(_exportButton, "Export selected macro to file");
+            _tips.SetToolTip(_openMappingButton, "Manage hotkey/button mappings");
+            _tips.SetToolTip(_openEditorButton, "Open macro editor");
+
             var speedLabel = new Label { Text = "Speed:", AutoSize = true, ForeColor = _uiSettings.TextColor };
             _speedCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 70, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
             _speedCombo.Items.AddRange(new object[] { "0.5x", "1.0x", "1.5x", "2.0x" });
             _speedCombo.SelectedIndex = 1;
+            _tips.SetToolTip(_speedCombo, "Playback speed");
 
             var loopsLabel = new Label { Text = "Loops:", AutoSize = true, ForeColor = _uiSettings.TextColor };
             _loopsUpDown = new NumericUpDown { Minimum = 1, Maximum = 100, Value = 1, Width = 60, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
+            _tips.SetToolTip(_loopsUpDown, "Number of loops");
 
             var devicesLabel = new Label { Text = "Devices:", AutoSize = true, ForeColor = _uiSettings.TextColor };
             _recordDevicesCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
+            _tips.SetToolTip(_recordDevicesCombo, "Choose devices to record");
             _recordDevicesCombo.Items.AddRange(new object[] { "Both", "Keyboard", "Mouse" });
             _recordDevicesCombo.SelectedIndex = 0;
 
@@ -138,6 +159,10 @@ namespace SimBlock.Presentation.Forms
             top.Controls.Add(_renameButton, 11, 0);
             top.Controls.Add(devicesLabel, 12, 0);
             top.Controls.Add(_recordDevicesCombo, 13, 0);
+            var filterLabel = new Label { Text = "Search:", AutoSize = true, ForeColor = _uiSettings.TextColor };
+            _searchTextBox = new TextBox { Width = 120, BackColor = _uiSettings.BackgroundColor, ForeColor = _uiSettings.TextColor };
+            top.Controls.Add(filterLabel, 14, 0);
+            top.Controls.Add(_searchTextBox, 15, 0);
 
             // Middle row: list + refresh
             var middle = new TableLayoutPanel
@@ -164,6 +189,23 @@ namespace SimBlock.Presentation.Forms
             rightButtons.Controls.Add(_exportButton);
             rightButtons.Controls.Add(_openMappingButton);
             rightButtons.Controls.Add(_openEditorButton);
+
+            _listMenu = new ContextMenuStrip();
+            _listMenu.Items.Add("Play", null, (s, e) => _playButton.PerformClick());
+            _listMenu.Items.Add("Edit Events...", null, (s, e) => _openEditorButton.PerformClick());
+            _listMenu.Items.Add(new ToolStripSeparator());
+            _listMenu.Items.Add("Rename", null, (s, e) => _renameButton.PerformClick());
+            _listMenu.Items.Add("Delete", null, (s, e) => _deleteButton.PerformClick());
+            _listMenu.Items.Add("Export", null, (s, e) => _exportButton.PerformClick());
+            _macroList.ContextMenuStrip = _listMenu;
+            _macroList.DoubleClick += (s, e) => _openEditorButton.PerformClick();
+            _macroList.SelectedIndexChanged += (s, e) => { if (_macroList.SelectedItem != null) _nameTextBox.Text = _macroList.SelectedItem.ToString()!; UpdateEnabledState(); };
+            _macroList.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter) { _playButton.PerformClick(); e.Handled = true; }
+                else if (e.KeyCode == Keys.Delete) { _deleteButton.PerformClick(); e.Handled = true; }
+                else if (e.KeyCode == Keys.F2) { _renameButton.PerformClick(); e.Handled = true; }
+            };
 
             middle.Controls.Add(_macroList, 0, 0);
             middle.Controls.Add(rightButtons, 1, 0);
@@ -289,6 +331,7 @@ namespace SimBlock.Presentation.Forms
             };
 
             _refreshButton.Click += async (s, e) => await RefreshListAsync();
+            _searchTextBox.TextChanged += (s, e) => ApplyFilter();
 
             _cancelPlayButton.Click += (s, e) =>
             {
@@ -398,6 +441,13 @@ namespace SimBlock.Presentation.Forms
             Shown += async (s, e) => await RefreshListAsync();
             FormClosing += (s, e) => { try { _playCts?.Cancel(); } catch { } };
             UpdateEnabledState();
+
+            KeyDown += (s, e) =>
+            {
+                if (e.Control && e.KeyCode == Keys.R) { _recordButton.PerformClick(); e.Handled = true; }
+                else if (e.Control && e.KeyCode == Keys.S) { _saveButton.PerformClick(); e.Handled = true; }
+                else if (e.KeyCode == Keys.Escape && _cancelPlayButton.Enabled) { _cancelPlayButton.PerformClick(); e.Handled = true; }
+            };
         }
 
         private async Task RefreshListAsync()
@@ -405,15 +455,27 @@ namespace SimBlock.Presentation.Forms
             try
             {
                 var names = await _macroService.ListAsync();
-                _macroList.Items.Clear();
-                foreach (var n in names)
-                    _macroList.Items.Add(n);
-                _statusLabel.Text = $"Loaded {names.Count} macros.";
+                _allMacroNames = names.ToList();
+                ApplyFilter();
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "MacroManager: list refresh error");
             }
+        }
+
+        private void ApplyFilter()
+        {
+            var q = _searchTextBox?.Text?.Trim() ?? string.Empty;
+            _macroList.BeginUpdate();
+            _macroList.Items.Clear();
+            foreach (var n in _allMacroNames)
+            {
+                if (string.IsNullOrEmpty(q) || n.Contains(q, StringComparison.OrdinalIgnoreCase))
+                    _macroList.Items.Add(n);
+            }
+            _macroList.EndUpdate();
+            _statusLabel.Text = $"Loaded {_macroList.Items.Count} macros.";
         }
 
         private double ParseSpeed(string? s)
