@@ -3,8 +3,6 @@
     <br><br>
 </div>
 
-> Status: Development of Simblock has ended. This project is no longer in active development.
-
 # Simblock - Simple Input Blocker
 
 A lightweight Windows application that allows you to temporarily block all keyboard 
